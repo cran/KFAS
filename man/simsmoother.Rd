@@ -5,7 +5,7 @@
   Generates random samples of state vector alpha from conditional density p(alpha | y).
 }
 \usage{
-  simsmoother(yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf=0, nnd, nsim=1, tol=1e-7)
+  simsmoother(yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf=0, nsim=1, tol=1e-7)
 }
 \arguments{
   \item{yt}{Matrix or array of observations.}
@@ -17,7 +17,6 @@
   \item{a1}{Initial state vector.}
   \item{P1}{Variance matrix of a1. In diffuse case P1star, the non-diffuse part of P1.}
   \item{P1inf}{Diffuse part of P1.}
-  \item{nnd}{Number of non-diffuse elements of initial state vector. See details.}
   \item{nsim}{Number of samples. Default is 1.}  
   \item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero in diffuse phase. Default is 1e-7.}
 }
@@ -26,15 +25,12 @@
   state vector alpha = (alpha_1, ..., alpha_n) 
   from conditional density p(alpha | y).
 
-
   The state space model is given by\cr
 
   y_t = Z_t * alpha_t + eps_t (observation equation)\cr
   alpha_t+1 = T_t * alpha_t + R_t * eta_t(transition equation)\cr
 
   where eps_t ~ N(0,H_t) and eta_t ~ N(0,Q_t) \cr
-
-  When initial state vector a1 is partially diffuse, model must be constructed so that the first nnd elements of a1 are non-diffuse, and rest are taken as diffuse, so the upper left nnd*nnd part of P1 is positive definite.
 
   Simulation smoother algorithm is from article by J. Durbin and S.J. Koopman (2002).
 }
@@ -85,7 +81,7 @@ kfd<-kf(yt = yt, Zt = matrix(1,nrow=2), Tt=1, Rt=1,
 ksd<-ks(kfd)
 
 alpha<-simsmoother(yt = yt, Zt = matrix(1,nrow=2), Tt=1, Rt=1, 
-	Ht=H, Qt=q11, a1 = 0, P1=0, P1inf=1, nnd=0, nsim=1000)
+	Ht=H, Qt=q11, a1 = 0, P1=0, P1inf=1, nsim=1000)
 
 ahat<-NULL
 for(i in 1:108) ahat[i]<-mean(alpha[1,i,])

@@ -1,11 +1,12 @@
-subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1inf, &
-     nnd, nsim, alphasim, epsplus, etaplus, aplus1, p, n, m, r, info, eps)
+subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1inf, &
+     nnd, nde, nsim, alphasim, epsplus, etaplus, aplus1, p, n, m, r, info, eps)
 
   implicit none
   
   integer, intent(inout) :: info
-  integer, intent(in) :: nnd, nsim, p, m, r, n
+  integer, intent(in) :: nsim, p, m, r, n, nnd
   integer ::  t, i, d, j
+  integer, intent(inout), dimension(nnd) :: nde
   integer, intent(inout), dimension(n) :: ydimt
   integer, intent(in), dimension(3) :: timevar
   double precision, intent(inout), dimension(p,n) :: yt
@@ -16,8 +17,8 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1inf, &
   double precision, intent(in), dimension(r,r,(n-1)*timevar(3)+1) :: qt
   double precision, intent(in), dimension(m) :: a1
   double precision, intent(in), dimension(m,m) ::  p1
+  double precision, intent(in), dimension(nnd,nnd) ::  p1pd
   double precision, intent(in), dimension(m,m) ::  p1inf
- ! double precision, dimension(p,n) :: ythelp
   double precision, dimension(p,m,n) :: zthelp
   double precision, dimension(p,p,n) :: hthelp
   double precision, dimension(m,n+1) :: at
@@ -66,7 +67,8 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1inf, &
   double precision, intent(in) :: eps
   double precision, dimension(p,p) :: cholht
   double precision, dimension(r,r) :: cholqt
-  double precision, dimension(m,m) :: cholp1
+  double precision, dimension(nnd,nnd) :: cholp1
+  double precision, dimension(nnd) :: a1nd
 
   external dcopy
   external dgemm
@@ -174,15 +176,17 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1inf, &
         call dtrmv('l','n','n',r,cholqt,r,etaplus(1:r,t,i),1)    
      end do
 
-     if(nnd>0) then
-        cholp1(1:nnd,1:nnd) = p1(1:nnd,1:nnd)
-        call dpotrf('l',nnd,cholp1(1:nnd,1:nnd),nnd,info)
+     if(nnd>0) then        
+        cholp1 = p1pd
+        call dpotrf('l',nnd,cholp1,nnd,info)
         if(info /= 0) then
            info=3
            return
         end if
-        call dtrmv('l','n','n',nnd,cholp1(1:nnd,1:nnd),nnd,aplus1(1:nnd,i),1)
-        aplus(1:m,1) = a1(1:m) + aplus1(1:m,i)
+        a1nd = aplus1(nde,i)
+        call dtrmv('l','n','n',nnd,cholp1,nnd,a1nd,1)
+        aplus(1:m,1) = a1(1:m)
+        aplus(nde,1) = aplus(nde,1) + a1nd 
      end if
      
      do t = 1, n
@@ -268,16 +272,31 @@ hthelp = ht
       call dtrmv('l','n','n',r,cholqt,r,etaplus(1:r,t,nsim),1)    
    end do
    
-   if(nnd>0) then
-      cholp1=p1(1:nnd,1:nnd)
-      call dpotrf('l',nnd,cholp1(1:nnd,1:nnd),nnd,info)
+   if(nnd>0) then        
+      cholp1 = p1pd
+      call dpotrf('l',nnd,cholp1,nnd,info)
       if(info /= 0) then
          info=3
          return
       end if
-      call dtrmv('l','n','n',nnd,cholp1(1:nnd,1:nnd),nnd,aplus1(1:nnd,nsim),1)
-      aplus(1:m,1) = aplus1(1:m,nsim)
+      a1nd = aplus1(nde,nsim)
+      call dtrmv('l','n','n',nnd,cholp1,nnd,a1nd,1)
+      aplus(1:m,1) = a1(1:m)
+      aplus(nde,1) = aplus(nde,1) + a1nd 
    end if
+     
+
+
+!   if(nnd>0) then
+!      cholp1=p1(1:nnd,1:nnd)
+!      call dpotrf('l',nnd,cholp1(1:nnd,1:nnd),nnd,info)
+!      if(info /= 0) then
+!         info=3
+!         return
+!      end if
+!      call dtrmv('l','n','n',nnd,cholp1(1:nnd,1:nnd),nnd,aplus1(1:nnd,nsim),1)
+!      aplus(1:m,1) = aplus1(1:m,nsim)
+!   end if
    
    do t = 1, n
       if(ydimt(t)>0) then

@@ -404,7 +404,7 @@ function (out)
     ks.out
 }
 simsmoother <-
-function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nnd, nsim = 1, 
+function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1, 
     tol = 1e-07) 
 {
     if (!is.array(yt)) {
@@ -458,7 +458,6 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nnd, nsim = 1,
     storage.mode(r) <- "integer"
     storage.mode(n) <- "integer"
     storage.mode(info) <- "integer"
-    storage.mode(nnd) <- "integer"
     storage.mode(nsim) <- "integer"
     for (t in 1:n) {
         if (ydimt[t] > 0) {
@@ -467,12 +466,19 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nnd, nsim = 1,
         }
     }
     etaplus[, , ] <- rnorm(r * n * nsim, mean = 0, sd = 1)
+    nde<-which(diag(P1inf)==0)
+    nnd<-length(nde)
     if (nnd > 0) {
-        aplus1[1:nnd, ] <- rnorm(nnd * nsim, mean = 0, sd = 1)
+        aplus1[nde, ] <- rnorm(nnd * nsim, mean = 0, sd = 1)
     }
+    P1pd <- array(P1[nde,nde],c(nnd,nnd))
+nde<-array(nde,c(nnd))
+storage.mode(nnd) <- "integer"
+storage.mode(nde) <-"integer"
+storage.mode(P1pd) <- "double"
     sims.out <- .Fortran("simsmoother", PACKAGE = "KFAS", NAOK = TRUE, 
-        ydimt, tv, y, Z, Tt, Rt, H, Qt, a1, P1, P1inf, nnd, nsim, 
-        alphasim = alphasim, epsplus, etaplus, aplus1, p = p, 
+        ydimt, tv, y, Z, Tt, Rt, H, Qt, a1, P1, P1pd=P1pd, P1inf, nnd, nde, nsim, 
+        alphasim = alphasim, epsplus, etaplus, aplus1, p, 
         n, m, r, info = info, tol)
     if (sims.out$info != 0) {
         if (sims.out$info == 1) 
@@ -480,7 +486,7 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nnd, nsim = 1,
         if (sims.out$info == 2) 
             stop("Couldn't compute Cholesky factorization of Qt!")
         if (sims.out$info == 3) 
-            stop("Couldn't compute Cholesky factorization of P1[1:nnd,1:nnd]!")
+            stop("Couldn't compute Cholesky factorization of P1!")
         else stop("Error in filtering!")
     }
     return(sims.out$alphasim)
