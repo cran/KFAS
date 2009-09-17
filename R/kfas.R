@@ -1,55 +1,3 @@
-estmiss <-
-function (out) 
-{
-    Ft <- out$Ft
-    Fstar <- out$Fstar
-    Finf <- out$Finf
-    tv <- NULL
-    tv[1] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
-        1)
-    tv[2] <- !(is.na(dim(as.array(Ht))[3]) || dim(as.array(Ht))[3] == 
-        1)
-    Zt <- array(out$Zt, c(out$p, out$m, (out$n - 1) * tv[1] + 
-        1))
-    Ht <- array(out$Ht, c(out$p, out$p, (out$n - 1) * tv[2] + 
-        1))
-    if (out$d > 0) {
-        for (i in 1:out$d) {
-            if (out$ydimt[i] != out$p) {
-                Fstar[, , i] <- as.matrix(Zt[, , (i - 1) * tv[1] + 
-                  1]) %*% out$Pstar[, , i] %*% t(as.matrix(Zt[, 
-                  , (i - 1) * tv[1] + 1])) + Ht[, , (i - 1) * 
-                  tv[2] + 1]
-                Finf[, , i] <- as.matrix(Zt[, , (i - 1) * tv[1] + 
-                  1]) %*% out$Pinf[, , i] %*% t(as.matrix(Zt[, 
-                  , (i - 1) * tv[1] + 1]))
-            }
-        }
-    }
-    if (out$d < out$n) {
-        for (i in (out$d + 1):out$n) {
-            if (out$ydimt[i] != out$p) 
-                Ft[, , i] <- as.matrix(Zt[, , (i - 1) * tv[1] + 
-                  1]) %*% out$Pt[, , i] %*% t(as.matrix(Zt[, 
-                  , (i - 1) * tv[1] + 1])) + Ht[, , (i - 1) * 
-                  tv[2] + 1]
-        }
-    }
-    if (!is.null(out$ahat)) {
-        yt <- out$yt
-        for (i in 1:out$n) {
-            if (out$ydimt[i] != out$p) 
-                yt[, i] <- as.matrix(Zt[, , (i - 1) * tv[1] + 
-                  1]) %*% as.matrix(out$ahat[, i])
-        }
-        est.out <- list(Fstar = Fstar, Finf = Finf, Ft = Ft, 
-            yt = yt)
-    }
-    else {
-        est.out <- list(Fstar = Fstar, Finf = Finf, Ft = Ft)
-    }
-    return(est.out)
-}
 forecast <-
 function (out, fc = 1, Zt.fc = NULL, Tt.fc = NULL, Rt.fc = NULL, 
     Ht.fc = NULL, Qt.fc = NULL) 
@@ -271,12 +219,20 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
     kfout$Qt <- Qt
     kfout$Zt <- Zt
     kfout$Ht <- Ht
+
+    H <- array(Ht, c(p, p, n))
+    Z <- array(Zt, dim = c(p, m, n))
+
     if (kfout$d > 0) {
+	kfout$Kt[, , 1:kfout$d] <- NA
+	kfout$Ktuni[, , 1:kfout$d] <- NA
         kfout$Ft[, , 1:kfout$d] <- NA
         kfout$Ftuni[1:kfout$j, 1:kfout$d] <- NA
         kfout$Pt[, , 1:kfout$d] <- NA
         for (i in 1:kfout$d) {
             if (ydimt[i] != p) {
+		kfout$Fstar[, , i] <- as.matrix(Z[, , i]) %*% kfout$Pstar[, , i] %*% t(as.matrix(Z[, , i])) + H[, , i]
+                kfout$Finf[, , i] <- as.matrix(Z[, , i]) %*% kfout$Pinf[, , i] %*% t(as.matrix(Z[,,i]))
                 kfout$Finfuni[(ydimt[i] + 1):p, i] <- NA
                 kfout$Fstaruni[(ydimt[i] + 1):p, i] <- NA
                 kfout$vtuni[(ydimt[i] + 1):p, i] <- NA
@@ -284,16 +240,13 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
                 kfout$Kinfuni[, (ydimt[i] + 1):p, i] <- NA
                 kfout$Kstaruni[, (ydimt[i] + 1):p, i] <- NA
                 if (optcal[1]) 
-                  kfout$vt[(ydimt[i] + 1):p, i] <- NA
-                if (optcal[2]) {
-                  kfout$Finf[(ydimt[i] + 1):p, (ydimt[i] + 1):p, 
-                    i] <- NA
-                  kfout$Fstar[(ydimt[i] + 1):p, (ydimt[i] + 1):p, 
-                    i] <- NA
-                }
-                if (optcal[3] && optcal[2]) {
-                  kfout$Kinf[, (ydimt[i] + 1):p, i] <- NA
-                  kfout$Kstar[, (ydimt[i] + 1):p, i] <- NA
+                  kfout$vt[!ymiss[,i],i]<-kfout$vt[1:ydimt[i], i]
+		  kfout$vt[ymiss[,i],i]<-NA
+                if (optcal[3] && optcal[2]) {		  
+                  kfout$Kinf[, !ymiss[,i], i] <- kfout$Kinf[,1:ydimt[i], i]
+		  kfout$Kstar[, !ymiss[,i], i] <- kfout$Kstar[,1:ydimt[i], i]
+		  kfout$Kinf[, ymiss[,i], i] <- NA
+		  kfout$Kstar[, ymiss[,i], i] <- NA                  
                 }
             }
         }
@@ -301,16 +254,16 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
     if (kfout$d < n) {
         for (i in (kfout$d + 1):n) {
             if (ydimt[i] != p) {
+		kfout$Ft[, , i] <- as.matrix(Z[, ,i]) %*% kfout$Pt[, , i] %*% t(as.matrix(Z[,,i])) + H[, , i]
                 kfout$Ftuni[(ydimt[i] + 1):p, i] <- NA
                 kfout$vtuni[(ydimt[i] + 1):p, i] <- NA
                 kfout$Ktuni[, (ydimt[i] + 1):p, i] <- NA
                 if (optcal[1]) 
-                  kfout$vt[(ydimt[i] + 1):p, i] <- NA
-                if (optcal[2]) 
-                  kfout$Ft[(ydimt[i] + 1):p, (ydimt[i] + 1):p, 
-                    i] <- NA
+		  kfout$vt[!ymiss[,i],i]<-kfout$vt[1:ydimt[i], i]
+		  kfout$vt[ymiss[,i],i]<-NA
                 if (optcal[3] && optcal[2]) 
-                  kfout$Kt[, (ydimt[i] + 1):p, i] <- NA
+		  kfout$Kt[, !ymiss[,i], i] <- kfout$Kt[,1:ydimt[i], i]
+                  kfout$Kt[, ymiss[,i], i] <- NA
             }
         }
     }

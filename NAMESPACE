@@ -1,2 +1,2 @@
 useDynLib(KFAS)
-export(kf, ks, simsmoother, forecast, estmiss)
+export(kf, ks, simsmoother, forecast)
