@@ -36,8 +36,8 @@ double precision, intent(inout),dimension(p,n) ::  fstaruni
 double precision, intent(inout),dimension(p,n) ::  finfuni
 double precision, intent(inout),dimension(p,p,n) ::  fstar
 double precision, intent(inout),dimension(p,p,n) ::  finf
-double precision, intent(inout), dimension(m,p,n) :: linf
-double precision, intent(inout), dimension(m,p,n) :: lstar
+double precision, intent(inout), dimension(m,m,n) :: linf
+double precision, intent(inout), dimension(m,m,n) :: lstar
 double precision, intent(inout) :: lik
 integer, intent(in), dimension(4) :: optcal 
 double precision, dimension(m) :: arec
@@ -325,14 +325,14 @@ end if
 
 if(optcal(2)==1) then
    do t= 1, d
-      if(ydimt(t)>0) then
-         if(ydimt(t)==1) then
+      if(ydimt(t)==p) then
+         if(p==1) then
             fstar(1,1,t) = fstaruni(1,t)
             finf(1,1,t) = finfuni(1,t)
          else
             call dgemm('n','t',m,ydimt(t),m,1.0d0,pinf(1:m,1:m,t),m,zt(1:ydimt(t),1:m,t),ydimt(t),&
                  0.0d0,mp(1:m,1:ydimt(t)),m) !mp = pinf*z'
-            call dgemm('n','n',ydimt(t),ydimt(t),m,1.0d0,zt(1:ydimt(t),1:m,t),ydimt(t),&
+            call dgemm('n','n',p,p,m,1.0d0,zt(1:ydimt(t),1:m,t),p,&
                  mp(1:m,1:ydimt(t)),m,0.0d0,finf(1:ydimt(t),1:ydimt(t),t),ydimt(t)) !finf = z*mp
             
             call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zt(1:ydimt(t),1:m,t),&
@@ -345,7 +345,7 @@ if(optcal(2)==1) then
    end do
    do t=d+1, n
       if(ydimt(t)>0) then
-         if(ydimt(t)==1) then
+         if(p==1) then
             ft(1,1,t) = ftuni(1,t)
          else
             call dsymm('r','u',ydimt(t),m,1.0d0,pt(1:m,1:m,t),m,zt(1:ydimt(t),1:m,t),ydimt(t),&
@@ -361,54 +361,49 @@ end if
 if(optcal(3)==1 .AND. optcal(2)==1) then   
    do t=1,d
       if(ydimt(t)>0) then
-         if(p==1) then
-            call dgemv('n',m,m,1.0d0/finfuni(1,t),tt(1:m,1:m,(t-1)*timevar(1)+1),m,kinfuni(1:m,1,t),1,0.0d0,kinf(1:m,1,t),1)
-            call dgemv('n',m,m,1.0d0/fstaruni(1,t),tt(1:m,1:m,(t-1)*timevar(1)+1),m,kstaruni(1:m,1,t),1,0.0d0,kstar(1:m,1,t),1)
-         else
-            if(maxval(abs(finf(1:ydimt(t),1:ydimt(t),t)))<eps) then !finf=0
-               call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zt(1:ydimt(t),1:m,t),p,0.0d0,&
-                    mp(1:m,1:ydimt(t)),m) !mp = pstar*z'
-               call dgemm('n','n',m,ydimt(t),m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,mp(1:m,1:ydimt(t)),m,0.0d0,&
-                    kstar(1:m,1:ydimt(t),t),m) !kstar = t*mp
-               pm(1:ydimt(t),1:m) = transpose(kstar(1:m,1:ydimt(t),t))
-               cholft(1:ydimt(t),1:ydimt(t)) = transpose(fstar(1:ydimt(t),1:ydimt(t),t))
-               call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
-               if(info /=0) then
-                  info=2
-                  return
-               end if
-               kstar(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))
-            else
-               pm(1:ydimt(t),1:m) = zt(1:ydimt(t),1:m,t)
-               cholft(1:ydimt(t),1:ydimt(t)) = transpose(finf(1:ydimt(t),1:ydimt(t),t))
-               call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
-               if(info/=0) then !if finf not pos.def
-                  info=3
-                  return
-               end if
-               kinf(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m)) !kinf = z'*inv(finf)
-               
-               call dgemm('n','n',m,ydimt(t),m,1.0d0,pinf(1:m,1:m,t),m,kinf(1:m,1:ydimt(t),t),m,0.0d0,&
-                    mp(1:m,1:ydimt(t)),m) !mp = pinf*kinf*z'*inv(finf)
-               call dgemm('n','n',m,ydimt(t),m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,mp(1:m,1:ydimt(t)),&
-                    m,0.0d0,kinf(1:m,1:ydimt(t),t),m) !kinf = t*pinf*z'*inv(finf)
-               
-               call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zt(1:ydimt(t),1:m,t),ydimt(t),0.0d0,&
-                    mp(1:m,1:ydimt(t)),m) !mp = pstar*z'    
-               call dgemm('n','n',m,ydimt(t),m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,mp(1:m,1:ydimt(t)),m,&
-                    0.0d0,kstar(1:m,1:ydimt(t),t),m) !kstar = t*mp
-               
-               call dgemm('n','n',m,ydimt(t),ydimt(t),1.0d0,kinf(1:m,1:ydimt(t),t),m,&
-                    fstar(1:ydimt(t),1:ydimt(t),t),ydimt(t),0.0d0,mp(1:m,1:ydimt(t)),m) !mp =kinf*fstar
-               kstar(1:m,1:ydimt(t),t) = kstar(1:m,1:ydimt(t),t) - mp(1:m,1:ydimt(t)) ! note the -, wrong in formula of Dk2003, corrected form in appendix!
-               pm(1:ydimt(t),1:m) = transpose(kstar(1:m,1:ydimt(t),t))
-               call dpotrs('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info) !use cholesky from earlier point               
-               if(info /=0) then
-                  info=3
-                  return
-               end if
-               kstar(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))     
+         if(maxval(abs(finf(1:ydimt(t),1:ydimt(t),t)))<eps) then !finf=0
+            call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zt(1:ydimt(t),1:m,t),p,0.0d0,&
+                 mp(1:m,1:ydimt(t)),m) !mp = pstar*z'
+            call dgemm('n','n',m,ydimt(t),m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,mp(1:m,1:ydimt(t)),m,0.0d0,&
+                 kstar(1:m,1:ydimt(t),t),m) !kstar = t*mp
+            pm(1:ydimt(t),1:m) = transpose(kstar(1:m,1:ydimt(t),t))
+            cholft(1:ydimt(t),1:ydimt(t)) = transpose(fstar(1:ydimt(t),1:ydimt(t),t))
+            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
+            if(info /=0) then
+               info=2
+               return
             end if
+            kstar(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))
+         else
+            pm(1:ydimt(t),1:m) = zt(1:ydimt(t),1:m,t)
+            cholft(1:ydimt(t),1:ydimt(t)) = transpose(finf(1:ydimt(t),1:ydimt(t),t))
+            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
+            if(info/=0) then !if finf not pos.def
+               info=3
+               return
+            end if
+            kinf(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m)) !kinf = z'*inv(finf)
+            
+            call dgemm('n','n',m,ydimt(t),m,1.0d0,pinf(1:m,1:m,t),m,kinf(1:m,1:ydimt(t),t),m,0.0d0,&
+                 mp(1:m,1:ydimt(t)),m) !mp = pinf*kinf*z'*inv(finf)
+            call dgemm('n','n',m,ydimt(t),m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,mp(1:m,1:ydimt(t)),&
+                 m,0.0d0,kinf(1:m,1:ydimt(t),t),m) !kinf = t*pinf*z'*inv(finf)
+               
+            call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zt(1:ydimt(t),1:m,t),ydimt(t),0.0d0,&
+                    mp(1:m,1:ydimt(t)),m) !mp = pstar*z'    
+            call dgemm('n','n',m,ydimt(t),m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,mp(1:m,1:ydimt(t)),m,&
+                 0.0d0,kstar(1:m,1:ydimt(t),t),m) !kstar = t*mp
+            
+            call dgemm('n','n',m,ydimt(t),ydimt(t),1.0d0,kinf(1:m,1:ydimt(t),t),m,&
+                 fstar(1:ydimt(t),1:ydimt(t),t),ydimt(t),0.0d0,mp(1:m,1:ydimt(t)),m) !mp =kinf*fstar
+            kstar(1:m,1:ydimt(t),t) = kstar(1:m,1:ydimt(t),t) - mp(1:m,1:ydimt(t)) ! note the -, wrong in formula of Dk2003, corrected form in appendix!
+            pm(1:ydimt(t),1:m) = transpose(kstar(1:m,1:ydimt(t),t))
+            call dpotrs('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info) !use cholesky from earlier point               
+            if(info /=0) then
+               info=3
+               return
+            end if
+            kstar(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))     
          end if
       end if
    end do
@@ -440,12 +435,11 @@ if(optcal(4)==1 .AND. optcal(3)==1) then
             call dgemm('n','n',m,m,ydimt(t),-1.0d0,kstar(1:m,1:ydimt(t),t),m,zt(1:ydimt(t),1:m,t),ydimt(t),&
                  1.0d0,lstar(1:m,1:m,t),m) !lstar
          else            
-            linf(1:m,1:m,d) = tt(1:m,1:m,(t-1)*timevar(1)+1)
+            linf(1:m,1:m,t) = tt(1:m,1:m,(t-1)*timevar(1)+1)
             call dgemm('n','n',m,m,ydimt(t),-1.0d0,kinf(1:m,1:ydimt(t),t),m,zt(1:ydimt(t),1:m,t),ydimt(t),&
                  1.0d0,linf(1:m,1:m,t),m) !linf 
-            lstar(1:m,1:m,t) = tt(1:m,1:m,(t-1)*timevar(1)+1)
             call dgemm('n','n',m,m,ydimt(t),-1.0d0,kstar(1:m,1:ydimt(t),t),m,zt(1:ydimt(t),1:m,t),ydimt(t),&
-                 1.0d0,lstar(1:m,1:m,t),m) !lstar
+                 0.0d0,lstar(1:m,1:m,t),m) !lstar
          end if
       end if
    end do
