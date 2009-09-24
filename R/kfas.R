@@ -231,39 +231,44 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
         kfout$Pt[, , 1:kfout$d] <- NA
         for (i in 1:kfout$d) {
             if (ydimt[i] != p) {
+		if(optcal[2]==1){
 		kfout$Fstar[, , i] <- as.matrix(Z[, , i]) %*% kfout$Pstar[, , i] %*% t(as.matrix(Z[, , i])) + H[, , i]
                 kfout$Finf[, , i] <- as.matrix(Z[, , i]) %*% kfout$Pinf[, , i] %*% t(as.matrix(Z[,,i]))
+		}
                 kfout$Finfuni[(ydimt[i] + 1):p, i] <- NA
                 kfout$Fstaruni[(ydimt[i] + 1):p, i] <- NA
                 kfout$vtuni[(ydimt[i] + 1):p, i] <- NA
-                kfout$Ktuni[, (ydimt[i] + 1):p, i] <- NA
-                kfout$Kinfuni[, (ydimt[i] + 1):p, i] <- NA
-                kfout$Kstaruni[, (ydimt[i] + 1):p, i] <- NA
+              #  kfout$Ktuni[, (ydimt[i] + 1):p, i] <- NA
+              #  kfout$Kinfuni[, (ydimt[i] + 1):p, i] <- NA
+              #  kfout$Kstaruni[, (ydimt[i] + 1):p, i] <- NA
                 if (optcal[1]) 
                   kfout$vt[!ymiss[,i],i]<-kfout$vt[1:ydimt[i], i]
 		  kfout$vt[ymiss[,i],i]<-NA
-                if (optcal[3] && optcal[2]) {		  
-                  kfout$Kinf[, !ymiss[,i], i] <- kfout$Kinf[,1:ydimt[i], i]
-		  kfout$Kstar[, !ymiss[,i], i] <- kfout$Kstar[,1:ydimt[i], i]
-		  kfout$Kinf[, ymiss[,i], i] <- NA
-		  kfout$Kstar[, ymiss[,i], i] <- NA                  
-                }
+              #  if (optcal[3] && optcal[2]) {		  
+              #    kfout$Kinf[, !ymiss[,i], i] <- kfout$Kinf[,1:ydimt[i], i]
+		#  kfout$Kstar[, !ymiss[,i], i] <- kfout$Kstar[,1:ydimt[i], i]
+		#  kfout$Kinf[, ymiss[,i], i] <- NA
+		#  kfout$Kstar[, ymiss[,i], i] <- NA                  
+                #}
             }
         }
     }
     if (kfout$d < n) {
         for (i in (kfout$d + 1):n) {
             if (ydimt[i] != p) {
+		if(optcal[2]==1){
 		kfout$Ft[, , i] <- as.matrix(Z[, ,i]) %*% kfout$Pt[, , i] %*% t(as.matrix(Z[,,i])) + H[, , i]
+		}
                 kfout$Ftuni[(ydimt[i] + 1):p, i] <- NA
                 kfout$vtuni[(ydimt[i] + 1):p, i] <- NA
-                kfout$Ktuni[, (ydimt[i] + 1):p, i] <- NA
+               # kfout$Ktuni[, (ydimt[i] + 1):p, i] <- NA
                 if (optcal[1]) 
 		  kfout$vt[!ymiss[,i],i]<-kfout$vt[1:ydimt[i], i]
 		  kfout$vt[ymiss[,i],i]<-NA
-                if (optcal[3] && optcal[2]) 
-		  kfout$Kt[, !ymiss[,i], i] <- kfout$Kt[,1:ydimt[i], i]
-                  kfout$Kt[, ymiss[,i], i] <- NA
+             #   if (optcal[3] && optcal[2]) {
+		#  kfout$Kt[, !ymiss[,i], i] <- kfout$Kt[,1:ydimt[i], i]
+                #  kfout$Kt[, ymiss[,i], i] <- NA
+		#	}
             }
         }
     }
@@ -308,10 +313,10 @@ function (out)
     Nt0 <- array(0, dim = c(out$m, out$m, out$d + 1))
     Nt1 <- array(0, dim = c(out$m, out$m, out$d + 1))
     Nt2 <- array(0, dim = c(out$m, out$m, out$d + 1))
-    epshat <- array(0, dim = c(out$p, out$n))
-    epshatvar <- array(0, dim = c(out$p, out$n))
-    etahat <- array(0, dim = c(out$r, out$n))
-    etahatvar <- array(0, dim = c(out$r, out$r, out$n))
+    #epshat <- array(0, dim = c(out$p, out$n))
+    #epshatvar <- array(0, dim = c(out$p, out$n))
+    #etahat <- array(0, dim = c(out$r, out$n))
+    #etahatvar <- array(0, dim = c(out$r, out$r, out$n))
     rt <- array(0, dim = c(out$m, out$n + 1))
     rt0 <- array(0, dim = c(out$m, out$d + 1))
     rt1 <- array(0, dim = c(out$m, out$d + 1))
@@ -338,24 +343,48 @@ function (out)
     storage.mode(Z) <- "double"
     ks.out <- .Fortran("ks", PACKAGE = "KFAS", NAOK = TRUE, out$ydimt, 
         out$tv, Z = Z, array(out$Tt, c(out$m, out$m, (out$n - 
-            1) * out$tv[1] + 1)), H = H, array(out$Rt, c(out$m, 
-            out$r, (out$n - 1) * out$tv[2] + 1)), array(out$Qt, 
-            c(out$r, out$r, (out$n - 1) * out$tv[3] + 1)), out$at, 
+            1) * out$tv[1] + 1)), H = H, out$at, 
         out$Pt, out$vtuni, out$Ftuni, out$Ktuni, ahat = ahat, 
         Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
-        Nt1 = Nt1, Nt2 = Nt2, epshat = epshat, epshatvar = epshatvar, 
-        etahat = etahat, etahatvar = etahatvar, Pinf = out$Pinf, 
+        Nt1 = Nt1, Nt2 = Nt2, Pinf = out$Pinf, 
         Pstar = out$Pstar, Kinfuni = out$Kinfuni, Kstaruni = out$Kstaruni, 
         Finfuni = out$Finfuni, Fstaruni = out$Fstaruni, d = out$d, 
-        j = out$j, p = out$p, m = out$m, r = out$r, n = out$n, 
+        j = out$j, p = out$p, m = out$m, n = out$n, 
         tol = out$tol)
     ks.out <- c(out, list(ahat = ks.out$ahat, Vt = ks.out$Vt, 
         rt = ks.out$rt, rt0 = ks.out$rt0, rt1 = ks.out$rt1, Nt = ks.out$Nt, 
-        Nt0 = ks.out$Nt0, Nt1 = ks.out$Nt1, Nt2 = ks.out$Nt2, 
-        epshat = ks.out$epshat, epshatvar = ks.out$epshatvar, 
-        etahat = ks.out$etahat, etahatvar = ks.out$etahatvar))
+        Nt0 = ks.out$Nt0, Nt1 = ks.out$Nt1, Nt2 = ks.out$Nt2)) 
+        #,epshat = ks.out$epshat, epshatvar = ks.out$epshatvar, 
+        #etahat = ks.out$etahat, etahatvar = ks.out$etahatvar))
     ks.out
 }
+
+distsmoother<-function(out)
+{
+epshat <- array(0, dim = c(out$p, out$n))
+epshatvar <- array(0, dim = c(out$p, out$p, out$n))
+etahat <- array(0, dim = c(out$r, out$n))
+etahatvar <- array(0, dim = c(out$r, out$r, out$n))
+
+tv <- array(0, dim = 3)
+    tv[1] <- !(is.na(dim(as.array(out$Ht))[3]) || dim(as.array(out$Ht))[3] == 
+        1)
+    tv[2] <- !(is.na(dim(as.array(out$Rt))[3]) || dim(as.array(out$Rt))[3] == 
+        1)
+    tv[3] <- !(is.na(dim(as.array(out$Qt))[3]) || dim(as.array(out$Qt))[3] == 
+        1)
+storage.mode(tv)<-"integer"
+info<-0
+storage.mode(info)<-"integer"
+ds.out<-.Fortran("distsmooth",PACKAGE="KFAS",NAOK=TRUE,tv, array(out$Ht, c(out$p, out$p, (out$n - 
+            1) * tv[1] + 1)), array(out$Rt, c(out$m, out$r, (out$n - 1) * tv[2] + 1)), array(out$Qt, 
+            c(out$r, out$r, (out$n - 1) * tv[3] + 1)),out$Ft,out$Kt,out$vt,out$Nt,out$rt,out$Fstar,out$Finf,out$Kinf,out$Kstar,out$Nt0,out$rt0,out$d,out$p,out$m,out$r,out$n,out$tol,epshat=epshat,epshatvar=epshatvar,etahat=etahat,etahatvar=etahatvar,info)
+if(info==1) stop("Fstar singular!")
+if(info==2) stop("Ft singular!")
+list(epshat = ds.out$epshat, epshatvar = ds.out$epshatvar,etahat = ds.out$etahat, etahatvar = ds.out$etahatvar)
+}
+
+
 simsmoother <-
 function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1, 
     tol = 1e-07) 

@@ -367,7 +367,7 @@ if(optcal(3)==1 .AND. optcal(2)==1) then
             call dgemm('n','n',m,ydimt(t),m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,mp(1:m,1:ydimt(t)),m,0.0d0,&
                  kstar(1:m,1:ydimt(t),t),m) !kstar = t*mp
             pm(1:ydimt(t),1:m) = transpose(kstar(1:m,1:ydimt(t),t))
-            cholft(1:ydimt(t),1:ydimt(t)) = transpose(fstar(1:ydimt(t),1:ydimt(t),t))
+            cholft(1:ydimt(t),1:ydimt(t)) = fstar(1:ydimt(t),1:ydimt(t),t)
             call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
             if(info /=0) then
                info=2
@@ -376,7 +376,7 @@ if(optcal(3)==1 .AND. optcal(2)==1) then
             kstar(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))
          else
             pm(1:ydimt(t),1:m) = zt(1:ydimt(t),1:m,t)
-            cholft(1:ydimt(t),1:ydimt(t)) = transpose(finf(1:ydimt(t),1:ydimt(t),t))
+            cholft(1:ydimt(t),1:ydimt(t)) = finf(1:ydimt(t),1:ydimt(t),t)
             call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
             if(info/=0) then !if finf not pos.def
                info=3
