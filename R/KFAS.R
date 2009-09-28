@@ -89,7 +89,6 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
             yt <- array(yt, dim = c(1, length(yt)))
         else yt <- array(yt, dim = dim(yt))
     }
-    storage.mode(yt) <- "double"
     d <- 0
     p <- dim(yt)[1]
     n <- dim(yt)[2]
@@ -140,47 +139,21 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
     Linf <- array(0, dim = c(m, m, n))
     Lstar <- array(0, dim = c(m, m, n))
     Pinf[, , 1] <- P1inf
-    storage.mode(Z) <- "double"
-    storage.mode(H) <- "double"
-    storage.mode(y) <- "double"
+    lik <- 0
+    info <- 0
+    j <- 0
     storage.mode(d) <- "integer"
+    storage.mode(j) <- "integer"
     storage.mode(p) <- "integer"
     storage.mode(m) <- "integer"
     storage.mode(r) <- "integer"
     storage.mode(n) <- "integer"
-    storage.mode(tv) <- "integer"
-    storage.mode(Zt) <- "double"
-    storage.mode(Tt) <- "double"
-    storage.mode(Rt) <- "double"
-    storage.mode(Ht) <- "double"
-    storage.mode(Qt) <- "double"
-    storage.mode(a1) <- "double"
-    storage.mode(P1) <- "double"
-    lik <- 0
-    storage.mode(lik) <- "double"
-    info <- 0
+    storage.mode(tv) <- "integer"    
     storage.mode(info) <- "integer"
     storage.mode(optcal) <- "integer"
     storage.mode(ydimt) <- "integer"
-    storage.mode(vt) <- "double"
-    storage.mode(vtuni) <- "double"
-    storage.mode(Ft) <- "double"
-    storage.mode(Ftuni) <- "double"
-    storage.mode(Finfuni) <- "double"
-    storage.mode(Fstaruni) <- "double"
-    storage.mode(Finf) <- "double"
-    storage.mode(Fstar) <- "double"
-    storage.mode(Kt) <- "double"
-    storage.mode(Ktuni) <- "double"
-    storage.mode(Kinfuni) <- "double"
-    storage.mode(Kinf) <- "double"
-    storage.mode(Kstaruni) <- "double"
-    storage.mode(Kstar) <- "double"
-    storage.mode(Pinf) <- "double"
-    storage.mode(Pstar) <- "double"
-    kfout <- NULL
-    j <- 0
     storage.mode(j) <- "integer"
+    kfout <- NULL  
     kfout <- .Fortran("kf", PACKAGE = "KFAS", NAOK = TRUE, yt = y, 
         ydimt = ydimt, tv = tv, Zt = Z, Tt = array(Tt, c(m, m, 
             (n - 1) * tv[1] + 1)), Rt = array(Rt, c(m, r, (n - 
@@ -241,9 +214,9 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
               #  kfout$Ktuni[, (ydimt[i] + 1):p, i] <- NA
               #  kfout$Kinfuni[, (ydimt[i] + 1):p, i] <- NA
               #  kfout$Kstaruni[, (ydimt[i] + 1):p, i] <- NA
-                if (optcal[1]) 
+                if (optcal[1]) {
                   kfout$vt[!ymiss[,i],i]<-kfout$vt[1:ydimt[i], i]
-		  kfout$vt[ymiss[,i],i]<-NA
+		  kfout$vt[ymiss[,i],i]<-NA}
               #  if (optcal[3] && optcal[2]) {		  
               #    kfout$Kinf[, !ymiss[,i], i] <- kfout$Kinf[,1:ydimt[i], i]
 		#  kfout$Kstar[, !ymiss[,i], i] <- kfout$Kstar[,1:ydimt[i], i]
@@ -262,9 +235,9 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
                 kfout$Ftuni[(ydimt[i] + 1):p, i] <- NA
                 kfout$vtuni[(ydimt[i] + 1):p, i] <- NA
                # kfout$Ktuni[, (ydimt[i] + 1):p, i] <- NA
-                if (optcal[1]) 
+                if (optcal[1]) {
 		  kfout$vt[!ymiss[,i],i]<-kfout$vt[1:ydimt[i], i]
-		  kfout$vt[ymiss[,i],i]<-NA
+		  kfout$vt[ymiss[,i],i]<-NA}
              #   if (optcal[3] && optcal[2]) {
 		#  kfout$Kt[, !ymiss[,i], i] <- kfout$Kt[,1:ydimt[i], i]
                 #  kfout$Kt[, ymiss[,i], i] <- NA
@@ -320,15 +293,6 @@ function (out)
     rt <- array(0, dim = c(out$m, out$n + 1))
     rt0 <- array(0, dim = c(out$m, out$d + 1))
     rt1 <- array(0, dim = c(out$m, out$d + 1))
-    storage.mode(Nt0) <- "double"
-    storage.mode(Nt1) <- "double"
-    storage.mode(Nt2) <- "double"
-    storage.mode(rt0) <- "double"
-    storage.mode(rt1) <- "double"
-    storage.mode(ahat) <- "double"
-    storage.mode(Vt) <- "double"
-    storage.mode(Nt) <- "double"
-    storage.mode(rt) <- "double"
     ymiss <- is.na(out$yt)
     H <- array(out$Ht, c(out$p, out$p, out$n))
     Z <- array(out$Zt, dim = c(out$p, out$m, out$n))
@@ -339,8 +303,6 @@ function (out)
             Z[1:out$ydimt[i], , i] <- Z[!ymiss[, i], , i]
         }
     }
-    storage.mode(H) <- "double"
-    storage.mode(Z) <- "double"
     ks.out <- .Fortran("ks", PACKAGE = "KFAS", NAOK = TRUE, out$ydimt, 
         out$tv, Z = Z, array(out$Tt, c(out$m, out$m, (out$n - 
             1) * out$tv[1] + 1)), H = H, out$at, 
@@ -381,7 +343,7 @@ ds.out<-.Fortran("distsmooth",PACKAGE="KFAS",NAOK=TRUE,tv, array(out$Ht, c(out$p
             c(out$r, out$r, (out$n - 1) * tv[3] + 1)),out$Ft,out$Kt,out$vt,out$Nt,out$rt,out$Fstar,out$Finf,out$Kinf,out$Kstar,out$Nt0,out$rt0,out$d,out$p,out$m,out$r,out$n,out$tol,epshat=epshat,epshatvar=epshatvar,etahat=etahat,etahatvar=etahatvar,info)
 if(info==1) stop("Fstar singular!")
 if(info==2) stop("Ft singular!")
-list(epshat = ds.out$epshat, epshatvar = ds.out$epshatvar,etahat = ds.out$etahat, etahatvar = ds.out$etahatvar)
+c(out,list(epshat = ds.out$epshat, epshatvar = ds.out$epshatvar,etahat = ds.out$etahat, etahatvar = ds.out$etahatvar))
 }
 
 
@@ -394,7 +356,6 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1,
             cat("yt must be array or matrix")
         else yt <- array(yt, dim = dim(yt))
     }
-    storage.mode(yt) <- "double"
     p <- dim(yt)[1]
     n <- dim(yt)[2]
     m <- length(a1)
@@ -457,7 +418,6 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1,
 nde<-array(nde,c(nnd))
 storage.mode(nnd) <- "integer"
 storage.mode(nde) <-"integer"
-storage.mode(P1pd) <- "double"
     sims.out <- .Fortran("simsmoother", PACKAGE = "KFAS", NAOK = TRUE, 
         ydimt, tv, y, Z, Tt, Rt, H, Qt, a1, P1, P1pd=P1pd, P1inf, nnd, nde, nsim, 
         alphasim = alphasim, epsplus, etaplus, aplus1, p, 

@@ -12,10 +12,11 @@
 }
 
 \value{
-\item{epshat}{p*n array of E(eps_t|y_1,...,y_n)}
-\item{etahat}{m*n array of E(eta_t|y_1,...,y_n)}
-\item{epshat}{p*p*n array of var(eps_t|y_1,...,y_n)}
-\item{epshat}{m*m*n array of var(eta_t|y_1,...,y_n)}
+A list with the output elements from Kalman smoother and following new elements: 
+\item{epshat}{p*n array of E(eps_t | y_1, ..., y_n).}
+\item{epshatvar}{p*p*n array of var(eps_t | y_1, ..., y_n).}
+\item{etahat}{r*n array of E(eta_t | y_1, ..., y_n).}
+\item{etahatvar}{r*r*n array of var(eta_t | y_1, ..., y_n).}
 }
 
 \references{
