@@ -37,7 +37,7 @@
 
 \value{
  
-\item{}{m*n*nsim array of simulated state vectors alpha}
+\item{}{m*n*nsim array of simulated state vectors alpha.}
 }
 
 \references{
