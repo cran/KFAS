@@ -40,8 +40,8 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1
   double precision, dimension(p,n) ::  finfuni
   double precision, dimension(p,p,n) ::  fstar
   double precision, dimension(p,p,n) ::  finf
-  double precision, dimension(m,p,n) :: linf
-  double precision, dimension(m,p,n) :: lstar
+  double precision, dimension(m,m,n) :: linf
+  double precision, dimension(m,m,n) :: lstar
   double precision :: lik
   integer, dimension(4) :: optcal
   double precision, dimension(m,m,n+1) :: nt !n_1 = n_0, ..., n_201 = n_200
@@ -53,10 +53,6 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1
   double precision, dimension(m,m,n+1) :: nt0
   double precision, dimension(m,m,n+1) :: nt1
   double precision, dimension(m,m,n+1) :: nt2
-  double precision, dimension(p,n) :: epshat
-  double precision, dimension(p,n) :: epshatvar
-  double precision, dimension(r,n) :: etahat
-  double precision, dimension(r,r,n) :: etahatvar 
   double precision, intent(inout), dimension(p,n,nsim) :: epsplus
   double precision, intent(inout), dimension(r,n,nsim) :: etaplus
   double precision, dimension(m,n+1) :: aplus
@@ -83,8 +79,6 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1
   external dtrsv
   external kf
   external ks
-
-
 
   optcal = 0
   pinf=0.0d0 
@@ -121,10 +115,6 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1
   nt0=0.0d0
   nt1=0.0d0
   nt2=0.0d0
-  epshat=0.0d0
-  epshatvar=0.0d0
-  etahat=0.0d0
-  etahatvar =0.0d0
   aplus=0.0d0  
   aplushat=0.0d0
   yplus=0.0d0
@@ -147,9 +137,9 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1
  zthelp = zt
  hthelp = ht
 
- call ks(ydimt, timevar, zthelp, tt, hthelp, rtv, qt, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
-          rt, rt0, rt1, nt, nt0, nt1, nt2, epshat, epshatvar, etahat, etahatvar, pinf, pstar, kinfuni,&
-          kstaruni, finfuni, fstaruni, d, j, p, m, r, n, eps)
+ call ks(ydimt, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
+          rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
+          kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
 
  do i = 1, floor(nsim/2.0d0)
 
@@ -237,9 +227,9 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1
 zthelp = zt
 hthelp = ht
 
-     call ks(ydimt, timevar, zthelp, tt, hthelp, rtv, qt, at, pt, vtuni, ftuni, ktuni, aplushat, vvt, &
-          rt, rt0, rt1, nt, nt0, nt1, nt2, epshat, epshatvar, etahat, etahatvar, pinf, pstar, kinfuni,&
-          kstaruni, finfuni, fstaruni, d, j, p, m, r, n, eps)
+     call ks(ydimt, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, ktuni, aplushat, vvt, &
+          rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
+          kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
 
      do t = 1, n
         alphasim(1:m,t,i) = ahat(1:m,t) - aplushat(1:m,t) + aplus(1:m,t)
@@ -285,18 +275,6 @@ hthelp = ht
       aplus(nde,1) = aplus(nde,1) + a1nd 
    end if
      
-
-
-!   if(nnd>0) then
-!      cholp1=p1(1:nnd,1:nnd)
-!      call dpotrf('l',nnd,cholp1(1:nnd,1:nnd),nnd,info)
-!      if(info /= 0) then
-!         info=3
-!         return
-!      end if
-!      call dtrmv('l','n','n',nnd,cholp1(1:nnd,1:nnd),nnd,aplus1(1:nnd,nsim),1)
-!      aplus(1:m,1) = aplus1(1:m,nsim)
-!   end if
    
    do t = 1, n
       if(ydimt(t)>0) then
@@ -345,9 +323,9 @@ hthelp = ht
 zthelp = zt
 hthelp = ht
 
-   call ks(ydimt, timevar, zthelp, tt, hthelp, rtv, qt, at, pt, vtuni, ftuni, ktuni, aplushat, vvt, &
-        rt, rt0, rt1, nt, nt0, nt1, nt2, epshat, epshatvar, etahat, etahatvar, pinf, pstar, kinfuni,&
-        kstaruni, finfuni, fstaruni, d, j, p, m, r, n, eps)
+   call ks(ydimt, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, ktuni, aplushat, vvt, &
+        rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
+        kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
 
    do t = 1, n
       alphasim(1:m,t,nsim) = ahat(1:m,t) - aplushat(1:m,t) + aplus(1:m,t)
