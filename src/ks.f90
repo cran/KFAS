@@ -7,12 +7,10 @@ implicit none
 integer, intent(in) :: d, j, p, m, n
 integer :: t, i, k, l
 integer, intent(in), dimension(n) :: ydimt
-integer, intent(in), dimension(3) :: timevar
+integer, intent(in), dimension(1) :: timevar
 double precision, intent(inout), dimension(p,m,n) :: zt  
 double precision, intent(in), dimension(m,m,(n-1)*timevar(1)+1) :: tt 
 double precision, intent(inout), dimension(p,p,n) :: ht
-!double precision, intent(in), dimension(m,r,(n-1)*timevar(2)+1) :: rtv
-!double precision, intent(in), dimension(r,r,(n-1)*timevar(3)+1) :: qt
 double precision, intent(in), dimension(m,n+1) :: at
 double precision, intent(in), dimension(m,m,n+1) :: pt
 double precision, intent(in), dimension(p,n) ::  vtuni
@@ -43,9 +41,6 @@ double precision, dimension(m,m) :: nrec2
 double precision, dimension(m) :: rrec
 double precision, dimension(m) :: rrec1
 double precision, dimension(m) :: rhelp
-!double precision, dimension(r) :: r1
-!double precision, dimension(m,r) :: mr
-!double precision, dimension(m,r) :: mr2
 double precision, dimension(m,m) ::  im
 double precision, dimension(m,m) ::  mm
 double precision, dimension(m,m) ::  mm2
@@ -144,9 +139,6 @@ rt(1:m,n+1) = 0.0d0
 do t = n, d+1, -1 !do until diffuse starts
    do i = ydimt(t), 1 , -1       
       if(abs(ftuni(i,t)) > eps) then 
-       !  epshat(i,t) = ht(i,i,t)*(vtuni(i,t)/ftuni(i,t) - ddot(m,ktuni(1:m,i,t),1,rrec,1))
-       !  call dgemv('n',m,m,1.0d0,nrec,m,ktuni(1:m,i,t),1,0.0d0,rhelp,1) !beta oli 1.0d0
-       !  epshatvar(i,t) = ht(i,i,t) - (ht(i,i,t)**2)*(1.0d0/ftuni(i,t) + ddot(m,ktuni(1:m,i,t),1,rhelp,1))  
          lt = im
          call dger(m,m,-1.0d0,ktuni(1:m,i,t),1,zt(i,1:m,t),1,lt,m) !l = I -kz 
          call dgemv('t',m,m,1.0d0,lt,m,rrec,1,0.0d0,rhelp,1) 
@@ -154,18 +146,10 @@ do t = n, d+1, -1 !do until diffuse starts
          call daxpy(m,vtuni(i,t)/ftuni(i,t),zt(i,1:m,t),1,rrec,1)
          call dsymm('l','u',m,m,1.0d0,nrec,m,lt,m,0.0d0,mm,m) !n*l
          call dgemm('t','n',m,m,m,1.0d0,lt,m,mm,m,0.0d0,nrec,m) !n = l'nl
-         call dger(m,m,(1.0d0/ftuni(i,t)),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec,m) ! n = n+z'z/f
-         !call dsyr('u',m,(1.0d0/ftuni(i,t)),zt(i,1:m,(t-1)*timevar(1)+1),1,nrec,m) ! n = n+z'z/f         
+         call dger(m,m,(1.0d0/ftuni(i,t)),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec,m) ! n = n+z'z/f  
       end if   
    end do
 
-  ! call dgemv('t',m,r,1.0d0,rtv(1:m,1:r,(t-1)*timevar(2)+1),m,rrec,1,0.0d0,r1,1)
-  ! call dsymv('u',r,1.0d0,qt(1:r,1:r,(t-1)*timevar(3)+1),r,r1,1,0.0d0,etahat(1:r,t),1)
-  ! etahatvar(1:r,1:r,t) = qt(1:r,1:r,(t-1)*timevar(3)+1)
-  ! call dsymm('r','u',m,r,1.0d0,qt(1:r,1:r,(t-1)*timevar(3)+1),r,rtv(1:m,1:r,(t-1)*timevar(2)+1),m,0.0d0,mr,m)
-  ! call dgemm('n','n',m,r,m,1.0d0,nrec,m,mr,m,0.0d0,mr2,m)
-  ! call dgemm('t','n',r,r,m,1.0d0,mr,m,mr2,m,1.0d0,etahatvar(1:r,1:r,t),r)   
- 
    call dcopy(m,rrec,1,rt(1:m,t),1) !r_t-1 = r_t,0
    nt(1:m,1:m,t) = nrec !n_t-1 = n_t,0
    call dcopy(m,at(1:m,t),1,ahat(1:m,t),1) !ahat = at
@@ -186,15 +170,11 @@ if(d>0) then
    if(ydimt(t)>j) then
       do i = ydimt(t), (j+1) , -1  
          if(ftuni(i,t) > eps) then 
-         !   epshat(i,t) = ht(i,i,t)*(vtuni(i,t)/ftuni(i,t) - ddot(m,ktuni(1:m,i,t),1,rrec,1))
-         !   call dgemv('n',m,m,1.0d0,nrec,m,ktuni(1:m,i,t),1,0.0d0,rhelp,1)
-         !   epshatvar(i,t) = ht(i,i,t) - (ht(i,i,t)**2)*(1.0d0/ftuni(i,t) + ddot(m,ktuni(1:m,i,t),1,rhelp,1))
             lt = im
             call dger(m,m,-1.0d0,ktuni(1:m,i,t),1,zt(i,1:m,t),1,lt,m) !l = i -kz
             call dgemv('t',m,m,1.0d0,lt,m,rrec,1,0.0d0,rhelp,1) 
             rrec=rhelp
             call daxpy(m,vtuni(i,t)/ftuni(i,t),zt(i,1:m,t),1,rrec,1)
-            ! call dsymm('l','u',m,m,1.0d0,nrec,m,lt,m,0.0d0,mm,m) !n*l
             call dgemm('n','n',m,m,m,1.0d0,nrec,m,lt,m,0.0d0,mm,m) !n*l
             call dgemm('t','n',m,m,m,1.0d0,lt,m,mm,m,0.0d0,nrec,m) !n = l'nl
             call dger(m,m,(1.0d0)/ftuni(i,t),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec,m) ! n = n+z'z/f      
@@ -212,9 +192,6 @@ if(d>0) then
 
    do i = j, 1, -1 
       if(finfuni(i,t)>eps) then
-       !  epshat(i,t) = -ht(i,i,t)/finfuni(i,t)*ddot(m,kinfuni(1:m,i,t),1,rrec,1)
-       !  call dgemv('n',m,m,1.0d0,nrec,m,kinfuni(1:m,i,t),1,0.0d0,rhelp,1)
-       !  epshatvar(i,t) = ht(i,i,t) - (ht(i,i,t)**2)/(finfuni(i,t)**2)*ddot(m,kinfuni(1:m,i,t),1,rhelp,1)
          linfuni = im            
          call dger(m,m,-1.0d0/finfuni(i,t),kinfuni(1:m,i,t),1,zt(i,1:m,t),1,linfuni,m) !linf
          rhelp = -kstaruni(1:m,i,t)
@@ -223,7 +200,6 @@ if(d>0) then
          call dger(m,m,(1.0d0/finfuni(i,t)),rhelp,1,zt(i,1:m,t),1,l0,m) !l0
 
          call dgemv('t',m,m,1.0d0,linfuni,m,rrec1,1,0.0d0,rhelp,1) !rt1
-        ! rrec1 = rhelp
          call dcopy(m,rhelp,1,rrec1,1)
          call dgemv('t',m,m,1.0d0,l0,m,rrec,1,1.0d0,rrec1,1)
          call daxpy(m,(vtuni(i,t)/finfuni(i,t)),zt(i,1:m,t),1,rrec1,1)
@@ -234,7 +210,6 @@ if(d>0) then
          call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec2,m,0.0d0,mm,m) !mm =linf'*nt2
          call dgemm('n','n',m,m,m,1.0d0,mm,m,linfuni,m,0.0d0,nrec2,m) !nt2 = linf'*nt2*linf
          call dger(m,m,(-fstaruni(i,t)/(finfuni(i,t)**2.0d0)),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec2,m) 
-         !nt2 = linf'nt2'linf + z'z*fstar/finf^2 !kOrJattu
          call dsymm('l','u',m,m,1.0d0,nrec,m,l0,m,0.0d0,mm,m) !mm= nt0*l0
 
          call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2 + l0'*nt0*l0
@@ -245,19 +220,13 @@ if(d>0) then
       
          call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec1,m) !nt1 = linf'*mm
          call dger(m,m,(1.0d0)/finfuni(i,t),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec1,m) 
-!nt1 = linf'nt1'linf + z'z/finf
          call dsymm('l','u',m,m,1.0d0,nrec,m,linfuni,m,0.0d0,mm,m) !mm= nt0*linf
-         !call dgemm('n','n',m,m,m,1.0d0,nrec,m,linfuni,m,0.0d0,mm,m) !mm= nt0*linf
          call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec1,m) !nt1 = l0'*nt0*linf+ linf'nt1'linf + z'z/finf
       
          call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec,m) !nt0 = linf'*mm
 
         
       else
-        ! epshat(i,t) = ht(i,i,t) * (vtuni(i,t)/fstaruni(i,t) - ddot(m,kinfuni(1:m,i,t),1,rrec,1)/fstaruni(i,t))
-        ! call dgemv('n',m,m,1.0d0,nrec,m,kstaruni(1:m,i,t),1,0.0d0,rhelp,1)
-       !  epshatvar(i,t) = ht(i,i,t) - ht(i,i,t)**2 * (1.0d0/fstaruni(i,t) + &
-       !       ddot(m,kstaruni(1:m,i,t),1,rhelp,1)/(fstaruni(i,t)**2))
          lstaruni= im
          call dger(m,m,(-1.0d0)/fstaruni(i,t),kstaruni(1:m,i,t),1,zt(i,1:m,t),1,lstaruni,m) !lstar = I -Kstar*Z/Fstar         
          call dgemv('t',m,m,1.0d0,lstaruni,m,rrec,1,0.0d0,rhelp,1)
@@ -276,12 +245,6 @@ if(d>0) then
         
       end if
    end do
- !  call dgemv('t',m,r,1.0d0,rtv(1:m,1:r,(t-1)*timevar(2)+1),m,rrec,1,0.0d0,r1,1)
- !  call dsymv('u',r,1.0d0,qt(1:r,1:r,(t-1)*timevar(3)+1),r,r1,1,0.0d0,etahat(1:r,t),1)
- !  etahatvar(1:r,1:r,t) = qt(1:r,1:r,(t-1)*timevar(3)+1)
- !  call dsymm('r','u',m,r,1.0d0,qt(1:r,1:r,(t-1)*timevar(3)+1),r,rtv(1:m,1:r,(t-1)*timevar(2)+1),m,0.0d0,mr,m)
-  ! call dgemm('n','n',m,r,m,1.0d0,nrec,m,mr,m,0.0d0,mr2,m)
-  ! call dgemm('t','n',r,r,m,1.0d0,mr,m,mr2,m,1.0d0,etahatvar(1:r,1:r,t),r)
 
    rt0(1:m,t) = rrec
    rt1(1:m,t) = rrec1
@@ -319,10 +282,6 @@ if(d>0) then
        do i = ydimt(t), 1, -1
          
          if(finfuni(i,t)> eps) then
-         !   epshat(i,t) = -ht(i,i,t)/finfuni(i,t)*ddot(m,kinfuni(1:m,i,t),1,rrec,1)
-        !    call dgemv('n',m,m,1.0d0,nrec,m,kinfuni(1:m,i,t),1,0.0d0,rhelp,1)
-        !    epshatvar(i,t) = ht(i,i,t) - (ht(i,i,t)**2)/(finfuni(i,t)**2)*&
-         !        (ftuni(i,t) + ddot(m,kinfuni(1:m,i,t),1,rhelp,1))
             linfuni = im            
             call dger(m,m,-1.0d0/finfuni(i,t),kinfuni(1:m,i,t),1,zt(i,1:m,t),1,linfuni,m) !linf
             rhelp = -1.0d0*kstaruni(1:m,i,t)
@@ -359,11 +318,6 @@ if(d>0) then
             
            
          else
-         !   epshat(i,t) = ht(i,i,t) * (vtuni(i,t)/fstaruni(i,t) - &
-        !         ddot(m,kinfuni(1:m,i,t),1,rrec,1)/fstaruni(i,t))
-         !   call dgemv('n',m,m,1.0d0,nrec,m,kstaruni(1:m,i,t),1,0.0d0,rhelp,1)
-        !    epshatvar(i,t) = ht(i,i,t) - ht(i,i,t)**2 * (1.0d0/fstaruni(i,t) &
-        !         + ddot(m,kstaruni(1:m,i,t),1,rhelp,1)/(fstaruni(i,t)**2))
             lstaruni= im
             call dger(m,m,(-1.0d0)/fstaruni(i,t),kstaruni(1:m,i,t),1,zt(i,1:m,t),1,lstaruni,m) !lstar = I -Kstar*Z/Fstar         
             call dgemv('t',m,m,1.0d0,lstaruni,m,rrec,1,0.0d0,rhelp,1) !oli beta 1.0d0!!!!... JA miinusmerkki
@@ -382,14 +336,7 @@ if(d>0) then
             
          end if
       end do
-      
-      !call dgemv('t',m,r,1.0d0,rtv(1:m,1:r,(t-1)*timevar(2)+1),m,rrec,1,0.0d0,r1,1)
-      !call dsymv('u',r,1.0d0,qt(1:r,1:r,(t-1)*timevar(3)+1),r,r1,1,0.0d0,etahat(1:r,t),1)
-      !etahatvar(1:r,1:r,t) = qt(1:r,1:r,(t-1)*timevar(3)+1)
-      !call dsymm('r','u',m,r,1.0d0,qt(1:r,1:r,(t-1)*timevar(3)+1),r,rtv(1:m,1:r,(t-1)*timevar(2)+1),m,0.0d0,mr,m)
-      !call dgemm('n','n',m,r,m,1.0d0,nrec,m,mr,m,0.0d0,mr2,m)
-      !call dgemm('t','n',r,r,m,1.0d0,mr,m,mr2,m,1.0d0,etahatvar(1:r,1:r,t),r)
-      
+          
       
       rt0(1:m,t) = rrec
       rt1(1:m,t) = rrec1
