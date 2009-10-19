@@ -413,3 +413,94 @@ storage.mode(nde) <-"integer"
     }
     return(alphasim=sims.out$alphasim)
 }
+
+expflik<-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist="Poisson", offset=1)
+{
+n<-length(yt)
+p<-1
+m <- length(a1)
+if (is.vector(Qt)) 
+        r <- 1
+else r <- dim(as.array(Qt))[2]
+
+alpha<-matrix(0,m,n)
+tv <- array(0, dim = 3)
+    tv[1] <- !(is.na(dim(as.array(Tt))[3]) || dim(as.array(Tt))[3] == 
+        1)
+    tv[2] <- !(is.na(dim(as.array(Rt))[3]) || dim(as.array(Rt))[3] == 
+        1)
+    tv[3] <- !(is.na(dim(as.array(Qt))[3]) || dim(as.array(Qt))[3] == 
+        1)
+
+ydimt <- array(c(!is.na(yt)), dim = n)
+at <- array(0, dim = c(m, n + 1))
+Pt <- array(0, dim = c(m, m, n + 1))
+vt <- array(0, dim = c(p, n))
+vtuni <- array(0, dim = c(p, n))
+Ft <- array(0, dim = c(p, p, n))
+Ftuni <- array(0, dim = c(p, n))
+Kt <- array(0, dim = c(m, p, n))
+Ktuni <- array(0, dim = c(m, p, n))
+Lt <- array(0, dim = c(m, m, n))
+Pinf <- array(0, dim = c(m, m, n + 1))
+Pstar <- array(0, dim = c(m, m, n + 1))
+Kinf <- array(0, dim = c(m, p, n))
+Kstar <- array(0, dim = c(m, p, n))
+Kinfuni <- array(0, dim = c(m, p, n))
+Kstaruni <- array(0, dim = c(m, p, n))
+Finfuni <- array(0, dim = c(p, n))
+Fstaruni <- array(0, dim = c(p, n))
+Finf <- array(0, dim = c(p, p, n))
+Fstar <- array(0, dim = c(p, p, n))
+Linf <- array(0, dim = c(m, m, n))
+Lstar <- array(0, dim = c(m, m, n))
+Pinf[, , 1] <- P1inf
+lik <- 0
+info <- 0
+d<-0
+j <- 0
+ahat <- array(0, dim = c(m, n))
+Vt <- array(0, dim = c(m, m, n))
+Nt <- array(0, dim = c(m, m, n + 1))
+Nt0 <- array(0, dim = c(m, m, n + 1))
+Nt1 <- array(0, dim = c(m, m, n + 1))
+Nt2 <- array(0, dim = c(m, m, n + 1))
+rt <- array(0, dim = c(m, n + 1))
+rt0 <- array(0, dim = c(m, n + 1))
+rt1 <- array(0, dim = c(m, n + 1))
+epshat <- array(0, dim = c(p, n))
+epshatvar <- array(0, dim = c(p, p, n))
+etahat <- array(0, dim = c(r, n))
+etahatvar <- array(0, dim = c(r, r, n))
+Ht <- array(0,dim=c(1,1,n))
+theta <- array(0,dim=n)
+offset <- array(offset,dim=n)
+optcal<-array(1,dim=4)
+storage.mode(n)<-"integer"
+storage.mode(p)<-"integer"
+storage.mode(r)<-"integer"
+storage.mode(m)<-"integer"
+storage.mode(d)<-"integer"
+storage.mode(j)<-"integer"
+storage.mode(tv)<-"integer"
+storage.mode(ydimt)<-"integer"
+storage.mode(info)<-"integer"
+storage.mode(optcal)<-"integer"
+
+ytilde <- array(0, dim = c(p, n))
+
+out<-.Fortran("expf", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n)), 
+        ydimt = ydimt, tv = tv, Zt = array(Zt,c(1,m,n)), Tt = Tt, Rt = Rt, Ht = Ht, Qt = Qt, a1 = a1, P1 = P1, at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
+        Ktuni = Ktuni, Pinf = Pinf, Pstar = Pstar, Finfuni = Finfuni, 
+        Fstaruni = Fstaruni, Kinfuni = Kinfuni, Kstaruni = Kstaruni, 
+        d = d, j = j, p = p, m = m, r = r, n = n, lik = lik, 
+        optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
+        Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
+        Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
+        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde)
+
+ueth<-offset*exp(out$theta)
+lik <- out$lik + sum(log(dpois(out$yt[1,],ueth)) - dnorm(out$ytilde[1,],out$theta,sqrt(out$Ht[1,1,]),log=TRUE)) + log(1 - .125*sum(ueth*out$epshatvar[1,1,]^2))
+out$lik0<-lik
+invisible(out)
+}
