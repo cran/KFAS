@@ -20,7 +20,7 @@ double precision, intent(inout), dimension(m,m,n+1) :: nt !n_1 = n_0, ..., n_201
 double precision, intent(inout), dimension(m,n+1) :: rt !same as n, r_1 = r_0 etc.
 double precision, intent(inout), dimension(m,n) :: ahat
 double precision, intent(inout), dimension(m,m,n) :: vvt
-double precision, intent(inout), dimension(m,m,d+1) ::  pinf
+double precision, intent(in), dimension(m,m,d+1) ::  pinf
 double precision, intent(in), dimension(m,m,d+1) ::  pstar
 double precision, intent(in),dimension(m,p,d) ::  kinfuni
 double precision, intent(in),dimension(m,p,d) ::  kstaruni
@@ -207,23 +207,51 @@ if(d>0) then
          call dgemv('t',m,m,1.0d0,linfuni,m,rrec,1,0.0d0,rhelp,1) !rt0 
          rrec = rhelp      
 
-         call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec2,m,0.0d0,mm,m) !mm =linf'*nt2
-         call dgemm('n','n',m,m,m,1.0d0,mm,m,linfuni,m,0.0d0,nrec2,m) !nt2 = linf'*nt2*linf
-         call dger(m,m,(-fstaruni(i,t)/(finfuni(i,t)**2.0d0)),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec2,m) 
-         call dsymm('l','u',m,m,1.0d0,nrec,m,l0,m,0.0d0,mm,m) !mm= nt0*l0
+ 
+            call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec2,m,0.0d0,mm,m) !mm =linf'*nt2
+            call dgemm('n','n',m,m,m,1.0d0,mm,m,linfuni,m,0.0d0,nrec2,m) !nt2 = linf'*nt2*linf
+            
+            call dger(m,m,-1.0d0*fstaruni(i,t)/(finfuni(i,t)**2.0d0),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2
+  
+            call dsymm('l','u',m,m,1.0d0,nrec,m,l0,m,0.0d0,mm,m) !mm= nt0*l0
+           
+            call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2 + l0'*nt0*l0
+            call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec1,m,0.0d0,mm,m) !mm = linf'*nt1
+            call dgemm('n','n',m,m,m,1.0d0,mm,m,l0,m,1.0d0,nrec2,m) !nt2 = nt2 + linf'*nt1*l0
+            call dgemm('t','n',m,m,m,1.0d0,nrec1,m,linfuni,m,0.0d0,mm,m) !mm = nt1'*linf
+            call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = nt2 + l0'*nt1'*linf hUOm ntrans
+           ! call dgemm('t','n',m,m,m,1.0d0,l0,m,nrec1,m,0.0d0,mm,m) !mm = l0'*nt1
+           ! call dgemm('n','n',m,m,m,1.0d0,mm,m,linfuni,m,1.0d0,nrec2,m) !nt2 = nt2 + l0'*nt1*linf 
 
-         call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2 + l0'*nt0*l0
-         call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec1,m,0.0d0,mm,m) !mm = linf'*nt1
-         call dgemm('n','n',m,m,m,1.0d0,mm,m,l0,m,1.0d0,nrec2,m) !nt2 = nt2 + linf'*nt1*l0
-         call dgemm('t','n',m,m,m,1.0d0,nrec1,m,linfuni,m,0.0d0,mm,m) !mm = nt1*linf
-         call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = nt2 + l0'*nt1'*linf hUOm ntrans
+            call dgemm('n','n',m,m,m,1.0d0,nrec1,m,linfuni,m,0.0d0,mm,m) !mm = nt1*linf !!!!!!!!!!
+            call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec1,m) !nt1 = linf'*mm
+            call dger(m,m,(1.0d0)/finfuni(i,t),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec1,m) 
+            !nt1 = linf'nt1'linf + z'z/finf
+            call dsymm('l','u',m,m,1.0d0,nrec,m,linfuni,m,0.0d0,mm,m) !mm= nt0*linf
+            call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec1,m) !nt1 = l0'*nt0*linf+ linf'nt1*linf + z'z/finf
+            
+            call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec,m) !nt0 = linf'*mm
+
+!         call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec2,m,0.0d0,mm,m) !mm =linf'*nt2
+!         call dgemm('n','n',m,m,m,1.0d0,mm,m,linfuni,m,0.0d0,nrec2,m) !nt2 = linf'*nt2*linf
+!         call dger(m,m,(-fstaruni(i,t)/(finfuni(i,t)**2.0d0)),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec2,m) 
+!         call dsymm('l','u',m,m,1.0d0,nrec,m,l0,m,0.0d0,mm,m) !mm= nt0*l0
+
+!         call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2 + l0'*nt0*l0
+!         call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec1,m,0.0d0,mm,m) !mm = linf'*nt1
+!         call dgemm('n','n',m,m,m,1.0d0,mm,m,l0,m,1.0d0,nrec2,m) !nt2 = nt2 + linf'*nt1*l0
+!       !  call dgemm('t','n',m,m,m,1.0d0,nrec1,m,linfuni,m,0.0d0,mm,m) !mm = nt1'*linf
+!       !  call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = nt2 + l0'*nt1'*linf hUOm ntrans
+!         call dgemm('t','n',m,m,m,1.0d0,l0,m,nrec1,m,0.0d0,mm,m) !mm = l0'*nt1
+!         call dgemm('n','n',m,m,m,1.0d0,mm,m,linfuni,m,1.0d0,nrec2,m) !nt2 = nt2 + l0'*nt1*linf 
+
+!         call dgemm('n','n',m,m,m,1.0d0,nrec1,m,linfuni,m,0.0d0,mm,m) !mm = nt1*linf !!!!!!!!!!
+!         call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec1,m) !nt1 = linf'*mm
+!         call dger(m,m,(1.0d0)/finfuni(i,t),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec1,m) 
+!         call dsymm('l','u',m,m,1.0d0,nrec,m,linfuni,m,0.0d0,mm,m) !mm= nt0*linf
+!         call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec1,m) !nt1 = l0'*nt0*linf+ linf'*nt1*linf + z'z/finf
       
-         call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec1,m) !nt1 = linf'*mm
-         call dger(m,m,(1.0d0)/finfuni(i,t),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec1,m) 
-         call dsymm('l','u',m,m,1.0d0,nrec,m,linfuni,m,0.0d0,mm,m) !mm= nt0*linf
-         call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec1,m) !nt1 = l0'*nt0*linf+ linf'nt1'linf + z'z/finf
-      
-         call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec,m) !nt0 = linf'*mm
+!         call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec,m) !nt0 = linf'*mm
 
         
       else
@@ -241,7 +269,7 @@ if(d>0) then
          call dgemm('n','n',m,m,m,1.0d0,nrec1,m,lstaruni,m,0.0d0,mm,m) !mm = nt1*lstar
          nrec1 = mm
          call dgemm('n','n',m,m,m,1.0d0,nrec2,m,lstaruni,m,0.0d0,mm,m) !mm = nt1*lstar
-         nrec2 = mm    
+         nrec2 = mm
         
       end if
    end do
@@ -284,13 +312,13 @@ if(d>0) then
          if(finfuni(i,t)> eps) then
             linfuni = im            
             call dger(m,m,-1.0d0/finfuni(i,t),kinfuni(1:m,i,t),1,zt(i,1:m,t),1,linfuni,m) !linf
-            rhelp = -1.0d0*kstaruni(1:m,i,t)
+            rhelp = -kstaruni(1:m,i,t)
             call daxpy(m,fstaruni(i,t)/finfuni(i,t),kinfuni(1:m,i,t),1,rhelp,1)
             l0=0.0d0
-            call dger(m,m,1.0d0/finfuni(i,t),rhelp,1,zt(i,1:m,t),1,l0,m) !l0
+            call dger(m,m,(1.0d0/finfuni(i,t)),rhelp,1,zt(i,1:m,t),1,l0,m) !l0
 
             call dgemv('t',m,m,1.0d0,linfuni,m,rrec1,1,0.0d0,rhelp,1) !rt1
-            rrec1 = rhelp
+            call dcopy(m,rhelp,1,rrec1,1)
             call dgemv('t',m,m,1.0d0,l0,m,rrec,1,1.0d0,rrec1,1)
             call daxpy(m,vtuni(i,t)/finfuni(i,t),zt(i,1:m,t),1,rrec1,1)
             call dgemv('t',m,m,1.0d0,linfuni,m,rrec,1,0.0d0,rhelp,1) !rt0 
@@ -302,17 +330,21 @@ if(d>0) then
             call dger(m,m,-1.0d0*fstaruni(i,t)/(finfuni(i,t)**2.0d0),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2
   
             call dsymm('l','u',m,m,1.0d0,nrec,m,l0,m,0.0d0,mm,m) !mm= nt0*l0
+           
             call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2 + l0'*nt0*l0
             call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec1,m,0.0d0,mm,m) !mm = linf'*nt1
             call dgemm('n','n',m,m,m,1.0d0,mm,m,l0,m,1.0d0,nrec2,m) !nt2 = nt2 + linf'*nt1*l0
-            call dgemm('t','n',m,m,m,1.0d0,nrec1,m,linfuni,m,0.0d0,mm,m) !mm = nt1*linf
+            call dgemm('t','n',m,m,m,1.0d0,nrec1,m,linfuni,m,0.0d0,mm,m) !mm = nt1'*linf
             call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec2,m) !nt2 = nt2 + l0'*nt1'*linf hUOm ntrans
-            
+           ! call dgemm('t','n',m,m,m,1.0d0,l0,m,nrec1,m,0.0d0,mm,m) !mm = l0'*nt1
+           ! call dgemm('n','n',m,m,m,1.0d0,mm,m,linfuni,m,1.0d0,nrec2,m) !nt2 = nt2 + l0'*nt1*linf 
+
+            call dgemm('n','n',m,m,m,1.0d0,nrec1,m,linfuni,m,0.0d0,mm,m) !mm = nt1*linf !!!!!!!!!!
             call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec1,m) !nt1 = linf'*mm
             call dger(m,m,(1.0d0)/finfuni(i,t),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec1,m) 
             !nt1 = linf'nt1'linf + z'z/finf
             call dsymm('l','u',m,m,1.0d0,nrec,m,linfuni,m,0.0d0,mm,m) !mm= nt0*linf
-            call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec1,m) !nt1 = l0'*nt0*linf+ linf'nt1'linf + z'z/finf
+            call dgemm('t','n',m,m,m,1.0d0,l0,m,mm,m,1.0d0,nrec1,m) !nt1 = l0'*nt0*linf+ linf'nt1*linf + z'z/finf
             
             call dgemm('t','n',m,m,m,1.0d0,linfuni,m,mm,m,0.0d0,nrec,m) !nt0 = linf'*mm
             
@@ -331,7 +363,7 @@ if(d>0) then
             call dger(m,m,(1.0d0)/fstaruni(i,t),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec,m)  !nt0 = z'z/fstar+lstar'*nt0*lstar
             call dgemm('n','n',m,m,m,1.0d0,nrec1,m,lstaruni,m,0.0d0,mm,m) !mm = nt1*lstar
             nrec1 = mm
-            call dgemm('n','n',m,m,m,1.0d0,nrec2,m,lstaruni,m,0.0d0,mm,m) !mm = nt1*lstar
+            call dgemm('n','n',m,m,m,1.0d0,nrec2,m,lstaruni,m,0.0d0,mm,m) !mm = nt2*lstar
             nrec2 = mm         
             
          end if

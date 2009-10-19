@@ -19,10 +19,10 @@ double precision, intent(in),dimension(m,p,d) ::  kstar
 double precision, intent(inout),dimension(p,p,d) ::  fstar
 double precision, intent(in),dimension(p,p,d) ::  finf
 
-double precision, intent(inout), dimension(m,m,n+1) :: nt 
-double precision, intent(inout), dimension(m,n+1) :: rt
-double precision, intent(inout), dimension(m,d+1) :: rt0
-double precision, intent(inout), dimension(m,m,d+1) :: nt0
+double precision, intent(in), dimension(m,m,n+1) :: nt 
+double precision, intent(in), dimension(m,n+1) :: rt
+double precision, intent(in), dimension(m,d+1) :: rt0
+double precision, intent(in), dimension(m,m,d+1) :: nt0
 
 double precision, intent(inout), dimension(p,n) :: epshat
 double precision, intent(inout), dimension(p,p,n) :: epshatvar
