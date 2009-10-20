@@ -27,7 +27,7 @@
 \details{
   Function kf performs Kalman filtering of gaussian multivariate state space model using the univariate approach from Koopman and Durbin (2000, 2001). Univariate approach is also known as sequential processing, see Anderson and Moore (1979). In case where the distributions of some or all of the elements of initial state vector are not known, kf uses exact diffuse initialisation using univariate approach by Koopman and Durbin (2000, 2003). Note that in univariate approach the prediction error variance matrices Ft, Finf and Fstar does not need to be non-singular, as there is no matrix inversions in univariate approach algorithm. This provides much faster and more general filtering than normal multivariate Kalman filter algorithm.
 
-  Filter can deal partially or totally missing observation vectors. If y_t,i is NA, it is interpreted as missing value, the dimensions of vtuni and Ktuni (or Kstaruni and Kinfuni) are decreased and the corresponding elements of vt, Kt and (and their diffuse counterparts) are marked as NA.
+  Filter can deal partially or totally missing observation vectors. If y_t,i is NA, it is interpreted as missing value, and the dimensions of vtuni and Ftuni (or Fstaruni and Finfuni) are decreased and the corresponding elements of vt are marked as NA.
 
   The state space model is given by\cr
 
