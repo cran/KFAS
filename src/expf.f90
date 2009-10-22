@@ -1,12 +1,12 @@
 subroutine expf(yt, ydimt, timevar, zt, tt, rtv, ht, qt, a1, p1, at, pt, vtuni, ftuni,& 
      ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, p, m, r, n, lik,&
      optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, ahat, vvt, &
-     rt, rt0, rt1, nt, nt0, nt1, nt2, epshat, epshatvar, etahat, etahatvar, eps, theta, offset,ytilde)
+     rt, rt0, rt1, nt, nt0, nt1, nt2, epshat, epshatvar, etahat, etahatvar, eps, theta, offset, ytilde,dist)
 
 implicit none
 
 
-integer, intent(in) ::  p, m, r, n
+integer, intent(in) ::  p, m, r, n,dist
 integer, intent(inout) :: d, j, info
 integer :: i
 double precision, intent(in) :: eps
@@ -75,14 +75,25 @@ external distsmooth
 
 err = 1.0d0
 alpha = 0.0d0
-optcal = 1 !
+optcal = 0 !
 do while(err > 1e-6)
    do i=1,n
       theta(i) = ddot(m,zt(1,1:m,i),1,alpha(1:m,i),1)
    end do
-   ht(1,1,1:n) = exp(-theta)/offset
-   ytilde(p,1:n) = theta(1:n) - 1.0d0 + yt(1,1:n)*ht(1,1,1:n)
+
+   select case(dist)
    
+      case(1)
+         ht(1,1,1:n) = exp(-theta)/offset
+         ytilde(1,1:n) = theta(1:n) + yt(1,1:n)*ht(1,1,1:n) - 1.0d0
+      case(2)
+         ht(1,1,1:n) = (1+exp(theta))**2/(offset*exp(theta))
+         ytilde(1,1:n) = theta(1:n) + ht(1,1,1:n)*yt(1,1:n) - 1 - exp(theta)
+      case(3)
+         ht(1,1,1:n) = (1-exp(theta))**2/(offset*exp(theta))
+         ytilde(1,1:n) = theta(1:n) + ht(1,1,1:n)*yt(1,1:n) + 1 - exp(-theta)
+   end select
+
    at=0.d0
    pt=0.0d0
    vtuni=0.0d0

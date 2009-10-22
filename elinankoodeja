@@ -1,0 +1,259 @@
+#Eksponenttisen perheen tila-avaruusmallien analysointifunktioita
+
+# Funktio: w
+w <- function(theta,y,y_tilde,H_tilde) {
+  product <- 1
+  for (t in 1:n) {
+    product <-
+product*(pYtCondThetat(t,y[,t],theta[,t])/gYtCondThetat(y_tilde[,t],theta[,t],H_tilde[,,t]))
+  }
+  return(product)
+}
+
+
+
+# Funktio: gYtCondThetat
+gYtCondThetat <- function(y_t,theta_t,H_t) {
+  p_y_t_cond_theta_t_H_t <- dnorm(y_t,mean=theta_t,sd=sqrt(H_t)) 
+  return(p_y_t_cond_theta_t_H_t) 
+}
+
+
+# Funktio: mleExpFamilyStart_dim1
+mleExpFamilyStart_dim1 <-
+function(psi,y,Z,T,R,Q,a1,P1,P1inf,tol,itermax,alpha_tilde_start,initial,omax) {
+  o <- optim(par=initial,
+        fn=minuslogLExpFamilyStart_dim1,
+        method="BFGS",
+        y=y,Z=Z,T=T,R=R,Q=Q,a1=a1,P1=P1,P1inf=P1inf,tol=tol,itermax=itermax,alpha_tilde_start=alpha_tilde_start,
+        control=list(maxit=omax))
+  return(o)
+}
+
+
+# Funktio: minuslogLExpFamilyStart_dim1
+minuslogLExpFamilyStart_dim1 <-
+function(psi,y,Z,T,R,Q,a1,P1,P1inf,tol,itermax,alpha_tilde_start) {
+  return((-1)*logLExpFamilyStart_dim1(psi,y,Z,T,R,Q,a1,P1,P1inf,tol,itermax,alpha_tilde_start))
+}
+
+
+# Funktio: logLExpFamilyStart_dim1
+logLExpFamilyStart_dim1 <-
+function(psi,y,Z,T,R,Q,a1,P1,P1inf,tol,itermax,alpha_tilde_start) {
+
+  n <- length(y[1,])
+
+  if (is.null(Z)) {
+    Z <- Zf(psi)
+  }
+
+  if (is.null(T)) {
+    T <- Tf(psi)
+  }
+
+  if (is.null(R)) {
+    R <- Rf(psi)
+  }
+
+  if (is.null(Q)) {
+    Q <- Qf(psi)
+  }
+ 
+  line <- linearisation_dim1(y=y, Z=Z, T=T, R=R, Q=Q, a1=a1, P1=P1, P1inf=P1inf,
+                             tol=tol, itermax=itermax,
+alpha_tilde_start=alpha_tilde_start)
+
+  kf1 <- kf(yt=line$y_tildes_final, Zt=Z, Tt=T, Rt=R, Ht=line$H_tildes_final, Qt=Q,
+a1=a1, P1=P1, P1inf=P1inf,
+            optcal=c(TRUE,TRUE,TRUE,TRUE), tol=tol)
+
+  ks1 <- ks(kf1)
+
+  ds1 <- distsmoother(ks1)
+
+  alpha_hat <- ks1$ahat
+
+  epshatvar <- ds1$epshatvar
+  
+  theta_hat <- array(0,dim=c(1,n))
+  for (t in 1:n) {
+    theta_hat[,t] <- Z[,,t]%*%alpha_hat[,t]
+  }
+
+  w_hat <- w(theta_hat,y,line$y_tildes_final,line$H_tildes_final)
+  
+  sumterm <-0
+  for (t in 1:n) {
+    sumterm <- sumterm + l4(t,theta_hat[,t])*(epshatvar[,,t])^2
+  } 
+
+  return(as.vector(kf1$lik + log(w_hat) + log(1+(1/8)*sumterm)))
+
+}
+
+
+
+
+# Funktio: statesmootherExpFamily_dim1
+statesmootherExpFamily_dim1 <-
+function(y,Z,T,R,Q,a1,P1,P1inf,tol,itermax,alpha_tilde_start,nsim,simul=NULL) {
+
+  n <- length(y[1,])
+  m <- length(T[,1,1])
+  
+  line <- linearisation_dim1(y=y, Z=Z, T=T, R=R, Q=Q, a1=a1, P1=P1, P1inf=P1inf,
+                             tol=tol, itermax=itermax,
+alpha_tilde_start=alpha_tilde_start) 
+  
+  if (is.null(simul)) {
+    simu <- simulate_dim1(y=line$y_tildes_final, Z=Z, H=line$H_tildes_final, T=T,
+R=R, Q=Q, a1=a1, P1=P1, P1inf=P1inf, 
+                          tol=tol, itermax=itermax,
+alpha_tilde_start=alpha_tilde_start, nsim=nsim)
+  }
+  else {
+    simu <- simul
+  }
+
+  alpha_simuls <- simu$alpha_simuls
+  theta_simuls <- simu$theta_simuls  
+
+  alpha_hat <- array(0,dim=c(m,n))
+  alpha_var <- array(0,dim=c(m,m,n))
+
+  theta_hat <- array(0,dim=c(1,n))
+  theta_var <- array(0,dim=c(1,1,n))
+
+  division <- vector(length=nsim)
+  for (k in 1:nsim) {
+    division[k] <-
+w(array(theta_simuls[,,k],dim=c(1,n)),y,line$y_tildes_final,line$H_tildes_final)
+  }
+
+  denominator <- sum(division)
+
+  for (t in 1:n) {
+
+    numerator1 <- 0
+    numerator2 <- 0
+  
+    for (k in 1:nsim) {
+      numerator1 <- numerator1 + alpha_simuls[,t,k]*division[k]
+      numerator2 <- numerator2 +
+(alpha_simuls[,t,k])%*%t(alpha_simuls[,t,k])*division[k]
+    }
+
+    alpha_hat[,t] <- numerator1/denominator
+    alpha_var[,,t] <- numerator2/denominator - alpha_hat[,t]%*%t(alpha_hat[,t])
+   
+  }
+
+  for (t in 1:n) {
+    theta_hat[,t] <- Z[,,t]%*%alpha_hat[,t]
+  }
+
+  for (t in 1:n) {
+    theta_var[,,t] <- Z[,,t]%*%alpha_var[,,t]%*%t(t(Z[,,t]))
+  }
+
+  theta_coin_down <- array(0,dim=c(1,n))
+  theta_coin_up <- array(0,dim=c(1,n))
+
+  for (t in 1:n) {
+    rank_theta <- rank(theta_simuls[,t,])
+    division2 <- vector(length=n)
+    for (j in 1:nsim) {
+      division2[j] <- division[which(rank_theta==j)] 
+    }
+    theta2 <- sort(theta_simuls[,t,])
+    quantiles <- cumsum(division2)/sum(division2)
+    m1 <- length(quantiles[quantiles<0.025])
+    m2 <- length(quantiles[quantiles<=0.975])
+    theta_coin_down[,t] <- theta2[m1]
+    theta_coin_up[,t] <- theta2[m2]
+  }
+
+  out <- list(alpha_hat=alpha_hat,
+              theta_hat=theta_hat,
+              alpha_var=alpha_var,
+              theta_var=theta_var,
+              theta_coin_down=theta_coin_down,
+              theta_coin_up=theta_coin_up,
+              simul=simu)
+  invisible(out)
+
+}
+
+
+# Funktio: simulate_dim1
+simulate_dim1 <- function(y,Z,T,R,H,Q,a1,P1,P1inf,tol,itermax,alpha_tilde_start,nsim) {
+
+  n <- length(y[1,])
+  m <- length(T[,1,1])
+  r <- length(Q[,1,1])
+
+  theta_simuls <- array(0,dim=c(1,n,nsim))
+
+  alpha_simuls <- simsmoother(yt=y, Zt=Z, Tt=T, Rt=R, Ht=H, Qt=Q, a1=a1, P1=P1,
+P1inf=P1inf,
+                              nsim=nsim, tol=tol)
+ 
+  for (k in 1:nsim) {
+    for (t in 1:n) {
+      theta_simuls[,t,k] <- Z[,,t]%*%alpha_simuls[,t,k]
+    }
+  }
+
+  out <- list(alpha_simuls=alpha_simuls,theta_simuls=theta_simuls)
+  invisible(out)
+
+}
+
+
+# Funktio: linearisation_dim1
+linearisation_dim1 <- function(y,Z,T,R,Q,a1,P1,P1inf,tol,itermax,alpha_tilde_start) {
+
+  n <- length(y[1,])
+  m <- length(T[,1,1])
+  r <- length(Q[,1,1])
+
+  alpha_tildes <- array(0,dim=c(m,n,itermax+2))
+
+  theta_tildes <- array(0,dim=c(1,n,itermax+1))
+  
+  H_tildes <- array(0,dim=c(1,1,n,itermax+1))
+
+  y_tildes <- array(0,dim=c(1,n,itermax+1))
+
+  alpha_tildes[,,1] <- alpha_tilde_start
+
+  for (iter in 1:(itermax+1)) {
+  
+    for (t in 1:n) {
+
+      theta_tildes[,t,iter]     <- Z[,,t]%*%alpha_tildes[,t,iter]
+      linearisation_iter_temp   <- linearisationIter(t,theta_tildes[,t,iter],y[,t])
+      H_tildes[,,t,iter]        <- linearisation_iter_temp$H_iter_t
+      y_tildes[,t,iter]         <- linearisation_iter_temp$y_iter_t
+
+    }
+  
+    ks1 <- ks(kf(yt=y_tildes[,,iter], Zt=Z, Tt=T, Rt=R, Ht=H_tildes[,,,iter], Qt=Q,
+a1=a1, P1=P1, P1inf=P1inf,
+                 optcal=c(TRUE,TRUE,TRUE,TRUE), tol=tol))
+
+    alpha_tildes[,,iter+1] <- ks1$ahat
+    
+  }
+
+  out <- list(y_tildes=y_tildes,y_tildes_final=array(y_tildes[,,itermax+1],dim=c(1,n)),
+              H_tildes=H_tildes,H_tildes_final=array(H_tildes[,,,itermax+1],dim=c(1,1,n)),
+              theta_tildes=theta_tildes,
+theta_tildes_final=array(theta_tildes[,,itermax],dim=c(1,n)),
+              alpha_tildes=alpha_tildes[,,1:(itermax+1)],
+alpha_tildes_final=alpha_tildes[,,itermax+1])
+  invisible(out)
+
+}
+
