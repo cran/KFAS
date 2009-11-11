@@ -426,10 +426,8 @@ else {
 	else 
 		distr<-3
 }
-distr <- 0
 storage.mode(distr)<-"integer"
 n<-length(yt)
-
 p<-1
 m <- length(a1)
 if (is.vector(Qt)) 
@@ -510,7 +508,7 @@ out<-.Fortran("expf", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n)),
         optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
         Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
         Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
-        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde,distr)
+        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
 
 if(dist=="Poisson")
 {
@@ -527,7 +525,7 @@ if(dist=="Poisson")
 				lik <- out$lik + sum(dnbinom(x=out$yt[1,],size=offset,prob=ueth,log=TRUE) - dnorm(out$ytilde[1,],out$theta,sqrt(out$Ht[1,1,]),log=TRUE)) + log(1 - .125*sum(offset*exp(out$theta)*(exp(2*out$theta)+4*exp(out$theta)+1)/(exp(out$theta)-4)^4))
 			}
 }
-
+out$P1inf<-P1inf
 out$lik0<-lik
 out$dist<-dist
 invisible(out)
@@ -536,7 +534,7 @@ invisible(out)
 
 expfsmoother <-function(out,nsim) {
 
-  alphasim <-simsmoother(out$ytilde, out$Zt, out$Tt, out$Rt, out$Ht, out$Qt, out$a1, out$P1, out$P1inf, nsim)$alpha
+  alphasim <-simsmoother(out$ytilde, out$Zt, out$Tt, out$Rt, out$Ht, out$Qt, out$a1, out$P1, out$P1inf, nsim)
   n<-out$n
   m<-out$m
   thetasim<-array(0,dim=c(1,n,nsim))
@@ -549,21 +547,34 @@ for (k in 1:nsim) {
     }
   }  
 
-  alpha_hat <- array(0,dim=c(m,n))
-  alpha_var <- array(0,dim=c(m,m,n))
 
-  theta_hat <- array(0,dim=c(1,n))
-  theta_var <- array(0,dim=c(1,1,n))
+  alphahat <- array(0,dim=c(m,n))
+  alphavar <- array(0,dim=c(m,m,n))
+
+  thetahat <- array(0,dim=c(1,n))
+  thetavar <- array(0,dim=c(1,1,n))
 
   division <- vector(length=nsim)
-#  for (k in 1:nsim) {
-#    division[k] <-
-#w(array(thetasim[,,k],dim=c(1,n)),out$yt,out$ytilde,out$Ht)
-#  }
 
+if(out$dist=="Poisson")
+{
 for(k in 1:nsim)
 {
-division[k] <- prod(dpois(out$yt[1,],thetasim[1,,k]))/prod(dnorm(out$yt[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
+division[k] <- prod(dpois(out$yt[1,],out$offset*exp(thetasim[1,,k])))/prod(dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
+}
+}
+else{ if(out$dist=="Binomial")
+{
+for(k in 1:nsim)
+{
+division[k] <- prod(dbinom(x=out$yt[1,],size=offset,prob=exp(thetasim[1,,k])/(1+exp(thetasim[1,,k]))))/prod(dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
+}
+}
+else
+for(k in 1:nsim)
+{
+division[k] <- prod(dnbinom(x=out$yt[1,],size=offset,prob=1 - exp(thetasim[1,,k])))/prod(dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
+}
 }
 
 
@@ -581,9 +592,8 @@ division[k] <- prod(dpois(out$yt[1,],thetasim[1,,k]))/prod(dnorm(out$yt[1,],mean
 
     alphahat[,t] <- numerator1/denominator
     alphavar[,,t] <- numerator2/denominator - alphahat[,t]%*%t(alphahat[,t])
-   
   }
-
+ 
 
   for (t in 1:n) {
     thetahat[,t] <- Zt[,,t]%*%alphahat[,t]
@@ -592,11 +602,13 @@ division[k] <- prod(dpois(out$yt[1,],thetasim[1,,k]))/prod(dnorm(out$yt[1,],mean
   for (t in 1:n) {
     thetavar[,,t] <- Zt[,,t]%*%alphavar[,,t]%*%t(t(Zt[,,t]))
   }  
-
-  out <- list(alphahat=alphahat,
-              thetahat=thetahat,
-              alphavar=alphavar,
-              thetavar=thetavar)
+ 
+  
+  
+  out <- c(out,list(nsim=nsim, ahat=alphahat,
+              that=thetahat,
+              ahatvar=alphavar,
+              thatvar=thetavar))
   invisible(out)
 
 }
