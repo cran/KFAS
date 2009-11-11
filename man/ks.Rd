@@ -20,7 +20,6 @@
 \value{
   A list with the output elements from Kalman filter and following new elements:
 
-vvt, alphat, nt, rt, rt0, rt1, nt0, nt1, nt2
 \item{ahat}{m*n array of E(alphat | y_1, y_2, ... , y_n).}
 \item{Vt}{m*m*n array of Var(alphat|y_1, y_2, ... , y_n).} 
 \item{rt}{m*n+1 array of weighted sums of innovations vj, j=t+1,...n. Notice that in literature t in rt goes from 0,..n. Here t=1,...n+1. Same applies to all r and N variables.}  

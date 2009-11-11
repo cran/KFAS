@@ -72,3 +72,41 @@ Durbin J. and Koopman, S.J. (1997). Monte Carlo Maximum Likelihood Estimation fo
 Koopman, S.J. and Durbin J. (2001). Time Series Analysis by State Space Methods. Oxford: Oxford University Press\cr
 }
 
+
+\examples{
+
+kk <- c(396,  399,  403,  434,  340,  519,  558,  566,  591,  566,  574,  646,  644,  646,  665,
+693,  773,  834,  910, 1035, 1002, 1161, 1056, 1097, 1094, 1042, 1194, 1316, 1246, 1503,
+1428, 1477, 1490, 1465, 1560, 1860, 2008, 2020, 2167)
+
+vlk <- c(4623785, 4606307, 4612124, 4639657, 4666081, 4690574, 4711440, 4725664, 4738902,
+4752528, 4764690, 4779535, 4799964, 4826933, 4855787, 4881803, 4902206, 4918154,
+4932123, 4946481, 4964371, 4986431, 5013740, 5041992, 5066447, 5088333, 5107790,
+5124573, 5139835, 5153498, 5165474, 5176209, 5188008, 5200598, 5213014, 5228172,
+5246096, 5266268, 5288720)
+
+
+n<-39
+Zt<-array(c(1,0),c(1,2))
+Tt<-diag(c(1,1))
+Tt[1,2]<-1
+Rt <- diag(2)
+a1 <- array(0,dim=2)
+P1 <- diag(0,2)
+P1inf <-diag(1,2)
+
+likfn<-function(pars,yt,Zt,Tt,Rt,a1,P1,P1inf,dist,offset=1)
+{
+Qt<-diag(exp(pars))
+lik<-expflik(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset)$lik0
+lik
+}
+
+opt <- optim(par=c(1,1),yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn,method="BFGS",
+control=list(fnscale=-1,trace=1,REPORT=1))
+
+Qt<-diag(exp(opt$par))
+out<-expflik(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
+out$Qt*10000
+}
+
