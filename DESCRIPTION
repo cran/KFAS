@@ -1,6 +1,6 @@
 Package: KFAS
-Version: 0.4.7
-Date: 2009-11-11
+Version: 0.4.8
+Date: 2009-11-14
 Title: Multivariate Kalman filter and smoother, simulation smoother and
         forecasting of state space models. State smoothing and
         approximate likelihood of exponential family state space
@@ -16,11 +16,10 @@ Description: Package KFAS provides functions for fast Kalman filtering,
         state smoothing and simulation functions use sequential
         processing algorithm, which is faster than standard approach,
         and it also allows singularity of prediction error variance
-        matrix. KFAS also contains function for approximation of
-        likelihood of exponential family state space models and
-        function for state smoothing of exponential family state space
-        models.
+        matrix. KFAS also contains function for likelihood of
+        exponential family state space models and function for state
+        smoothing of exponential family state space models.
 License: GPL (>= 2)
-Packaged: 2009-11-11 08:02:26 UTC; jovetale
+Packaged: 2009-12-14 09:39:48 UTC; jovetale
 Repository: CRAN
-Date/Publication: 2009-11-11 13:10:07
+Date/Publication: 2009-12-14 19:58:40
