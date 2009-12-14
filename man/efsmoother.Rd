@@ -1,18 +1,18 @@
-\name{expfsmoother}
-\alias{expfsmoother}
+\name{efsmoother}
+\alias{efsmoother}
 \title{Kalman Smoother for exponential family models}
 \description{
   Performs Kalman smoothing for exponential family models via simulation.
 }
 \usage{
-  expfsmoother(out,nsim)
+  efsmoother(out,nsim)
 }
 \arguments{
   \item{out}{Output from function 'expflik'.}
   \item{nsim}{Number of simulations used for smoothing.}
 }
 \details{
-  Function expfsmoother performs Kalman smoothing of univariate exponential family state space model using the simulation algorithms by Koopman and Durbin (2001, 2002).
+  Function efsmoother performs Kalman smoothing of univariate exponential family state space model using the simulation algorithms by Koopman and Durbin (2001, 2002).
 }
 
 \value{
@@ -76,11 +76,11 @@ P1inf<-diag(1,2)
 
 dist <- "Poisson"
 
-expflikout <- expflik(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset)
+eflikout <- eflik0(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset)
 
 nsim <- 1000
 
-smef <- expfsmoother(expflikout,nsim)
+smef <- efsmoother(eflikout,nsim)
 
 
 }

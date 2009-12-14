@@ -1,11 +1,11 @@
-\name{expflik}
-\alias{expflik}
-\title{Approximate log-likelihood and gaussian density of exponential family state-space model.}
+\name{eflik}
+\alias{eflik}
+\title{Log-likelihood of exponential family state-space model.}
 \description{
-  Function expflik computes approximate log-likelihood and approximate gaussian density of univariate exponential family state-space model, based on Durbin and Koopman (1997, 2001).
+  Function eflik computes log-likelihood function of univariate exponential family state-space model via simulation.
 }
 \usage{
-  expflik(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1)
+  eflik(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000)
 }
 \arguments{
   \item{yt}{Matrix, array or vector of observations. Note that yt is univariate.}
@@ -18,17 +18,18 @@
   \item{P1inf}{Diffuse part of P1.}
   \item{dist}{Distribution of yt.}
   \item{offset}{Vector of length n. See details.}
+  \item{nsim}{Number of simulations.}
 }
 
 \details{
   
-  Function approximates p(alpha|y) with gaussian g(alpha|y) which has same conditional mode (alpha,alpha_n+1|y) as p(alpha|y), and computes approximate log-likelihood\cr
+  Function computes log-likelihood of exponential family state-space model. It is very recommended to use estimates gained from function lik0 as initial values. \cr
 
 
-  logL_0(psi) = logL_g(psi) + logE_g(w_T|y),\cr
+  logL_p(psi) = logL_g(psi) + logE*_g(w|y),\cr
 
 
-  where logL_g(psi) is log-likelihood of approximate gaussian distribution and logE_g(w_T|y) is a Taylor-approximation of E_g[p(y|theta)/g(y|theta) | y].\cr
+  where logL_g(psi) is log-likelihood of approximate gaussian distribution and logE*_g(w|y) is a Monte-Carlo approximation of E_g[p(y|theta)/g(y|theta) | y].\cr
 
 
   For details, see J. Durbin and S.J. Koopman (1997).
@@ -56,15 +57,18 @@
   In case of negative binomial distribution, offset is vector of specified number of successes wanted at times 1,...,n, and theta = log(1-pi_t). \cr
 
   Note that this function works only for univariate observations.
+
 }
 
 \value{
-List with output from Kalman smoother and distribution smoother, when model is approximated with gaussian distribution g(y|theta). Note that Ht is H*_t. List also contains following items:
+List with output from Kalman smoother, when model is approximated with gaussian distribution g(y|theta). Note that Ht is H*_t. List also contains following items:
 \item{ytilde}{y* of approximating gaussian model.}
 \item{theta}{Z_t * alpha_t of approximating gaussian model.}
-\item{lik0}{Value of logL_0.}
+\item{likp}{Value of logL_p.}
 \item{offset}{}
 \item{dist}{Distribution of yt.}
+
+\item{lik}{Value of log-likelihood function.}
 }
 
 \references{
@@ -98,7 +102,7 @@ P1inf <-diag(1,2)
 likfn<-function(pars,yt,Zt,Tt,Rt,a1,P1,P1inf,dist,offset=1)
 {
 Qt<-diag(exp(pars))
-lik<-expflik(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset)$lik0
+lik<-eflik0(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset)$lik0
 lik
 }
 
@@ -106,7 +110,22 @@ opt <- optim(par=c(1,1),yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P
 control=list(fnscale=-1,trace=1,REPORT=1))
 
 Qt<-diag(exp(opt$par))
-out<-expflik(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
+out<-eflik0(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
+out$Qt*10000
+
+
+likfn2<-function(pars,yt,Zt,Tt,Rt,a1,P1,P1inf,dist,offset=1)
+{
+Qt<-diag(exp(pars))
+lik<-eflik(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset,nsim=1000)$likp
+lik
+}
+
+opt2 <- optim(par=opt$par,yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn2,method="BFGS",
+control=list(fnscale=-1,trace=1,REPORT=1))
+
+Qt<-diag(exp(opt2$par))
+out<-eflik(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
 out$Qt*10000
 }
 
