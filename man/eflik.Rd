@@ -106,12 +106,12 @@ lik<-eflik0(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset)$lik0
 lik
 }
 
-opt <- optim(par=c(1,1),yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn,method="BFGS",
-control=list(fnscale=-1,trace=1,REPORT=1))
+#not run
+#opt <- optim(par=c(1,1),yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn,method="BFGS", control=list(fnscale=-1,trace=1,REPORT=1))
 
-Qt<-diag(exp(opt$par))
-out<-eflik0(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
-out$Qt*10000
+#Qt<-diag(exp(opt$par))
+#out<-eflik0(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
+#out$Qt*10000
 
 
 likfn2<-function(pars,yt,Zt,Tt,Rt,a1,P1,P1inf,dist,offset=1)
@@ -121,11 +121,12 @@ lik<-eflik(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset,nsim=1000)$likp
 lik
 }
 
-opt2 <- optim(par=opt$par,yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn2,method="BFGS",
-control=list(fnscale=-1,trace=1,REPORT=1))
+#not run
 
-Qt<-diag(exp(opt2$par))
-out<-eflik(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
-out$Qt*10000
+#opt2 <- optim(par=opt$par,yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn2,method="BFGS", control=list(fnscale=-1,trace=1,REPORT=1))
+
+#Qt<-diag(exp(opt2$par))
+#out<-eflik(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
+#out$Qt*10000
 }
 
