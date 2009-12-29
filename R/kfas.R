@@ -82,7 +82,7 @@ function (out, fc = 1, Zt.fc = NULL, Tt.fc = NULL, Rt.fc = NULL,
 }
 kf <-
 function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE, 
-    TRUE, TRUE, TRUE), tol = 1e-07) 
+    TRUE, TRUE, TRUE), tol = 1e-10) 
 {
     if (!is.array(yt)) {
         if (!is.matrix(yt)) 
@@ -753,12 +753,9 @@ else
 			eg[k] <- sum(dnbinom(x=out$yt[1,],size=offset,prob=1 - exp(thetasim[1,,k]))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
 		}
 }
-out$likp<-out$lik+log(sum(eg))
+out$likp<-out$lik+log(sum(eg)/nsim)
 out$dist<-dist
 invisible(out)
-
-invisible(out)
-
 }
 
 
