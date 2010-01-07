@@ -8,7 +8,7 @@
   efsmoother(out,nsim)
 }
 \arguments{
-  \item{out}{Output from function 'expflik'.}
+  \item{out}{Output from function 'eflik'.}
   \item{nsim}{Number of simulations used for smoothing.}
 }
 \details{

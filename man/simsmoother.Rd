@@ -5,7 +5,7 @@
   Generates random samples of state vector alpha from conditional density p(alpha | y).
 }
 \usage{
-  simsmoother(yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf=0, nsim=1, tol=1e-7)
+  simsmoother(yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf=0, nsim=1, tol=1e-30)
 }
 \arguments{
   \item{yt}{Matrix or array of observations.}
@@ -18,7 +18,7 @@
   \item{P1}{Variance matrix of a1. In diffuse case P1star, the non-diffuse part of P1.}
   \item{P1inf}{Diffuse part of P1.}
   \item{nsim}{Number of samples. Default is 1.}  
-  \item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero in diffuse phase. Default is 1e-7.}
+  \item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero in diffuse phase. Default is 1e-30.}
 }
 \details{
   Function simsmoother generates random samples of 

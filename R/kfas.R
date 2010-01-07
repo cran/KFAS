@@ -82,7 +82,7 @@ function (out, fc = 1, Zt.fc = NULL, Tt.fc = NULL, Rt.fc = NULL,
 }
 kf <-
 function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE, 
-    TRUE, TRUE, TRUE), tol = 1e-10) 
+    TRUE, TRUE, TRUE), tol = 1e-30) 
 {
     if (!is.array(yt)) {
         if (!is.matrix(yt)) 
@@ -96,52 +96,44 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
     if (is.vector(Qt)) 
         r <- 1
     else r <- dim(as.array(Qt))[2]
-    tv <- array(0, dim = 3)
+    tv <- array(0, dim = 5)
     tv[1] <- !(is.na(dim(as.array(Tt))[3]) || dim(as.array(Tt))[3] == 
         1)
     tv[2] <- !(is.na(dim(as.array(Rt))[3]) || dim(as.array(Rt))[3] == 
         1)
     tv[3] <- !(is.na(dim(as.array(Qt))[3]) || dim(as.array(Qt))[3] == 
         1)
-    ymiss <- is.na(yt)
-    ydimt <- array(0, dim = n)
-    H <- array(Ht, c(p, p, n))
-    Z <- array(Zt, dim = c(p, m, n))
-    y <- yt
-    for (i in 1:n) {
-        ydimt[i] <- sum(!ymiss[1:p, i])
-        if (ydimt[i] != p && ydimt[i] != 0) {
-            y[1:ydimt[i], i] <- yt[!ymiss[, i], i]
-            H[1:ydimt[i], 1:ydimt[i], i] <- H[!ymiss[, i], !ymiss[, 
-                i], i]
-            Z[1:ydimt[i], , i] <- Z[!ymiss[, i], , i]
-        }
-    }
+    tv[4] <- !(is.na(dim(as.array(Ht))[3]) || dim(as.array(Ht))[3] == 
+        1)
+    tv[5] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
+        1)
+    ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+yna<-(sum(!ymiss)>0)
+tvz = (tv[5] || yna)
+tvh = (tv[4] || yna)
+tvhz = (tv[4] || tv[5])
+ydimt<-array(0,dim=c(n))
+
+Z<-array(Zt,c(p,m,(n-1)*tvz+1))
+H<-array(Ht,c(p,p,(n-1)*tv[4]+1))
+  
     at <- array(0, dim = c(m, n + 1))
-    Pt <- array(0, dim = c(m, m, n + 1))
-    vt <- array(0, dim = c(p, n))
-    vtuni <- array(0, dim = c(p, n))
-    Ft <- array(0, dim = c(p, p, n))
-    Ftuni <- array(0, dim = c(p, n))
-    Kt <- array(0, dim = c(m, p, n))
-    Ktuni <- array(0, dim = c(m, p, n))
-    Lt <- array(0, dim = c(m, m, n))
-    Pinf <- array(0, dim = c(m, m, n + 1))
-    Pstar <- array(0, dim = c(m, m, n + 1))
-    Kinf <- array(0, dim = c(m, p, n))
-    Kstar <- array(0, dim = c(m, p, n))
-    Kinfuni <- array(0, dim = c(m, p, n))
-    Kstaruni <- array(0, dim = c(m, p, n))
-    Finfuni <- array(0, dim = c(p, n))
-    Fstaruni <- array(0, dim = c(p, n))
-    Finf <- array(0, dim = c(p, p, n))
-    Fstar <- array(0, dim = c(p, p, n))
-    Linf <- array(0, dim = c(m, m, n))
-    Lstar <- array(0, dim = c(m, m, n))
+    Pt <- Pinf <- Pstar <-array(0, dim = c(m, m, n + 1))
+    vt <- vtuni <- Ftuni <- Finfuni <- Fstaruni <- array(0, dim = c(p, n))
+    Ft <- Finf <- Fstar <- array(0, dim = c(p, p, n))
+    Kt <- Ktuni <- Kinf <- Kstar <- Kinfuni <- Kstaruni <-array(0, dim = c(m, p, n))
+    Lt <- Linf <- Lstar <-array(0, dim = c(m, m, n))
+
     Pinf[, , 1] <- P1inf
     lik <- 0
     info <- 0
     j <- 0
+    storage.mode(ydimt) <- "integer"
+    storage.mode(tvhz) <- "integer"
+    storage.mode(tvh) <- "integer"
+    storage.mode(tvz) <- "integer"
+    storage.mode(ymiss) <- "integer"
+    storage.mode(yna) <- "integer"
     storage.mode(d) <- "integer"
     storage.mode(j) <- "integer"
     storage.mode(p) <- "integer"
@@ -151,21 +143,20 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
     storage.mode(tv) <- "integer"    
     storage.mode(info) <- "integer"
     storage.mode(optcal) <- "integer"
-    storage.mode(ydimt) <- "integer"
     storage.mode(j) <- "integer"
-    kfout <- NULL  
-    kfout <- .Fortran("kf", PACKAGE = "KFAS", NAOK = TRUE, yt = y, 
-        ydimt = ydimt, tv = tv, Zt = Z, Tt = array(Tt, c(m, m, 
+    kfout <- NULL
+    kfout <- .Fortran("kf", PACKAGE = "KFAS", NAOK = TRUE, yt = yt, 
+        ymiss = ymiss, ydimt=ydimt, yna=yna, tvh=tvh, tvz=tvz, tvhz=tvhz, tv = tv, Zt = Z, Tt = array(Tt, c(m, m, 
             (n - 1) * tv[1] + 1)), Rt = array(Rt, c(m, r, (n - 
             1) * tv[2] + 1)), Ht = H, Qt = array(Qt, c(r, r, 
             (n - 1) * tv[3] + 1)), a1 = array(a1, c(m)), P1 = array(P1, 
             c(m, m)), at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
         Ktuni = Ktuni, Pinf = Pinf, Pstar = Pstar, Finfuni = Finfuni, 
-        Fstaruni = Fstaruni, Kinfuni = Kinfuni, Kstaruni = Kstaruni, 
-        d = d, j = j, p = p, m = m, r = r, n = n, lik = lik, 
-        optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
+        Fstaruni = Fstaruni, Kinfuni = Kinfuni, Kstaruni = Kstaruni,
+        d = d, j = j, p = p, m = m, r = r, n = n, lik = lik,  optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
         Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
         Linf = Linf, Lstar = Lstar, tol = tol)
+
     kfout$Pinf <- array(kfout$Pinf[, , 1:(kfout$d + 1)], c(m, 
         m, (kfout$d + 1) * (kfout$d > 0)))
     kfout$Pstar <- array(kfout$Pstar[, , 1:(kfout$d + 1)], c(m, 
@@ -177,15 +168,6 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
         p, kfout$d))
     kfout$Kstaruni <- array(kfout$Kstaruni[, , 1:kfout$d], c(m, 
         p, kfout$d))
-    kfout$Finf <- array(kfout$Finf[, , 1:kfout$d], c(p, p, kfout$d))
-    kfout$Fstar <- array(kfout$Fstar[, , 1:kfout$d], c(p, p, 
-        kfout$d))
-    kfout$Kinf <- array(kfout$Kinf[, , 1:kfout$d], c(m, p, kfout$d))
-    kfout$Kstar <- array(kfout$Kstar[, , 1:kfout$d], c(m, p, 
-        kfout$d))
-    kfout$Linf <- array(kfout$Linf[, , 1:kfout$d], c(m, m, kfout$d))
-    kfout$Lstar <- array(kfout$Lstar[, , 1:kfout$d], c(m, m, 
-        kfout$d))
     kfout$yt <- yt
     kfout$Tt <- Tt
     kfout$Rt <- Rt
@@ -193,42 +175,29 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
     kfout$Zt <- Zt
     kfout$Ht <- Ht
 
-    H <- array(Ht, c(p, p, n))
-    Z <- array(Zt, dim = c(p, m, n))
-
     if (kfout$d > 0) {
 	kfout$Kt[, , 1:kfout$d] <- NA
         kfout$Ft[, , 1:kfout$d] <- NA
         kfout$Pt[, , 1:kfout$d] <- NA
         for (i in 1:kfout$d) {
-            if (ydimt[i] != p) {
-		if(optcal[2]==1){
-		kfout$Fstar[, , i] <- matrix(Z[, , i],p,m) %*% kfout$Pstar[, , i] %*% t(matrix(Z[, , i],p,m)) + H[, , i]
-                kfout$Finf[, , i] <- matrix(Z[, , i],p,m) %*% kfout$Pinf[, , i] %*% t(matrix(Z[,,i],p,m))
-		}
-                kfout$Finfuni[(ydimt[i] + 1):p, i] <- NA
-                kfout$Fstaruni[(ydimt[i] + 1):p, i] <- NA
-                kfout$vtuni[(ydimt[i] + 1):p, i] <- NA
-                if (optcal[1]) {
-                  kfout$vt[!ymiss[,i],i]<-kfout$vt[1:ydimt[i], i]
-		  kfout$vt[ymiss[,i],i]<-NA}
-            }
-        }
+     		if (kfout$ydimt[i] != p) {
+        	        kfout$Finfuni[(kfout$ydimt[i] + 1):p, i] <- NA
+        	        kfout$Fstaruni[(kfout$ydimt[i] + 1):p, i] <- NA
+        	        kfout$vtuni[(kfout$ydimt[i] + 1):p, i] <- NA
+			}         
+        	}
     }
     if (kfout$d < n) {
         for (i in (kfout$d + 1):n) {
-            if (ydimt[i] != p) {
-		if(optcal[2]==1){
-		kfout$Ft[, , i] <- matrix(Z[, ,i],p,m) %*% kfout$Pt[, , i] %*% t(matrix(Z[,,i],p,m)) + H[, , i]
-		}
-                kfout$Ftuni[(ydimt[i] + 1):p, i] <- NA
-                kfout$vtuni[(ydimt[i] + 1):p, i] <- NA              
-                if (optcal[1]) {
-		  kfout$vt[!ymiss[,i],i]<-kfout$vt[1:ydimt[i], i]
-		  kfout$vt[ymiss[,i],i]<-NA}            
-            }
-        }
+		if (kfout$ydimt[i] != p) {
+                	kfout$Ftuni[(kfout$ydimt[i] + 1):p, i] <- NA
+                	kfout$vtuni[(kfout$ydimt[i] + 1):p, i] <- NA
+		}         
+                   }
     }
+
+
+
     if (optcal[1] == 0) 
         kfout$vt <- NULL
     if (optcal[2] == 0) {
@@ -236,16 +205,29 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
         kfout$Finf <- NULL
         kfout$Fstar <- NULL
     }
+    else{
+	kfout$Finf <- array(kfout$Finf[, , 1:kfout$d], c(p, p, kfout$d))
+    	kfout$Fstar <- array(kfout$Fstar[, , 1:kfout$d], c(p, p, kfout$d))	
+	}
     if (optcal[3] == 0) {
         kfout$Kt <- NULL
         kfout$Kinf <- NULL
         kfout$Kstar <- NULL
     }
+    else{
+	kfout$Kinf <- array(kfout$Kinf[, , 1:kfout$d], c(m, p, kfout$d))
+    	kfout$Kstar <- array(kfout$Kstar[, , 1:kfout$d], c(m, p, kfout$d))
+	}
     if (optcal[4] == 0) {
         kfout$Lt <- NULL
         kfout$Linf <- NULL
         kfout$Lstar <- NULL
     }
+    else{
+    	kfout$Linf <- array(kfout$Linf[, , 1:kfout$d], c(m, m, kfout$d))
+    	kfout$Lstar <- array(kfout$Lstar[, , 1:kfout$d], c(m, m, kfout$d))
+	}
+kfout$ymiss<-kfout$ydimt<-kfout$yna<-kfout$tvh<-kfout$tvz<-kfout$tvhz<-NULL
     if (kfout$info != 0) {
         if (kfout$info == 1) {
             kfout$lik <- -Inf
@@ -273,19 +255,18 @@ function (out)
     rt <- array(0, dim = c(out$m, out$n + 1))
     rt0 <- array(0, dim = c(out$m, out$d + 1))
     rt1 <- array(0, dim = c(out$m, out$d + 1))
-    ymiss <- is.na(out$yt)
-    H <- array(out$Ht, c(out$p, out$p, out$n))
-    Z <- array(out$Zt, dim = c(out$p, out$m, out$n))
-    for (i in 1:out$n) {
-        if (out$ydimt[i] != out$p && out$ydimt[i] != 0) {
-            H[1:out$ydimt[i], 1:out$ydimt[i], i] <- H[!ymiss[, 
-                i], !ymiss[, i], i]
-            Z[1:out$ydimt[i], , i] <- Z[!ymiss[, i], , i]
-        }
-    }
-     ks.out <- .Fortran("ks", PACKAGE = "KFAS", NAOK = TRUE, out$ydimt, 
-        out$tv[1], Z = Z, array(out$Tt, c(out$m, out$m, (out$n - 
-            1) * out$tv[1] + 1)), H = H, out$at, 
+    ymiss <- !is.na(out$yt)
+yna<-(sum(!ymiss)>0)
+tvz = (out$tv[5] || yna)
+tvh = (out$tv[4] || yna)
+tvhz = (out$tv[4] || out$tv[5])
+
+Z<-array(out$Zt,c(out$p,out$m,(out$n-1)*tvz+1))
+H<-array(out$Ht,c(out$p,out$p,(out$n-1)*out$tv[4]+1))
+
+     ks.out <- .Fortran("ks", PACKAGE = "KFAS", NAOK = TRUE, ymiss, yna,tvh,tvz,tvhz, 
+        out$tv, Z = Z, array(out$Tt, c(out$m, out$m, (out$n - 
+            1) * out$tv[1] + 1)), H=H, out$at, 
         out$Pt, out$vtuni, out$Ftuni, out$Ktuni, ahat = ahat, 
         Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
         Nt1 = Nt1, Nt2 = Nt2, Pinf = out$Pinf, 
@@ -302,6 +283,9 @@ function (out)
 
 distsmoother<-function(out)
 {
+if(sum(out$optcal[1:3])!=3)
+stop("distsmoother needs multivariate vt, Ft and Kt, run filter and smoother with optcal=c(TRUE,TRUE,TRUE,TRUE/FALSE)!")
+
 epshat <- array(0, dim = c(out$p, out$n))
 epshatvar <- array(0, dim = c(out$p, out$p, out$n))
 etahat <- array(0, dim = c(out$r, out$n))
@@ -328,7 +312,7 @@ c(out,list(epshat = ds.out$epshat, epshatvar = ds.out$epshatvar,etahat = ds.out$
 
 simsmoother <-
 function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1, 
-    tol = 1e-07) 
+    tol = 1e-30) 
 {
     if (!is.array(yt)) {
         if (!is.matrix(yt)) 
@@ -348,21 +332,22 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1,
     tv[2] <- !(is.na(dim(as.array(Rt))[3]) || dim(as.array(Rt))[3] == 
         1)
     tv[3] <- !(is.na(dim(as.array(Qt))[3]) || dim(as.array(Qt))[3] == 
+        1) 
+tv[4] <- !(is.na(dim(as.array(Ht))[3]) || dim(as.array(Ht))[3] == 
         1)
-    ymiss <- is.na(yt)
-    ydimt <- array(0, dim = n)
-    H <- array(Ht, c(p, p, n))
-    Z <- array(Zt, dim = c(p, m, n))
-    y <- yt
-    for (i in 1:n) {
-        ydimt[i] <- sum(!ymiss[1:p, i])
-        if (ydimt[i] != p && ydimt[i] != 0) {
-            y[1:ydimt[i], i] <- yt[!ymiss[, i], i]
-            H[1:ydimt[i], 1:ydimt[i], i] <- H[!ymiss[, i], !ymiss[, 
-                i], i]
-            Z[1:ydimt[i], , i] <- Z[!ymiss[, i], , i]
-        }
-    }
+    tv[5] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
+        1)
+    ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+yna<-(sum(!ymiss)>0)
+tvz = (tv[5] || yna)
+tvh = (tv[4] || yna)
+tvhz = (tv[4] || tv[5])
+ydimt<-array(0,dim=c(n))
+
+Z<-array(Zt,c(p,m,(n-1)*tvz+1))
+H<-array(Ht,c(p,p,(n-1)*tvh+1))
+   
+
     Tt <- array(Tt, c(m, m, (n - 1) * tv[1] + 1))
     Rt <- array(Rt, c(m, r, (n - 1) * tv[2] + 1))
     Qt <- array(Qt, c(r, r, (n - 1) * tv[3] + 1))
@@ -374,8 +359,13 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1,
     epsplus <- array(0, c(p, n, nsim))
     etaplus <- array(0, c(r, n, nsim))
     aplus1 <- array(0, dim = c(m, nsim))
+storage.mode(ydimt) <- "integer"
+    storage.mode(tvhz) <- "integer"
+    storage.mode(tvh) <- "integer"
+    storage.mode(tvz) <- "integer"
+    storage.mode(ymiss) <- "integer"
+    storage.mode(yna) <- "integer"
     storage.mode(tv) <- "integer"
-    storage.mode(ydimt) <- "integer"
     storage.mode(p) <- "integer"
     storage.mode(m) <- "integer"
     storage.mode(r) <- "integer"
@@ -383,6 +373,7 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1,
     storage.mode(info) <- "integer"
     storage.mode(nsim) <- "integer"
     for (t in 1:n) {
+	ydimt[t] <- sum(ymiss[1:p, t])
         if (ydimt[t] > 0) {
             epsplus[1:ydimt[t], t, ] <- rnorm(ydimt[t] * nsim, 
                 mean = 0, sd = 1)
@@ -399,7 +390,7 @@ nde<-array(nde,c(nnd))
 storage.mode(nnd) <- "integer"
 storage.mode(nde) <-"integer"
     sims.out <- .Fortran("simsmoother", PACKAGE = "KFAS", NAOK = TRUE, 
-        ydimt, tv, y, Z, Tt, Rt, H, Qt, a1, P1, P1pd, P1inf, nnd, nde, nsim, 
+        ymiss, ydimt, yna,tvh,tvz,tvhz,tv, yt, Z, Tt, Rt, H, Qt, a1, P1, P1pd, P1inf, nnd, nde, nsim, 
         alphasim = alphasim, epsplus, etaplus, aplus1, p, 
         n, m, r, info = info, tol)
     if (sims.out$info != 0) {
@@ -435,34 +426,39 @@ if (is.vector(Qt))
 else r <- dim(as.array(Qt))[2]
 
 alpha<-matrix(0,m,n)
-tv <- array(0, dim = 3)
+tv <- array(0, dim = 5)
     tv[1] <- !(is.na(dim(as.array(Tt))[3]) || dim(as.array(Tt))[3] == 
         1)
     tv[2] <- !(is.na(dim(as.array(Rt))[3]) || dim(as.array(Rt))[3] == 
         1)
     tv[3] <- !(is.na(dim(as.array(Qt))[3]) || dim(as.array(Qt))[3] == 
         1)
+    tv[5] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
+        1)
+ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Z<-array(Zt,c(1,m,(n-1)*tv[5]+1))
+tv[4]<-1
+ydimt <- array(c(!is.na(yt)), dim = n) #yksiulotteinen
 
-ydimt <- array(c(!is.na(yt)), dim = n)
 at <- array(0, dim = c(m, n + 1))
 Pt <- array(0, dim = c(m, m, n + 1))
-vt <- array(0, dim = c(p, n))
-vtuni <- array(0, dim = c(p, n))
-Ft <- array(0, dim = c(p, p, n))
-Ftuni <- array(0, dim = c(p, n))
-Kt <- array(0, dim = c(m, p, n))
-Ktuni <- array(0, dim = c(m, p, n))
+vt <- array(0, dim = c(1, n))
+vtuni <- array(0, dim = c(1, n))
+Ft <- array(0, dim = c(1, 1, n))
+Ftuni <- array(0, dim = c(1, n))
+Kt <- array(0, dim = c(m, 1, n))
+Ktuni <- array(0, dim = c(m, 1, n))
 Lt <- array(0, dim = c(m, m, n))
 Pinf <- array(0, dim = c(m, m, n + 1))
 Pstar <- array(0, dim = c(m, m, n + 1))
-Kinf <- array(0, dim = c(m, p, n))
-Kstar <- array(0, dim = c(m, p, n))
-Kinfuni <- array(0, dim = c(m, p, n))
-Kstaruni <- array(0, dim = c(m, p, n))
-Finfuni <- array(0, dim = c(p, n))
-Fstaruni <- array(0, dim = c(p, n))
-Finf <- array(0, dim = c(p, p, n))
-Fstar <- array(0, dim = c(p, p, n))
+Kinf <- array(0, dim = c(m, 1, n))
+Kstar <- array(0, dim = c(m, 1, n))
+Kinfuni <- array(0, dim = c(m, 1, n))
+Kstaruni <- array(0, dim = c(m, 1, n))
+Finfuni <- array(0, dim = c(1, n))
+Fstaruni <- array(0, dim = c(1, n))
+Finf <- array(0, dim = c(1, 1, n))
+Fstar <- array(0, dim = c(1, 1, n))
 Linf <- array(0, dim = c(m, m, n))
 Lstar <- array(0, dim = c(m, m, n))
 Pinf[, , 1] <- P1inf
@@ -479,8 +475,8 @@ Nt2 <- array(0, dim = c(m, m, n + 1))
 rt <- array(0, dim = c(m, n + 1))
 rt0 <- array(0, dim = c(m, n + 1))
 rt1 <- array(0, dim = c(m, n + 1))
-epshat <- array(0, dim = c(p, n))
-epshatvar <- array(0, dim = c(p, p, n))
+epshat <- array(0, dim = c(1, n))
+epshatvar <- array(0, dim = c(1, 1, n))
 etahat <- array(0, dim = c(r, n))
 etahatvar <- array(0, dim = c(r, r, n))
 Ht <- array(0,dim=c(1,1,n))
@@ -495,21 +491,23 @@ storage.mode(d)<-"integer"
 storage.mode(j)<-"integer"
 storage.mode(tv)<-"integer"
 storage.mode(ydimt)<-"integer"
+storage.mode(ymiss)<-"integer"
 storage.mode(info)<-"integer"
 storage.mode(optcal)<-"integer"
 
-ytilde <- array(0, dim = c(p, n))
+ytilde <- array(0, dim = c(1, n))
 
-out<-.Fortran("expf", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n)), 
-        ydimt = ydimt, tv = tv, Zt = array(Zt,c(1,m,n)), Tt = Tt, Rt = Rt, Ht = Ht, Qt = Qt, a1 = a1, P1 = P1, at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
+out<-.Fortran("eflik0", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n)), 
+        ydimt = ydimt, ymiss = ymiss, tv = tv, Zt = Zt, Tt = Tt, Rt = Rt, Ht = Ht, Qt = Qt, a1 = a1, P1 = P1, at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
         Ktuni = Ktuni, Pinf = Pinf, Pstar = Pstar, Finfuni = Finfuni, 
         Fstaruni = Fstaruni, Kinfuni = Kinfuni, Kstaruni = Kstaruni, 
         d = d, j = j, p = p, m = m, r = r, n = n, lik = lik, 
         optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
         Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
         Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
-        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
-
+        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = 1e-30, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
+out$ydimt<-NULL
+out$ymiss<-NULL
 if(dist=="Poisson")
 {
 	ueth<- offset*exp(out$theta)
@@ -641,13 +639,20 @@ if (is.vector(Qt))
 else r <- dim(as.array(Qt))[2]
 
 alpha<-matrix(0,m,n)
-tv <- array(0, dim = 3)
+tv <- array(0, dim = 5)
     tv[1] <- !(is.na(dim(as.array(Tt))[3]) || dim(as.array(Tt))[3] == 
         1)
     tv[2] <- !(is.na(dim(as.array(Rt))[3]) || dim(as.array(Rt))[3] == 
         1)
     tv[3] <- !(is.na(dim(as.array(Qt))[3]) || dim(as.array(Qt))[3] == 
         1)
+    tv[5] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
+        1)
+ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Z<-array(Zt,c(1,m,(n-1)*tv[5]+1))
+tv[4]<-1
+
+Ht <- array(0,dim=c(1,1,n))
 
 ydimt <- array(c(!is.na(yt)), dim = n)
 at <- array(0, dim = c(m, n + 1))
@@ -689,7 +694,6 @@ epshat <- array(0, dim = c(p, n))
 epshatvar <- array(0, dim = c(p, p, n))
 etahat <- array(0, dim = c(r, n))
 etahatvar <- array(0, dim = c(r, r, n))
-Ht <- array(0,dim=c(1,1,n))
 theta <- array(0,dim=n)
 offset <- array(offset,dim=n)
 optcal<-array(1,dim=4)
@@ -701,13 +705,14 @@ storage.mode(d)<-"integer"
 storage.mode(j)<-"integer"
 storage.mode(tv)<-"integer"
 storage.mode(ydimt)<-"integer"
+storage.mode(ymiss)<-"integer"
 storage.mode(info)<-"integer"
 storage.mode(optcal)<-"integer"
 
 ytilde <- array(0, dim = c(p, n))
 
 out<-.Fortran("eflik", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n)), 
-        ydimt = ydimt, tv = tv, Zt = array(Zt,c(1,m,n)), Tt = Tt, Rt = Rt, Ht = Ht, Qt = Qt, a1 = a1, P1 = P1, at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
+        ydimt = ydimt, ymiss=ymiss, tv = tv, Zt = Z, Tt = Tt, Rt = Rt, Ht = Ht, Qt = Qt, a1 = a1, P1 = P1, at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
         Ktuni = Ktuni, Pinf = Pinf, Pstar = Pstar, Finfuni = Finfuni, 
         Fstaruni = Fstaruni, Kinfuni = Kinfuni, Kstaruni = Kstaruni, 
         d = d, j = j, p = p, m = m, r = r, n = n, lik = lik, 
@@ -715,7 +720,8 @@ out<-.Fortran("eflik", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n))
         Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
         Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
         Nt1 = Nt1, Nt2 = Nt2, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
-
+out$ydimt<-NULL
+out$ymiss<-NULL
 
 alphasim <-simsmoother(out$ytilde, out$Zt, out$Tt, out$Rt, out$Ht, out$Qt, a1, P1, P1inf, nsim)
 
@@ -735,7 +741,7 @@ if(dist=="Poisson")
 {
 for(k in 1:nsim)
 	{
-	eg[k] <-sum(dpois(out$yt[1,],out$offset*exp(thetasim[1, , k]))/dnorm(out$ytilde[1,],mean=thetasim[1, , k],sd=sqrt(out$Ht[1,1,])))
+	eg[k] <- prod(dpois(out$yt[1, ], out$offset * exp(thetasim[1,, k]))/dnorm(out$ytilde[1, ], mean = thetasim[1,, k], sd = sqrt(out$Ht[1, 1, ])))
 	}
 }
 else
@@ -744,17 +750,18 @@ else
 	{
 		for(k in 1:nsim)
 		{
-			eg[k] <- sum(dbinom(x=out$yt[1,],size=offset,prob=exp(thetasim[1,,k])/(1+exp(thetasim[1,,k])))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
+			eg[k] <- prod(dbinom(x=out$yt[1,],size=offset,prob=exp(thetasim[1,,k])/(1+exp(thetasim[1,,k])))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
 		}
 	}
 	else
 		for(k in 1:nsim)
 		{
-			eg[k] <- sum(dnbinom(x=out$yt[1,],size=offset,prob=1 - exp(thetasim[1,,k]))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
+			eg[k] <- prod(dnbinom(x=out$yt[1,],size=offset,prob=1 - exp(thetasim[1,,k]))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
 		}
 }
 out$likp<-out$lik+log(sum(eg)/nsim)
 out$dist<-dist
+out$P1inf<-P1inf
 invisible(out)
 }
 

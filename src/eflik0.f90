@@ -1,4 +1,4 @@
-subroutine expf(yt, ydimt, timevar, zt, tt, rtv, ht, qt, a1, p1, at, pt, vtuni, ftuni,& 
+subroutine eflik0(yt, ydimt, ymiss, timevar, zt, tt, rtv, ht, qt, a1, p1, at, pt, vtuni, ftuni,& 
      ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, p, m, r, n, lik,&
      optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, ahat, vvt, &
      rt, rt0, rt1, nt, nt0, nt1, nt2, epshat, epshatvar, etahat, etahatvar, eps, theta, offset, ytilde,dist)
@@ -6,18 +6,21 @@ subroutine expf(yt, ydimt, timevar, zt, tt, rtv, ht, qt, a1, p1, at, pt, vtuni, 
 implicit none
 
 
+integer ::  yna, tvh, tvz,tvhz
+integer, intent(inout), dimension(1,n) :: ymiss
+
 integer, intent(in) ::  p, m, r, n,dist
 integer, intent(inout) :: d, j, info
 integer :: i
 double precision, intent(in) :: eps
-integer, intent(in), dimension(n) :: ydimt
-integer, intent(in), dimension(3) :: timevar
+integer, intent(inout), dimension(n) :: ydimt
+integer, intent(inout), dimension(5) :: timevar
 double precision, intent(in), dimension(p,n) :: yt
-double precision, intent(in), dimension(p,m,n) :: zt  
-double precision, intent(in), dimension(m,m,1) :: tt 
-double precision, intent(in), dimension(m,r,1) :: rtv 
+double precision, intent(in), dimension(p,m,(n-1)*timevar(5)+1) :: zt  
+double precision, intent(in), dimension(m,m,(n-1)*timevar(1)+1) :: tt 
+double precision, intent(in), dimension(m,r,(n-1)*timevar(2)+1) :: rtv 
 double precision, intent(inout), dimension(p,p,n) :: ht 
-double precision, intent(in), dimension(r,r,1) :: qt
+double precision, intent(in), dimension(r,r,(n-1)*timevar(3)+1) :: qt
 double precision, intent(in), dimension(m) :: a1
 double precision, intent(in), dimension(m,m) ::  p1
 double precision, intent(inout), dimension(m,n+1) :: at
@@ -73,12 +76,17 @@ external kf
 external ks
 external distsmooth
 
+yna=0 
+tvh=1
+tvz=timevar(5)
+tvhz=1
+
 err = 1.0d0
 alpha = 0.0d0
 optcal = 0 !
 do while(err > 1e-6)
    do i=1,n
-      theta(i) = ddot(m,zt(1,1:m,i),1,alpha(1:m,i),1)
+      theta(i) = ddot(m,zt(1,1:m,(i-1)*timevar(5)+1),1,alpha(1:m,i),1)
    end do
 
    select case(dist)
@@ -115,15 +123,25 @@ do while(err > 1e-6)
    d=0
    j=0
 ftdis = ht
-   call kf(ytilde, ydimt, timevar, zt, tt, rtv, ftdis, qt, a1, p1, at, pt, vtuni,&
-        ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, p, m, r, n,&
-        lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
+
+
+call kf(ytilde, ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, zt, tt, rtv, ftdis, qt, a1, p1, &
+     at, pt, vtuni, ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, &
+     p, m, r, n, lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
+
  ftdis = ht       
-   call ks(ydimt, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
-        rt, rt0(1:m,1:(d+1)), rt1(1:m,1:(d+1)), nt,&
-        nt0(1:m,1:m,1:(d+1)), nt1(1:m,1:m,1:(d+1)), nt2(1:m,1:m,1:(d+1)), pinf(1:m,1:m,1:(d+1)),&
-        pstar(1:m,1:m,1:(d+1)), kinfuni(1:m,1:p,1:d), kstaruni(1:m,1:p,1:d), &
-        finfuni(1:p,1:d), fstaruni(1:p,1:d), d, j, p, m, n, eps)
+
+
+call ks(ymiss, yna,tvh,tvz,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
+     rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
+     kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
+
+!call ks(ymiss, yna,tvz,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
+!     rt, rt0(1:m,1:(d+1)), rt1(1:m,1:(d+1)), nt, nt0(1:m,1:m,1:(d+1)), nt1(1:m,1:m,1:(d+1)), &
+!     nt2(1:m,1:m,1:(d+1)), pinf(1:m,1:m,1:(d+1)), pstar(1:m,1:m,1:(d+1)), kinfuni(1:m,1:p,1:d),&
+!     kstaruni(1:m,1:p,1:d), finfuni(1:p,1:d), fstaruni(1:p,1:d), d, j, p, m, n, eps)
+
+
    if(maxval(abs(ahat)) > 1.0d+100) then
       info=1
       return
@@ -158,23 +176,32 @@ j=0
 
 ftdis = ht
 lik=0.0d0
-call kf(ytilde, ydimt, timevar, zt, tt, rtv, ftdis, qt, a1, p1, at, pt, vtuni,&
-     ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, p, m, r, n,&
-     lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
+
+
+call kf(ytilde, ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, zt, tt, rtv, ftdis, qt, a1, p1, &
+     at, pt, vtuni, ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, &
+     p, m, r, n, lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
+
 
 ftdis = ht
-call ks(ydimt, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
-        rt, rt0, rt1, nt,nt0, nt1, nt2(1:m,1:m,1:(d+1)), pinf,&
-        pstar, kinfuni, kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
+
+call ks(ymiss, yna,tvh,tvz,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
+     rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
+     kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
+
+!call ks(ymiss, yna,tvz,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
+!     rt, rt0(1:m,1:(d+1)), rt1(1:m,1:(d+1)), nt, nt0(1:m,1:m,1:(d+1)), nt1(1:m,1:m,1:(d+1)), &
+!     nt2(1:m,1:m,1:(d+1)), pinf(1:m,1:m,1:(d+1)), pstar(1:m,1:m,1:(d+1)), kinfuni(1:m,1:p,1:d),&
+!     kstaruni(1:m,1:p,1:d), finfuni(1:p,1:d), fstaruni(1:p,1:d), d, j, p, m, n, eps)
 
 alpha = ahat
 do i=1,n
-   theta(i) = ddot(m,zt(1,1:m,i),1,alpha(1:m,i),1)
+   theta(i) = ddot(m,zt(1,1:m,(i-1)*timevar(5)+1),1,alpha(1:m,i),1)
 end do
 
 timevardis(1) = 1
-timevardis(2) = 0
-timevardis(3) = 0
+timevardis(2) = timevar(2)
+timevardis(3) = timevar(3)
 vtdis = vt
 ftdis = ft
 fstardis = fstar
@@ -183,15 +210,6 @@ call distsmooth(timevardis, ht, rtv, qt, ftdis, kt, vtdis, nt, rt, fstardis(1:p,
      kinf(1:m,1:p,1:d), kstar(1:m,1:p,1:d), nt0(1:m,1:m,1:(d+1)), rt0(1:m,1:(d+1)), d, p, m, r, n,&
      eps, epshat, epshatvar, etahat, etahatvar, info)
 
-
-!call distsmooth(timevardis, ht, rtv, qt, ftdis, kt, vtdis, nt, rt, fstardis, finf,&
-!     kinf, kstar, nt0, rt0, d, p, m, r, n,&
-!     eps, epshat, epshatvar, etahat, etahatvar, info)
-
-!ueth = offset*exp(theta)
-
-!lik = lik + sum(yt(1,1:n)*theta - ueth) + 0.5d0*sum(log(ht(1,1,1:n)) + (ytilde(1,1:n) - theta)**2/ht(1,1,1:n))&
-!     + log(1.0d0 - 0.125*sum(ueth*epshatvar(1,1,1:n)**2))
 
 
 end subroutine
