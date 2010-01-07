@@ -9,7 +9,7 @@
   See function 'ks' for smoothing.
 }
 \usage{
-  kf(yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf=0, optcal=c(TRUE,TRUE,TRUE,TRUE), tol=1e-10)
+  kf(yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf=0, optcal=c(TRUE,TRUE,TRUE,TRUE), tol=1e-30)
 }
 \arguments{
   \item{yt}{Matrix or array of observations.}
@@ -62,7 +62,7 @@
 
   \item{yt}{p*n matrix or array of observations.}
   \item{ydimt}{array of length n which has dimensions of observation vector at times t=1,...,n.}
-  \item{tv}{array of length 4 where tv[i]=0 if i is time-invariant and otherwise tv[i]=1, i is dt, Tt, Rt, Qt.}
+  \item{tv}{array of length 5 where tv[i]=0 if i is time-invariant and otherwise tv[i]=1, i is Tt, Rt, Qt, Ht, Zt.}
   \item{Zt}{system matrix or array of observation equation.}
   \item{Tt}{system matrix or array of transition equation.}
   \item{Rt}{system matrix or array of transition equation.}
