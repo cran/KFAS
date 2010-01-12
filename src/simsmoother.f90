@@ -1,17 +1,17 @@
-subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1inf, &
+subroutine simsmoother( ymiss, ydimt, yna, tvh, tvhz, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1inf, &
      nnd, nde, nsim, alphasim, epsplus, etaplus, aplus1, p, n, m, r, info, eps)
   
   implicit none
   
   integer, intent(inout) :: info,yna
-  integer, intent(in) :: nsim, p, m, r, n, nnd,tvz,tvh,tvhz
+  integer, intent(in) :: nsim, p, m, r, n, nnd,tvhz,tvh
   integer ::  t, i, d, j
   integer, intent(inout), dimension(nnd) :: nde
   integer, intent(inout), dimension(n) :: ydimt
   integer, intent(in), dimension(p,n) :: ymiss
   integer, intent(inout), dimension(5) :: timevar
   double precision, intent(inout), dimension(p,n) :: yt
-  double precision, intent(inout), dimension(p,m,(n-1)*tvz+1) :: zt  
+  double precision, intent(inout), dimension(p,m,(n-1)*tvhz+1) :: zt  
   double precision, intent(in), dimension(m,m,(n-1)*timevar(1)+1) :: tt 
   double precision, intent(in), dimension(m,r,(n-1)*timevar(2)+1) :: rtv 
   double precision, intent(inout), dimension(p,p,(n-1)*tvh+1) :: ht 
@@ -20,7 +20,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
   double precision, intent(in), dimension(m,m) ::  p1
   double precision, intent(in), dimension(nnd,nnd) ::  p1pd
   double precision, intent(in), dimension(m,m) ::  p1inf
-  double precision, dimension(p,m,(n-1)*tvz+1) :: zthelp
+  double precision, dimension(p,m,(n-1)*tvhz+1) :: zthelp
   double precision, dimension(p,p,(n-1)*tvh+1) :: hthelp
   double precision, dimension(m,n+1) :: at
   double precision, dimension(m,m,n+1) :: pt
@@ -92,7 +92,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
   end if
   
   timevar(4)=tvh
-  timevar(5)=tvz
+  timevar(5)=tvhz
   yna=0
   
 
@@ -140,9 +140,9 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
   
   zthelp = zt
   hthelp = ht
+!ythelp?
 
-
-  call kf(yt, ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, zthelp, tt, rtv, hthelp, qt, a1, p1, &
+  call kf(yt, ymiss, ydimt, yna, tvh, tvhz, timevar, zthelp, tt, rtv, hthelp, qt, a1, p1, &
        at, pt, vtuni, ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, &
        p, m, r, n, lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
   
@@ -154,7 +154,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
   zthelp = zt
   hthelp = ht
   
-  call ks(ymiss, yna,tvh,tvz,tvhz, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, &
+  call ks(ymiss, yna,tvh,tvhz, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, &
        ktuni, ahat, vvt,rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
        kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
   
@@ -171,7 +171,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
   
   do t = 1, (n-1)*timevar(3)+1
      cholqt(1:r,1:r,t) = qt(1:r,1:r,t)
-     call dpotrf('l',r,cholqt,r,info)
+     call dpotrf('l',r,cholqt(1:r,1:r,t),r,info)
      if(info /= 0) then
         info=2
         return
@@ -186,6 +186,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
         return
      end if
   end if
+
   do i = 1, floor(nsim/2.0d0)
      
      zthelp = zt
@@ -206,7 +207,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
     
     do t = 1, n
        if(ydimt(t)>0) then
-          call dgemv('n',ydimt(t),m,1.0d0,zt(1:ydimt(t),1:m,(t-1)*tvz+1),ydimt(t),aplus(1:m,t),1,0.0d0,yplus(1:ydimt(t),t),1)
+          call dgemv('n',ydimt(t),m,1.0d0,zt(1:ydimt(t),1:m,(t-1)*tvhz+1),ydimt(t),aplus(1:m,t),1,0.0d0,yplus(1:ydimt(t),t),1)
           yplus(1:ydimt(t),t) = yplus(1:ydimt(t),t) + epsplus(1:ydimt(t),t,i)
        end if
        call dgemv('n',m,m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,aplus(1:m,t),1,0.0d0,aplus(1:m,t+1),1)
@@ -238,7 +239,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
     d=0
     j=0
 
-    call kf(yplus, ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, zthelp, tt, rtv, hthelp, qt, a1, p1, &
+    call kf(yplus, ymiss, ydimt, yna, tvh, tvhz, timevar, zthelp, tt, rtv, hthelp, qt, a1, p1, &
          at, pt, vtuni, ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, &
          p, m, r, n, lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
     
@@ -252,7 +253,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
     hthelp = ht
     
     
-    call ks(ymiss, yna,tvh,tvz,tvhz, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, ktuni, aplushat, vvt, &
+    call ks(ymiss, yna,tvh,tvhz, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, ktuni, aplushat, vvt, &
          rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
          kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
     
@@ -284,7 +285,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
     
     do t = 1, n
        if(ydimt(t)>0) then
-          call dgemv('n',ydimt(t),m,1.0d0,zt(1:ydimt(t),1:m,(t-1)*tvz+1),ydimt(t),aplus(1:m,t),1,0.0d0,yplus(1:ydimt(t),t),1)
+          call dgemv('n',ydimt(t),m,1.0d0,zt(1:ydimt(t),1:m,(t-1)*tvhz+1),ydimt(t),aplus(1:m,t),1,0.0d0,yplus(1:ydimt(t),t),1)
           yplus(1:ydimt(t),t) = yplus(1:ydimt(t),t) + epsplus(1:ydimt(t),t,nsim)
        end if
        call dgemv('n',m,m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,aplus(1:m,t),1,0.0d0,aplus(1:m,t+1),1)
@@ -316,7 +317,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
     d=0
     j=0
     
-    call kf(yplus, ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, zthelp, tt, rtv, hthelp, qt, a1, p1, &
+    call kf(yplus, ymiss, ydimt, yna, tvh, tvhz, timevar, zthelp, tt, rtv, hthelp, qt, a1, p1, &
          at, pt, vtuni, ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, &
          p, m, r, n, lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
     
@@ -329,7 +330,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
     zthelp = zt
     hthelp = ht
     
-    call ks(ymiss, yna,tvh,tvz,tvhz, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, ktuni, aplushat, vvt, &
+    call ks(ymiss, yna,tvh,tvhz, timevar, zthelp, tt, hthelp, at, pt, vtuni, ftuni, ktuni, aplushat, vvt, &
          rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
          kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
     
@@ -339,3 +340,4 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, yt, zt, tt, 
  end if
  
 end subroutine simsmoother
+
