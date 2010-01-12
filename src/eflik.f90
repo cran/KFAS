@@ -7,7 +7,7 @@ implicit none
 
 
 
-integer ::  yna, tvh, tvz,tvhz
+integer ::  yna, tvh, tvhz
 integer, intent(in), dimension(1,n) :: ymiss
 integer, intent(in) ::  p, m, r, n,dist
 integer, intent(inout) :: d, j, info
@@ -71,8 +71,7 @@ external distsmooth
 
 yna=0 
 tvh=1
-tvz=timevar(5)
-tvhz=1
+tvhz=0
 err = 1.0d0
 alpha = 0.0d0
 optcal = 0 !
@@ -116,14 +115,14 @@ do while(err > 1e-6)
    j=0
 ftdis = ht
 
-call kf(ytilde, ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, zt, tt, rtv, ftdis, qt, a1, p1, &
+call kf(ytilde, ymiss, ydimt, yna, tvh, tvhz, timevar, zt, tt, rtv, ftdis, qt, a1, p1, &
      at, pt, vtuni, ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, &
      p, m, r, n, lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
 
  ftdis = ht       
 
 
-call ks(ymiss, yna,tvh,tvz,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
+call ks(ymiss, yna,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
      rt, rt0(1:m,1:(d+1)), rt1(1:m,1:(d+1)), nt, nt0(1:m,1:m,1:(d+1)), nt1(1:m,1:m,1:(d+1)), &
      nt2(1:m,1:m,1:(d+1)), pinf(1:m,1:m,1:(d+1)), pstar(1:m,1:m,1:(d+1)), kinfuni(1:m,1:p,1:d),&
      kstaruni(1:m,1:p,1:d), finfuni(1:p,1:d), fstaruni(1:p,1:d), d, j, p, m, n, eps)
@@ -164,7 +163,7 @@ ftdis = ht
 lik=0.0d0
 
 
-call kf(ytilde, ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, zt, tt, rtv, ftdis, qt, a1, p1, &
+call kf(ytilde, ymiss, ydimt, yna, tvh, tvhz, timevar, zt, tt, rtv, ftdis, qt, a1, p1, &
      at, pt, vtuni, ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, &
      p, m, r, n, lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
 
@@ -172,7 +171,7 @@ call kf(ytilde, ymiss, ydimt, yna, tvh, tvz, tvhz, timevar, zt, tt, rtv, ftdis, 
 ftdis = ht
 
 
-call ks(ymiss, yna,tvh,tvz,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
+call ks(ymiss, yna,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
      rt, rt0(1:m,1:(d+1)), rt1(1:m,1:(d+1)), nt, nt0(1:m,1:m,1:(d+1)), nt1(1:m,1:m,1:(d+1)), &
      nt2(1:m,1:m,1:(d+1)), pinf(1:m,1:m,1:(d+1)), pstar(1:m,1:m,1:(d+1)), kinfuni(1:m,1:p,1:d),&
      kstaruni(1:m,1:p,1:d), finfuni(1:p,1:d), fstaruni(1:p,1:d), d, j, p, m, n, eps)

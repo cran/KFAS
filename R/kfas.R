@@ -107,14 +107,13 @@ function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE,
         1)
     tv[5] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
         1)
-    ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ymiss <- !is.na(yt) 
 yna<-(sum(!ymiss)>0)
-tvz = (tv[5] || yna)
 tvh = (tv[4] || yna)
 tvhz = (tv[4] || tv[5])
 ydimt<-array(0,dim=c(n))
 
-Z<-array(Zt,c(p,m,(n-1)*tvz+1))
+Z<-array(Zt,c(p,m,(n-1)*tvhz+1))
 H<-array(Ht,c(p,p,(n-1)*tv[4]+1))
   
     at <- array(0, dim = c(m, n + 1))
@@ -125,28 +124,12 @@ H<-array(Ht,c(p,p,(n-1)*tv[4]+1))
     Lt <- Linf <- Lstar <-array(0, dim = c(m, m, n))
 
     Pinf[, , 1] <- P1inf
-    lik <- 0
-    info <- 0
-    j <- 0
-    storage.mode(ydimt) <- "integer"
-    storage.mode(tvhz) <- "integer"
-    storage.mode(tvh) <- "integer"
-    storage.mode(tvz) <- "integer"
-    storage.mode(ymiss) <- "integer"
-    storage.mode(yna) <- "integer"
-    storage.mode(d) <- "integer"
-    storage.mode(j) <- "integer"
-    storage.mode(p) <- "integer"
-    storage.mode(m) <- "integer"
-    storage.mode(r) <- "integer"
-    storage.mode(n) <- "integer"
-    storage.mode(tv) <- "integer"    
-    storage.mode(info) <- "integer"
-    storage.mode(optcal) <- "integer"
-    storage.mode(j) <- "integer"
+    lik <- info <- j <- 0
+    storage.mode(ydimt) <- storage.mode(tvhz) <- storage.mode(tvh)  <- storage.mode(ymiss) <- storage.mode(yna) <- storage.mode(d) <- storage.mode(j) <- 
+    storage.mode(p) <- storage.mode(m) <-storage.mode(r) <- storage.mode(n) <-  storage.mode(tv) <- storage.mode(info) <- storage.mode(optcal) <- storage.mode(j) <- "integer"
     kfout <- NULL
     kfout <- .Fortran("kf", PACKAGE = "KFAS", NAOK = TRUE, yt = yt, 
-        ymiss = ymiss, ydimt=ydimt, yna=yna, tvh=tvh, tvz=tvz, tvhz=tvhz, tv = tv, Zt = Z, Tt = array(Tt, c(m, m, 
+        ymiss = ymiss, ydimt=ydimt, yna=yna, tvh=tvh, tvhz=tvhz, tv = tv, Zt = Z, Tt = array(Tt, c(m, m, 
             (n - 1) * tv[1] + 1)), Rt = array(Rt, c(m, r, (n - 
             1) * tv[2] + 1)), Ht = H, Qt = array(Qt, c(r, r, 
             (n - 1) * tv[3] + 1)), a1 = array(a1, c(m)), P1 = array(P1, 
@@ -176,58 +159,46 @@ H<-array(Ht,c(p,p,(n-1)*tv[4]+1))
     kfout$Ht <- Ht
 
     if (kfout$d > 0) {
-	kfout$Kt[, , 1:kfout$d] <- NA
-        kfout$Ft[, , 1:kfout$d] <- NA
-        kfout$Pt[, , 1:kfout$d] <- NA
+	kfout$Kt[, , 1:kfout$d] <- kfout$Ft[, , 1:kfout$d] <- kfout$Pt[, , 1:kfout$d] <- NA
         for (i in 1:kfout$d) {
      		if (kfout$ydimt[i] != p) {
-        	        kfout$Finfuni[(kfout$ydimt[i] + 1):p, i] <- NA
-        	        kfout$Fstaruni[(kfout$ydimt[i] + 1):p, i] <- NA
-        	        kfout$vtuni[(kfout$ydimt[i] + 1):p, i] <- NA
+        	        kfout$Finfuni[(kfout$ydimt[i] + 1):p, i] <- kfout$Fstaruni[(kfout$ydimt[i] + 1):p, i] <- kfout$vtuni[(kfout$ydimt[i] + 1):p, i] <- NA
 			}         
         	}
     }
     if (kfout$d < n) {
         for (i in (kfout$d + 1):n) {
 		if (kfout$ydimt[i] != p) {
-                	kfout$Ftuni[(kfout$ydimt[i] + 1):p, i] <- NA
-                	kfout$vtuni[(kfout$ydimt[i] + 1):p, i] <- NA
+                	kfout$Ftuni[(kfout$ydimt[i] + 1):p, i] <- kfout$vtuni[(kfout$ydimt[i] + 1):p, i] <- NA
 		}         
                    }
     }
 
-
-
     if (optcal[1] == 0) 
         kfout$vt <- NULL
     if (optcal[2] == 0) {
-        kfout$Ft <- NULL
-        kfout$Finf <- NULL
-        kfout$Fstar <- NULL
+        kfout$Ft <- kfout$Finf <- kfout$Fstar <- NULL
     }
     else{
 	kfout$Finf <- array(kfout$Finf[, , 1:kfout$d], c(p, p, kfout$d))
     	kfout$Fstar <- array(kfout$Fstar[, , 1:kfout$d], c(p, p, kfout$d))	
 	}
     if (optcal[3] == 0) {
-        kfout$Kt <- NULL
-        kfout$Kinf <- NULL
-        kfout$Kstar <- NULL
+        kfout$Kt <- kfout$Kinf <- kfout$Kstar <- NULL
     }
     else{
 	kfout$Kinf <- array(kfout$Kinf[, , 1:kfout$d], c(m, p, kfout$d))
     	kfout$Kstar <- array(kfout$Kstar[, , 1:kfout$d], c(m, p, kfout$d))
 	}
     if (optcal[4] == 0) {
-        kfout$Lt <- NULL
-        kfout$Linf <- NULL
-        kfout$Lstar <- NULL
+        kfout$Lt <- kfout$Linf <- kfout$Lstar <- NULL
     }
     else{
     	kfout$Linf <- array(kfout$Linf[, , 1:kfout$d], c(m, m, kfout$d))
     	kfout$Lstar <- array(kfout$Lstar[, , 1:kfout$d], c(m, m, kfout$d))
 	}
-kfout$ymiss<-kfout$ydimt<-kfout$yna<-kfout$tvh<-kfout$tvz<-kfout$tvhz<-NULL
+kfout$ymiss<-kfout$ydimt<-kfout$yna<-kfout$tvh<-kfout$tvhz<-NULL
+
     if (kfout$info != 0) {
         if (kfout$info == 1) {
             kfout$lik <- -Inf
@@ -257,14 +228,13 @@ function (out)
     rt1 <- array(0, dim = c(out$m, out$d + 1))
     ymiss <- !is.na(out$yt)
 yna<-(sum(!ymiss)>0)
-tvz = (out$tv[5] || yna)
 tvh = (out$tv[4] || yna)
 tvhz = (out$tv[4] || out$tv[5])
 
-Z<-array(out$Zt,c(out$p,out$m,(out$n-1)*tvz+1))
+Z<-array(out$Zt,c(out$p,out$m,(out$n-1)*tvhz+1))
 H<-array(out$Ht,c(out$p,out$p,(out$n-1)*out$tv[4]+1))
 
-     ks.out <- .Fortran("ks", PACKAGE = "KFAS", NAOK = TRUE, ymiss, yna,tvh,tvz,tvhz, 
+     ks.out <- .Fortran("ks", PACKAGE = "KFAS", NAOK = TRUE, ymiss, yna,tvh,tvhz, 
         out$tv, Z = Z, array(out$Tt, c(out$m, out$m, (out$n - 
             1) * out$tv[1] + 1)), H=H, out$at, 
         out$Pt, out$vtuni, out$Ftuni, out$Ktuni, ahat = ahat, 
@@ -339,12 +309,11 @@ tv[4] <- !(is.na(dim(as.array(Ht))[3]) || dim(as.array(Ht))[3] ==
         1)
     ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 yna<-(sum(!ymiss)>0)
-tvz = (tv[5] || yna)
 tvh = (tv[4] || yna)
 tvhz = (tv[4] || tv[5])
 ydimt<-array(0,dim=c(n))
 
-Z<-array(Zt,c(p,m,(n-1)*tvz+1))
+Z<-array(Zt,c(p,m,(n-1)*tvhz+1))
 H<-array(Ht,c(p,p,(n-1)*tvh+1))
    
 
@@ -359,10 +328,8 @@ H<-array(Ht,c(p,p,(n-1)*tvh+1))
     epsplus <- array(0, c(p, n, nsim))
     etaplus <- array(0, c(r, n, nsim))
     aplus1 <- array(0, dim = c(m, nsim))
-storage.mode(ydimt) <- "integer"
     storage.mode(tvhz) <- "integer"
     storage.mode(tvh) <- "integer"
-    storage.mode(tvz) <- "integer"
     storage.mode(ymiss) <- "integer"
     storage.mode(yna) <- "integer"
     storage.mode(tv) <- "integer"
@@ -387,10 +354,11 @@ storage.mode(ydimt) <- "integer"
     }
     P1pd <- array(P1[nde,nde],c(nnd,nnd))
 nde<-array(nde,c(nnd))
+storage.mode(ydimt) <- "integer"
 storage.mode(nnd) <- "integer"
 storage.mode(nde) <-"integer"
     sims.out <- .Fortran("simsmoother", PACKAGE = "KFAS", NAOK = TRUE, 
-        ymiss, ydimt, yna,tvh,tvz,tvhz,tv, yt, Z, Tt, Rt, H, Qt, a1, P1, P1pd, P1inf, nnd, nde, nsim, 
+        ymiss, ydimt, yna,tvh,tvhz,tv, yt, Z, Tt, Rt, H, Qt, a1, P1, P1pd, P1inf, nnd, nde, nsim, 
         alphasim = alphasim, epsplus, etaplus, aplus1, p, 
         n, m, r, info = info, tol)
     if (sims.out$info != 0) {
