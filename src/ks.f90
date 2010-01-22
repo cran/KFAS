@@ -8,7 +8,7 @@ integer, intent(in) :: d, j, p, m, n,yna,tvh,tvhz
 integer :: t, i,k,info
 integer, intent(in), dimension(5) :: timevar
 integer, intent(in), dimension(p,n) :: ymiss
-double precision, intent(inout), dimension(p,m,(n-1)*tvhz+1) :: zt  
+double precision, intent(inout), dimension(p,m,n) :: zt  
 double precision, intent(in), dimension(m,m,(n-1)*timevar(1)+1) :: tt 
 double precision, intent(inout), dimension(p,p,(n-1)*timevar(4)+1) :: ht 
 double precision, intent(in), dimension(m,n+1) :: at
@@ -57,7 +57,7 @@ external dsyevr
 double precision, external :: ddot
 double precision, dimension(p,p,(n-1)*tvh+1) :: ldl 
 double precision, dimension(p,(n-1)*tvh+1) :: diag
-integer, dimension(p) :: vp
+integer, dimension(p) :: vp,apu
 integer, dimension((n-1)*timevar(4)+1) :: hdiagtest
 integer, dimension(n) :: ydimt
 
@@ -119,8 +119,9 @@ if(p>1) then
       end if
       do t = 1, n
          if ((ydimt(t) .NE. p) .AND.( ydimt(t) .NE. 0)) then
-            ldl(1:ydimt(t), 1:ydimt(t),t) = ldl(ymiss(1:p,t)*vp, ymiss(1:p,t)*vp, t)
-            zt(1:ydimt(t),1:m , t) = zt(ymiss(1:p,t)*vp, 1:m, t)
+            apu=ymiss(1:p,t)*vp
+            ldl(1:ydimt(t), 1:ydimt(t),t) = ldl(pack(apu,apu>0), pack(apu,apu>0), t)
+            zt(1:ydimt(t),1:m , t) = zt(pack(apu,apu>0), 1:m, t)
          end if
       end do
    end if

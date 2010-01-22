@@ -113,7 +113,7 @@ tvh = (tv[4] || yna)
 tvhz = (tv[4] || tv[5])
 ydimt<-array(0,dim=c(n))
 
-Z<-array(Zt,c(p,m,(n-1)*tvhz+1))
+Z<-array(Zt,c(p,m,n))
 H<-array(Ht,c(p,p,(n-1)*tv[4]+1))
   
     at <- array(0, dim = c(m, n + 1))
@@ -151,6 +151,7 @@ H<-array(Ht,c(p,p,(n-1)*tv[4]+1))
         p, kfout$d))
     kfout$Kstaruni <- array(kfout$Kstaruni[, , 1:kfout$d], c(m, 
         p, kfout$d))
+
     kfout$yt <- yt
     kfout$Tt <- Tt
     kfout$Rt <- Rt
@@ -231,7 +232,7 @@ yna<-(sum(!ymiss)>0)
 tvh = (out$tv[4] || yna)
 tvhz = (out$tv[4] || out$tv[5])
 
-Z<-array(out$Zt,c(out$p,out$m,(out$n-1)*tvhz+1))
+Z<-array(out$Zt,c(out$p,out$m,out$n))
 H<-array(out$Ht,c(out$p,out$p,(out$n-1)*out$tv[4]+1))
 
      ks.out <- .Fortran("ks", PACKAGE = "KFAS", NAOK = TRUE, ymiss, yna,tvh,tvhz, 
@@ -313,7 +314,7 @@ tvh = (tv[4] || yna)
 tvhz = (tv[4] || tv[5])
 ydimt<-array(0,dim=c(n))
 
-Z<-array(Zt,c(p,m,(n-1)*tvhz+1))
+Z<-array(Zt,c(p,m,n))
 H<-array(Ht,c(p,p,(n-1)*tvh+1))
    
 
@@ -404,7 +405,7 @@ tv <- array(0, dim = 5)
     tv[5] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
         1)
 ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Z<-array(Zt,c(1,m,(n-1)*tv[5]+1))
+Z<-array(Zt,c(1,m,n))
 tv[4]<-1
 ydimt <- array(c(!is.na(yt)), dim = n) #yksiulotteinen
 
@@ -617,7 +618,7 @@ tv <- array(0, dim = 5)
     tv[5] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
         1)
 ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Z<-array(Zt,c(1,m,(n-1)*tv[5]+1))
+Z<-array(Zt,c(1,m,n))
 tv[4]<-1
 
 Ht <- array(0,dim=c(1,1,n))
