@@ -82,7 +82,7 @@ function (out, fc = 1, Zt.fc = NULL, Tt.fc = NULL, Rt.fc = NULL,
 }
 kf <-
 function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, optcal = c(TRUE, 
-    TRUE, TRUE, TRUE), tol = 1e-30) 
+    TRUE, TRUE, TRUE), tol = 1e-10) 
 {
     if (!is.array(yt)) {
         if (!is.matrix(yt)) 
@@ -283,7 +283,7 @@ c(out,list(epshat = ds.out$epshat, epshatvar = ds.out$epshatvar,etahat = ds.out$
 
 simsmoother <-
 function (yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf = 0, nsim = 1, 
-    tol = 1e-30) 
+    tol = 1e-10) 
 {
     if (!is.array(yt)) {
         if (!is.matrix(yt)) 
@@ -374,7 +374,7 @@ storage.mode(nde) <-"integer"
     return(alphasim=sims.out$alphasim)
 }
 
-eflik0<-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1)
+eflik0<-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,tol=1e-10)
 {                                          
                                    
 dist <- match.arg(dist)
@@ -386,7 +386,7 @@ else {
 	else 
 		distr<-3
 }
-storage.mode(distr)<-"integer"
+
 n<-length(yt)
 p<-1
 m <- length(a1)
@@ -402,81 +402,47 @@ tv <- array(0, dim = 5)
         1)
     tv[3] <- !(is.na(dim(as.array(Qt))[3]) || dim(as.array(Qt))[3] == 
         1)
-    tv[5] <- !(is.na(dim(as.array(Zt))[3]) || dim(as.array(Zt))[3] == 
-        1)
+    tv[5] <- 1
 ymiss <- !is.na(yt) #HUOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Z<-array(Zt,c(1,m,n))
 tv[4]<-1
 ydimt <- array(c(!is.na(yt)), dim = n) #yksiulotteinen
 
-at <- array(0, dim = c(m, n + 1))
-Pt <- array(0, dim = c(m, m, n + 1))
-vt <- array(0, dim = c(1, n))
-vtuni <- array(0, dim = c(1, n))
-Ft <- array(0, dim = c(1, 1, n))
-Ftuni <- array(0, dim = c(1, n))
-Kt <- array(0, dim = c(m, 1, n))
-Ktuni <- array(0, dim = c(m, 1, n))
-Lt <- array(0, dim = c(m, m, n))
-Pinf <- array(0, dim = c(m, m, n + 1))
-Pstar <- array(0, dim = c(m, m, n + 1))
-Kinf <- array(0, dim = c(m, 1, n))
-Kstar <- array(0, dim = c(m, 1, n))
-Kinfuni <- array(0, dim = c(m, 1, n))
-Kstaruni <- array(0, dim = c(m, 1, n))
-Finfuni <- array(0, dim = c(1, n))
-Fstaruni <- array(0, dim = c(1, n))
-Finf <- array(0, dim = c(1, 1, n))
-Fstar <- array(0, dim = c(1, 1, n))
-Linf <- array(0, dim = c(m, m, n))
-Lstar <- array(0, dim = c(m, m, n))
+at <- rt <- rt0 <- rt1 <- array(0, dim = c(m, n + 1))
+vt <- vtuni <- Ftuni <- Finfuni <- Fstaruni <- epshat <- ytilde <-array(0, dim = c(1, n))
+Ft <- Finf <- Fstar <- epshatvar <- Ht <- array(0, dim = c(1, 1, n))
+Pt <- Pinf <- Pstar <- Nt <- Nt0 <- Nt1 <- Nt2 <- array(0, dim = c(m, m, n + 1))
+Kt <- Ktuni <- Kinf <- Kstar <- Kinfuni <- Kstaruni <- array(0, dim = c(m, 1, n))
+Lt <- Linf <- Lstar <- Vt <- array(0, dim = c(m, m, n))
 Pinf[, , 1] <- P1inf
-lik <- 0
-info <- 0
-d<-0
-j <- 0
+lik <- info <- d <- j <- 0
 ahat <- array(0, dim = c(m, n))
-Vt <- array(0, dim = c(m, m, n))
-Nt <- array(0, dim = c(m, m, n + 1))
-Nt0 <- array(0, dim = c(m, m, n + 1))
-Nt1 <- array(0, dim = c(m, m, n + 1))
-Nt2 <- array(0, dim = c(m, m, n + 1))
-rt <- array(0, dim = c(m, n + 1))
-rt0 <- array(0, dim = c(m, n + 1))
-rt1 <- array(0, dim = c(m, n + 1))
-epshat <- array(0, dim = c(1, n))
-epshatvar <- array(0, dim = c(1, 1, n))
 etahat <- array(0, dim = c(r, n))
 etahatvar <- array(0, dim = c(r, r, n))
-Ht <- array(0,dim=c(1,1,n))
 theta <- array(0,dim=n)
 offset <- array(offset,dim=n)
 optcal<-array(1,dim=4)
-storage.mode(n)<-"integer"
-storage.mode(p)<-"integer"
-storage.mode(r)<-"integer"
-storage.mode(m)<-"integer"
-storage.mode(d)<-"integer"
-storage.mode(j)<-"integer"
-storage.mode(tv)<-"integer"
-storage.mode(ydimt)<-"integer"
-storage.mode(ymiss)<-"integer"
-storage.mode(info)<-"integer"
-storage.mode(optcal)<-"integer"
-
-ytilde <- array(0, dim = c(1, n))
+storage.mode(distr)<-storage.mode(n)<-storage.mode(p)<-storage.mode(r)<-storage.mode(m)<-storage.mode(d)<-storage.mode(j)<-storage.mode(tv)<-storage.mode(ydimt)<-storage.mode(ymiss)<-storage.mode(info)<-storage.mode(optcal)<-"integer"
 
 out<-.Fortran("eflik0", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n)), 
-        ydimt = ydimt, ymiss = ymiss, tv = tv, Zt = Zt, Tt = Tt, Rt = Rt, Ht = Ht, Qt = Qt, a1 = a1, P1 = P1, at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
+        ydimt = ydimt, ymiss = ymiss, tv = tv, Zt = Z, Tt = Tt, Rt = Rt, Ht = Ht, Qt = Qt, a1 = array(a1,c(m)), P1 = P1, at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
         Ktuni = Ktuni, Pinf = Pinf, Pstar = Pstar, Finfuni = Finfuni, 
         Fstaruni = Fstaruni, Kinfuni = Kinfuni, Kstaruni = Kstaruni, 
         d = d, j = j, p = p, m = m, r = r, n = n, lik = lik, 
         optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
         Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
         Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
-        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = 1e-30, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
-out$ydimt<-NULL
-out$ymiss<-NULL
+        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = tol, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
+if(out$info!=0)
+{
+out$lik0<- -Inf
+if(out$info==10)
+	warning("Error in eflik0, ahat exploded in linearization!")
+else
+	warning("Unknown error, error code",out$info)
+
+}
+out$ydimt<-out$ymiss<-NULL
 if(dist=="Poisson")
 {
 	ueth<- offset*exp(out$theta)
@@ -501,7 +467,7 @@ invisible(out)
 
 efsmoother <-function(out,nsim) {
 
-  alphasim <-simsmoother(out$ytilde, out$Zt, out$Tt, out$Rt, out$Ht, out$Qt, out$a1, out$P1, out$P1inf, nsim)
+  alphasim <-simsmoother(out$ytilde, out$Zt, out$Tt, out$Rt, out$Ht, out$Qt, out$a1, out$P1, out$P1inf, nsim,out$tol)
   n<-out$n
   m<-out$m
   thetasim<-array(0,dim=c(1,n,nsim))
@@ -588,7 +554,7 @@ division[k] <- prod(dnbinom(x=out$yt[1,],size=offset,prob=1 - exp(thetasim[1,,k]
 
 
 
-eflik <-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000){
+eflik <-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000, tol=1e-10){
 
 dist <- match.arg(dist)
 if(dist == "Poisson")
@@ -599,7 +565,7 @@ else {
 	else 
 		distr<-3
 }
-storage.mode(distr)<-"integer"
+
 n<-length(yt)
 p<-1
 m <- length(a1)
@@ -626,23 +592,23 @@ Ht <- array(0,dim=c(1,1,n))
 ydimt <- array(c(!is.na(yt)), dim = n)
 at <- array(0, dim = c(m, n + 1))
 Pt <- array(0, dim = c(m, m, n + 1))
-vt <- array(0, dim = c(p, n))
-vtuni <- array(0, dim = c(p, n))
-Ft <- array(0, dim = c(p, p, n))
-Ftuni <- array(0, dim = c(p, n))
-Kt <- array(0, dim = c(m, p, n))
-Ktuni <- array(0, dim = c(m, p, n))
+vt <- array(0, dim = c(1, n))
+vtuni <- array(0, dim = c(1, n))
+Ft <- array(0, dim = c(1, 1, n))
+Ftuni <- array(0, dim = c(1, n))
+Kt <- array(0, dim = c(m, 1, n))
+Ktuni <- array(0, dim = c(m, 1, n))
 Lt <- array(0, dim = c(m, m, n))
 Pinf <- array(0, dim = c(m, m, n + 1))
 Pstar <- array(0, dim = c(m, m, n + 1))
-Kinf <- array(0, dim = c(m, p, n))
-Kstar <- array(0, dim = c(m, p, n))
-Kinfuni <- array(0, dim = c(m, p, n))
-Kstaruni <- array(0, dim = c(m, p, n))
-Finfuni <- array(0, dim = c(p, n))
-Fstaruni <- array(0, dim = c(p, n))
-Finf <- array(0, dim = c(p, p, n))
-Fstar <- array(0, dim = c(p, p, n))
+Kinf <- array(0, dim = c(m, 1, n))
+Kstar <- array(0, dim = c(m, 1, n))
+Kinfuni <- array(0, dim = c(m, 1, n))
+Kstaruni <- array(0, dim = c(m, 1, n))
+Finfuni <- array(0, dim = c(1, n))
+Fstaruni <- array(0, dim = c(1, n))
+Finf <- array(0, dim = c(1, 1, n))
+Fstar <- array(0, dim = c(1, 1, n))
 Linf <- array(0, dim = c(m, m, n))
 Lstar <- array(0, dim = c(m, m, n))
 Pinf[, , 1] <- P1inf
@@ -659,24 +625,11 @@ Nt2 <- array(0, dim = c(m, m, n + 1))
 rt <- array(0, dim = c(m, n + 1))
 rt0 <- array(0, dim = c(m, n + 1))
 rt1 <- array(0, dim = c(m, n + 1))
-epshat <- array(0, dim = c(p, n))
-epshatvar <- array(0, dim = c(p, p, n))
-etahat <- array(0, dim = c(r, n))
-etahatvar <- array(0, dim = c(r, r, n))
 theta <- array(0,dim=n)
 offset <- array(offset,dim=n)
 optcal<-array(1,dim=4)
-storage.mode(n)<-"integer"
-storage.mode(p)<-"integer"
-storage.mode(r)<-"integer"
-storage.mode(m)<-"integer"
-storage.mode(d)<-"integer"
-storage.mode(j)<-"integer"
-storage.mode(tv)<-"integer"
-storage.mode(ydimt)<-"integer"
-storage.mode(ymiss)<-"integer"
-storage.mode(info)<-"integer"
-storage.mode(optcal)<-"integer"
+storage.mode(distr)<-storage.mode(n)<-storage.mode(p)<-storage.mode(r)<-storage.mode(m)<-storage.mode(d)<-
+storage.mode(j)<-storage.mode(tv)<-storage.mode(ydimt)<-storage.mode(ymiss)<-storage.mode(info)<-storage.mode(optcal)<-"integer"
 
 ytilde <- array(0, dim = c(p, n))
 
@@ -688,7 +641,17 @@ out<-.Fortran("eflik", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n))
         optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
         Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
         Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
-        Nt1 = Nt1, Nt2 = Nt2, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
+        Nt1 = Nt1, Nt2 = Nt2, tol = tol, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
+if(out$info!=0)
+{
+out$lik0<- -Inf
+if(out$info==10)
+	stop("Error in eflik, ahat exploded in linearization!")
+else
+	stop("Unknown error!")
+
+}
+
 out$ydimt<-NULL
 out$ymiss<-NULL
 

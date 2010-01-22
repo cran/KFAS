@@ -5,7 +5,7 @@
   Function eflik computes log-likelihood function of univariate exponential family state-space model via simulation.
 }
 \usage{
-  eflik(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000)
+  eflik(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000,tol=1e-10)
 }
 \arguments{
   \item{yt}{Matrix, array or vector of observations. Note that yt is univariate.}
@@ -19,6 +19,7 @@
   \item{dist}{Distribution of yt.}
   \item{offset}{Vector of length n. See details.}
   \item{nsim}{Number of simulations.}
+\item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero in diffuse phase. Default is 1e-10.}
 }
 
 \details{
@@ -67,7 +68,6 @@ List with output from Kalman smoother, when model is approximated with gaussian 
 \item{likp}{Value of logL_p.}
 \item{offset}{}
 \item{dist}{Distribution of yt.}
-
 \item{lik}{Value of log-likelihood function.}
 }
 

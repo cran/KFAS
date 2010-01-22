@@ -15,61 +15,33 @@ integer :: i
 double precision, intent(in) :: eps
 integer, intent(inout), dimension(n) :: ydimt
 integer, intent(inout), dimension(5) :: timevar
-double precision, intent(in), dimension(p,n) :: yt
-double precision, intent(in), dimension(p,m,n) :: zt  
+double precision, intent(in), dimension(1,n) :: yt
+double precision, intent(in), dimension(1,m,n) :: zt  
 double precision, intent(in), dimension(m,m,(n-1)*timevar(1)+1) :: tt 
 double precision, intent(in), dimension(m,r,(n-1)*timevar(2)+1) :: rtv 
-double precision, intent(inout), dimension(p,p,n) :: ht 
+double precision, intent(inout), dimension(1,1,n) :: ht 
 double precision, intent(in), dimension(r,r,(n-1)*timevar(3)+1) :: qt
 double precision, intent(in), dimension(m) :: a1
 double precision, intent(in), dimension(m,m) ::  p1
-double precision, intent(inout), dimension(m,n+1) :: at
-double precision, intent(inout), dimension(m,m,n+1) :: pt
-double precision, intent(inout), dimension(p,n) :: vt
-double precision, intent(inout), dimension(p,n) :: vtuni
-double precision, intent(inout), dimension(p,p,n) :: ft
-double precision, intent(inout), dimension(p,n) :: ftuni
-double precision, intent(inout), dimension(m,p,n) :: kt
-double precision, intent(inout), dimension(m,p,n) :: ktuni
-double precision, intent(inout), dimension(m,m,n) :: lt
-double precision, intent(inout),dimension(m,m,n+1) ::  pstar
-double precision, intent(inout),dimension(m,m,n+1) ::  pinf
-double precision, intent(inout),dimension(m,p,n) ::  kstaruni
-double precision, intent(inout),dimension(m,p,n) ::  kinfuni
-double precision, intent(inout),dimension(m,p,n) ::  kstar
-double precision, intent(inout),dimension(m,p,n) ::  kinf
-double precision, intent(inout),dimension(p,n) ::  fstaruni
-double precision, intent(inout),dimension(p,n) ::  finfuni
-double precision, intent(inout),dimension(p,p,n) ::  fstar
-double precision, intent(inout),dimension(p,p,n) ::  finf
-double precision, intent(inout), dimension(m,m,n) :: linf
-double precision, intent(inout), dimension(m,m,n) :: lstar
-double precision, intent(inout), dimension(m,m,n+1) :: nt !n_1 = n_0, ..., n_201 = n_200
-double precision, intent(inout), dimension(m,n+1) :: rt !same as n, r_1 = r_0 etc.
+double precision, intent(inout), dimension(m,n+1) :: at,rt,rt0,rt1
+double precision, intent(inout), dimension(1,n) :: vt,vtuni,ftuni,fstaruni,finfuni,epshat
+double precision, intent(inout), dimension(1,1,n) :: ft,epshatvar,fstar,finf
+double precision, intent(inout), dimension(m,m,n) :: lt,linf,lstar,vvt
+double precision, intent(inout),dimension(m,m,n+1) ::  pt,pstar,pinf,nt,nt0,nt1,nt2
+double precision, intent(inout),dimension(m,1,n) ::  kstaruni,kinfuni,kstar,kinf,kt,ktuni
 double precision, intent(inout), dimension(m,n) :: ahat
-double precision, intent(inout), dimension(m,m,n) :: vvt
-double precision, intent(inout), dimension(m,n+1) :: rt0
-double precision, intent(inout), dimension(m,n+1) :: rt1
-double precision, intent(inout), dimension(m,m,n+1) :: nt0
-double precision, intent(inout), dimension(m,m,n+1) :: nt1
-double precision, intent(inout), dimension(m,m,n+1) :: nt2
-double precision, intent(inout), dimension(p,n) :: epshat
-double precision, intent(inout), dimension(p,p,n) :: epshatvar
 double precision, intent(inout), dimension(r,n) :: etahat
 double precision, intent(inout), dimension(r,r,n) :: etahatvar
-double precision, intent(inout), dimension(n) :: theta
-double precision, intent(inout), dimension(n) :: offset
+double precision, intent(inout), dimension(n) :: theta,offset
 double precision, intent(inout) :: lik
 integer, intent(inout), dimension(4) :: optcal 
 double precision :: err
 double precision, dimension(m,n) :: alpha
-double precision, dimension(p,n) :: ytilde
-!double precision, dimension(n)  :: ueth
-
+double precision, dimension(1,n) :: ytilde
 integer, dimension(3):: timevardis
-double precision, dimension(p,n) ::  vtdis
-double precision, dimension(p,p,n) :: ftdis
-double precision, dimension(p,p,n) ::  fstardis
+double precision, dimension(1,n) ::  vtdis
+double precision, dimension(1,1,n) :: ftdis
+double precision, dimension(1,1,n) ::  fstardis
 
 double precision, external :: ddot
 external kf
@@ -78,14 +50,15 @@ external distsmooth
 
 yna=0 
 tvh=1
-tvhz=0
+tvhz=1
 
 err = 1.0d0
 alpha = 0.0d0
 optcal = 0 !
-do while(err > 1e-6)
+
+do while(err > 1d-7)
    do i=1,n
-      theta(i) = ddot(m,zt(1,1:m,(i-1)*timevar(5)+1),1,alpha(1:m,i),1)
+      theta(i) = ddot(m,zt(1,1:m,i),1,alpha(1:m,i),1)
    end do
 
    select case(dist)
@@ -93,6 +66,7 @@ do while(err > 1e-6)
       case(1)
          ht(1,1,1:n) = exp(-theta)/offset
          ytilde(1,1:n) = theta(1:n) + yt(1,1:n)*ht(1,1,1:n) - 1.0d0
+         !ytilde(1,1:n) = theta(1:n) + ht(1,1,1:n)*(yt(1,1:n)-exp(theta))
       case(2)
          ht(1,1,1:n) = (1+exp(theta))**2/(offset*exp(theta))
          ytilde(1,1:n) = theta(1:n) + ht(1,1,1:n)*yt(1,1:n) - 1 - exp(theta)
@@ -101,7 +75,7 @@ do while(err > 1e-6)
          ytilde(1,1:n) = theta(1:n) + ht(1,1,1:n)*yt(1,1:n) + 1 - exp(-theta)
    end select
 
-   at=0.d0
+   at=0.0d0
    pt=0.0d0
    vtuni=0.0d0
    ftuni=0.0d0
@@ -112,7 +86,7 @@ do while(err > 1e-6)
    fstaruni=0.0d0
    finfuni=0.0d0
    nt=0.0d0
-   rt =0.0d0
+   rt=0.0d0
    vvt=0.0d0
    rt0=0.0d0
    rt1=0.0d0
@@ -141,11 +115,11 @@ call ks(ymiss, yna,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni
 !     kstaruni(1:m,1:p,1:d), finfuni(1:p,1:d), fstaruni(1:p,1:d), d, j, p, m, n, eps)
 
 
-   if(maxval(abs(ahat)) > 1.0d+100) then
-      info=1
+   if(maxval(abs(ahat)) > 1d100) then
+      info=10
       return
    end if
-   err = maxval(abs(alpha-ahat))
+   err = maxval(abs(abs(alpha)-abs(ahat)))
    alpha = ahat
 end do
 
@@ -195,7 +169,7 @@ call ks(ymiss, yna,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni
 
 alpha = ahat
 do i=1,n
-   theta(i) = ddot(m,zt(1,1:m,(i-1)*timevar(5)+1),1,alpha(1:m,i),1) !oli timevar
+   theta(i) = ddot(m,zt(1,1:m,i),1,alpha(1:m,i),1) !oli timevar
 end do
 
 timevardis(1) = 1

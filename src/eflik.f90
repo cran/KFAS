@@ -75,9 +75,71 @@ tvhz=0
 err = 1.0d0
 alpha = 0.0d0
 optcal = 0 !
-do while(err > 1e-6)
+
+
+!first iteration with ht=100000.0d0 and ytilde=yt
+do i=1,n
+   theta(i) = ddot(m,zt(1,1:m,i),1,alpha(1:m,i),1)
+end do
+
+select case(dist)
+   
+case(1)
+   ht(1,1,1:n) = 100000.0d0
+   ytilde(1,1:n) = yt(1,1:n)
+   !ytilde(1,1:n) = theta(1:n) + ht(1,1,1:n)*(yt(1,1:n)-exp(theta))
+case(2)
+   ht(1,1,1:n) = (1+exp(theta))**2/(offset*exp(theta))
+   ytilde(1,1:n) = theta(1:n) + ht(1,1,1:n)*yt(1,1:n) - 1 - exp(theta)
+case(3)
+   ht(1,1,1:n) = (1-exp(theta))**2/(offset*exp(theta))
+   ytilde(1,1:n) = theta(1:n) + ht(1,1,1:n)*yt(1,1:n) + 1 - exp(-theta)
+end select
+
+ at=0.0d0
+   pt=0.0d0
+   vtuni=0.0d0
+   ftuni=0.0d0
+   ktuni=0.0d0
+   pstar=0.0d0
+   kstaruni=0.0d0
+   kinfuni=0.0d0
+   fstaruni=0.0d0
+   finfuni=0.0d0
+   nt=0.0d0
+   rt=0.0d0
+   vvt=0.0d0
+   rt0=0.0d0
+   rt1=0.0d0
+   nt0=0.0d0
+   nt1=0.0d0
+   nt2=0.0d0
+   d=0
+   j=0
+ftdis = ht
+
+
+call kf(ytilde, ymiss, ydimt, yna, tvh, tvhz, timevar, zt, tt, rtv, ftdis, qt, a1, p1, &
+     at, pt, vtuni, ftuni, ktuni, pinf, pstar, finfuni, fstaruni, kinfuni, kstaruni, d, j, &
+     p, m, r, n, lik, optcal, info, vt, ft, kt, lt, finf, fstar, kinf, kstar, linf, lstar, eps)
+
+ ftdis = ht       
+
+
+call ks(ymiss, yna,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni, ahat, vvt, &
+     rt, rt0, rt1, nt, nt0, nt1, nt2, pinf, pstar, kinfuni,&
+     kstaruni, finfuni, fstaruni, d, j, p, m, n, eps)
+
+if(maxval(abs(ahat)) > 1d10) then
+   info=10
+   return
+end if
+err = maxval(abs(abs(alpha)-abs(ahat)))
+alpha = ahat
+
+do while(err > 1e-7)
    do i=1,n
-      theta(i) = ddot(m,zt(1,1:m,(i-1)*timevar(5)+1),1,alpha(1:m,i),1)
+      theta(i) = ddot(m,zt(1,1:m,i),1,alpha(1:m,i),1)
    end do
 
    select case(dist)
@@ -127,11 +189,11 @@ call ks(ymiss, yna,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni
      nt2(1:m,1:m,1:(d+1)), pinf(1:m,1:m,1:(d+1)), pstar(1:m,1:m,1:(d+1)), kinfuni(1:m,1:p,1:d),&
      kstaruni(1:m,1:p,1:d), finfuni(1:p,1:d), fstaruni(1:p,1:d), d, j, p, m, n, eps)
 
-   if(maxval(abs(ahat)) > 1.0d+100) then
-      info=1
+   if(maxval(abs(ahat)) > 1.0d10) then
+      info=10
       return
    end if
-   err = maxval(abs(alpha-ahat))
+   err = maxval(abs(abs(alpha)-abs(ahat)))
    alpha = ahat
 end do
 
@@ -178,7 +240,7 @@ call ks(ymiss, yna,tvh,tvhz, timevar, zt, tt, ftdis, at, pt, vtuni, ftuni, ktuni
 
 alpha = ahat
 do i=1,n
-   theta(i) = ddot(m,zt(1,1:m,((i-1)*timevar(5)+1)),1,alpha(1:m,i),1)
+   theta(i) = ddot(m,zt(1,1:m,i),1,alpha(1:m,i),1)
 end do
 
 
