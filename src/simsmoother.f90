@@ -11,7 +11,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvhz, timevar, yt, zt, tt, rtv, 
   integer, intent(in), dimension(p,n) :: ymiss
   integer, intent(inout), dimension(5) :: timevar
   double precision, intent(inout), dimension(p,n) :: yt
-  double precision, intent(inout), dimension(p,m,(n-1)*tvhz+1) :: zt  
+  double precision, intent(inout), dimension(p,m,n) :: zt  
   double precision, intent(in), dimension(m,m,(n-1)*timevar(1)+1) :: tt 
   double precision, intent(in), dimension(m,r,(n-1)*timevar(2)+1) :: rtv 
   double precision, intent(inout), dimension(p,p,(n-1)*tvh+1) :: ht 
@@ -20,7 +20,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvhz, timevar, yt, zt, tt, rtv, 
   double precision, intent(in), dimension(m,m) ::  p1
   double precision, intent(in), dimension(nnd,nnd) ::  p1pd
   double precision, intent(in), dimension(m,m) ::  p1inf
-  double precision, dimension(p,m,(n-1)*tvhz+1) :: zthelp
+  double precision, dimension(p,m,n) :: zthelp
   double precision, dimension(p,p,(n-1)*tvh+1) :: hthelp
   double precision, dimension(m,n+1) :: at
   double precision, dimension(m,m,n+1) :: pt
@@ -66,7 +66,7 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvhz, timevar, yt, zt, tt, rtv, 
   double precision, dimension(r,r,(n-1)*timevar(3)+1) :: cholqt
   double precision, dimension(nnd,nnd) :: cholp1
   double precision, dimension(nnd) :: a1nd
-  integer, dimension(p) :: vp
+  integer, dimension(p) :: vp,apu
   external dcopy
   external dgemm
   external dgemv
@@ -84,15 +84,16 @@ subroutine simsmoother( ymiss, ydimt, yna, tvh, tvhz, timevar, yt, zt, tt, rtv, 
   if(yna==1 .AND. p>1) then   
      do t = 1, n        
         if ((ydimt(t) .NE. p) .AND.( ydimt(t) .NE. 0)) then
-           yt(1:ydimt(t), t) = yt((ymiss(1:p,t)*vp), t)
-           ht(1:ydimt(t), 1:ydimt(t),t) = ht(ymiss(1:p,t)*vp, ymiss(1:p,t)*vp, t)
-           zt(1:ydimt(t),1:m , t) = zt(ymiss(1:p,t)*vp, 1:m, t)
+           apu=ymiss(1:p,t)*vp
+           yt(1:ydimt(t), t) = yt(pack(apu,apu>0), t)
+           ht(1:ydimt(t), 1:ydimt(t),t) = ht(pack(apu,apu>0), pack(apu,apu>0), t)
+           zt(1:ydimt(t),1:m , t) = zt(pack(apu,apu>0), 1:m, t) 
         end if
      end do
   end if
   
   timevar(4)=tvh
-  timevar(5)=tvhz
+  timevar(5)=1
   yna=0
   
 

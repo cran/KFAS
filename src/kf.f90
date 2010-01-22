@@ -4,14 +4,14 @@ subroutine kf(yt, ymiss, ydimt, yna, tvh, tvhz, timevar, zt, tt, rt, ht, qt, a1,
 
 implicit none
 
-integer, intent(in) ::  p, m, r, n, yna, tvh, tvhz
-integer, intent(inout) :: d, j,info
+integer, intent(in) ::  p, m, r, n, yna, tvh
+integer, intent(inout) :: d, j,info,tvhz
 integer ::  t, i,k
 integer, intent(inout),dimension(n) :: ydimt
 integer, intent(in), dimension(5) :: timevar
 double precision, intent(inout), dimension(p,n) :: yt
 integer, intent(in), dimension(p,n) :: ymiss
-double precision, intent(inout), dimension(p,m,(n-1)*tvhz+1) :: zt  
+double precision, intent(inout), dimension(p,m,n) :: zt  
 double precision, intent(in), dimension(m,m,(n-1)*timevar(1)+1) :: tt 
 double precision, intent(in), dimension(m,r,(n-1)*timevar(2)+1) :: rt 
 double precision, intent(inout), dimension(p,p,(n-1)*timevar(4)+1) :: ht 
@@ -36,11 +36,11 @@ double precision, dimension(m,m) ::  im, mm
 integer, dimension((n-1)*timevar(4)+1) :: hdiagtest
 double precision, intent(in) :: eps
 double precision, dimension(p,n) :: yy
-double precision, dimension(p,m,(n-1)*timevar(5)+1) :: zz
-double precision, dimension(p,p,(n-1)*timevar(4)+1) :: hh
+double precision, dimension(p,m,n) :: zz
+double precision, dimension(p,p,(n-1)*tvh+1) :: hh
 double precision, dimension(p,p,(n-1)*tvh+1) :: ldl 
 double precision, dimension(p,(n-1)*tvh+1) :: diag
-integer, dimension(p) :: vp
+integer, dimension(p) :: vp,apu
 
 
 external dcopy, dgemm, dgemv, daxpy, dsyr, dger, dposv, dtrsm, dtrsv, dsymm, dsymv,dsyevr,dpotrf
@@ -62,7 +62,7 @@ double precision, external :: ddot
 
 if(sum(optcal)>0) then
    
-   do t = 1, (n-1)*timevar(5)+1
+   do t = 1, n
       zz(1:p,1:m,t) = zt(1:p,1:m,t)
    end do
    
@@ -73,8 +73,8 @@ if(sum(optcal)>0) then
    end if
    
    if(optcal(2)==1) then
-      do t = 1, (n-1)*timevar(4)+1
-         hh(1:p,1:p,t) = ht(1:p,1:p,t)
+      do t = 1, (n-1)*tvh+1
+         hh(1:p,1:p,t) = ht(1:p,1:p,(t-1)*timevar(4)+1)
       end do
    end if
 end if
@@ -130,6 +130,7 @@ if(p>1) then
          do t=2,n
             zt(1:p,1:m,t) = zt(1:p,1:m,1)
          end do
+         tvhz=1
       end if
       if(timevar(4)==0) then
          do t=2,n
@@ -138,9 +139,10 @@ if(p>1) then
       end if
       do t = 1, n
          if ((ydimt(t) .NE. p) .AND.( ydimt(t) .NE. 0)) then
-            yt(1:ydimt(t), t) = yt((ymiss(1:p,t)*vp), t)
-            ldl(1:ydimt(t), 1:ydimt(t),t) = ldl(ymiss(1:p,t)*vp, ymiss(1:p,t)*vp, t)
-            zt(1:ydimt(t),1:m , t) = zt(ymiss(1:p,t)*vp, 1:m, t)
+            apu=ymiss(1:p,t)*vp
+            yt(1:ydimt(t), t) = yt(pack(apu,apu>0), t)
+            ldl(1:ydimt(t), 1:ydimt(t),t) = ldl(pack(apu,apu>0), pack(apu,apu>0), t)
+            zt(1:ydimt(t),1:m , t) = zt(pack(apu,apu>0), 1:m, t)
          end if
          if(hdiagtest((t-1)*timevar(4)+1)==1) then
             call dtrsv('l','n','u',ydimt(t),ldl(1:ydimt(t),1:ydimt(t),t),ydimt(t),yt(1:ydimt(t),t),1) !solve y*=inv(L) * yt, 
@@ -305,14 +307,14 @@ end do
 if(sum(optcal)>0) then
    if((yna == 1) .AND.  p>1) then
       do i=1, n
-         yy(1:ydimt(i), i) = yy((ymiss(1:p,i)*vp), i)
+         apu=ymiss(1:p,i)*vp
+         yy(1:ydimt(i), i) = yy(pack(apu,apu>0), i)
          zt(1:p,1:m,i) = zz(1:p,1:m,i)
-         zz(1:ydimt(i),1:m , i) = zz(ymiss(1:p,i)*vp,1:m , i)
-         ht(1:p,1:p,i) = hh(1:p,1:p,i)
-         hh(1:ydimt(i), 1:ydimt(i), i) = hh(ymiss(1:p, i)*vp,ymiss(1:p, i)*vp, i)
+         zz(1:ydimt(i),1:m , i) = zz(pack(apu,apu>0),1:m , i)
+         hh(1:ydimt(i), 1:ydimt(i), i) = hh(pack(apu,apu>0),pack(apu,apu>0), i)
       end do
    else
-      do t = 1, (n-1)*timevar(5)+1
+      do t = 1, n
          zt(1:p,1:m,t) = zz(1:p,1:m,t)
       end do
       do t = 1, (n-1)*timevar(4)+1
@@ -343,7 +345,7 @@ if(sum(optcal)>0) then
             else
                call dgemm('n','t',m,ydimt(t),m,1.0d0,pinf(1:m,1:m,t),m,zz(1:ydimt(t),1:m,(t-1)*tvhz+1),ydimt(t),&
                     0.0d0,mp(1:m,1:ydimt(t)),m) !mp = pinf*z'
-               call dgemm('n','n',p,p,m,1.0d0,zz(1:ydimt(t),1:m,(t-1)*tvhz+1),p,&
+               call dgemm('n','n',ydimt(t),ydimt(t),m,1.0d0,zz(1:ydimt(t),1:m,(t-1)*tvhz+1),ydimt(t),&
                     mp(1:m,1:ydimt(t)),m,0.0d0,finf(1:ydimt(t),1:ydimt(t),t),ydimt(t)) !finf = z*mp
                
                call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zz(1:ydimt(t),1:m,(t-1)*tvhz+1),&
@@ -373,7 +375,7 @@ if(sum(optcal)>0) then
       mulkd: do t=1,d
          if(ydimt(t)>0) then
             if(maxval(abs(finf(1:ydimt(t),1:ydimt(t),t)))<eps) then !finf=0
-               call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zz(1:ydimt(t),1:m,(t-1)*tvhz+1),p,0.0d0,&
+               call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zz(1:ydimt(t),1:m,(t-1)*tvhz+1),ydimt(t),0.0d0,&
                     mp(1:m,1:ydimt(t)),m) !mp = pstar*z'
                call dgemm('n','n',m,ydimt(t),m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,mp(1:m,1:ydimt(t)),m,0.0d0,&
                     kstar(1:m,1:ydimt(t),t),m) !kstar = t*mp
@@ -481,14 +483,14 @@ if(sum(optcal)>0) then
                  p,0.0d0,mp(1:m,1:p),m) !mp = pstar*z'
             call dgemm('n','n',p,p,m,1.0d0,zt(1:p,1:m,(t-1)*tvhz+1),p,&
                  mp(1:m,1:p),m,0.0d0,fstar(1:p,1:p,t),p) !fstar = z*mp 
-            fstar(1:p,1:p,t) = fstar(1:p,1:p,t) +  ht(1:p,1:p,(t-1)*tvh+1)
+            fstar(1:p,1:p,t) = fstar(1:p,1:p,t) +  ht(1:p,1:p,(t-1)*timevar(4)+1)
          end if
       end do
       do t=d+1, n
          if(p==1) then
             ft(1,1,t) = ftuni(1,t)
          else
-            ft(1:p,1:p,t) =  ht(1:p,1:p,(t-1)*tvh+1)
+            ft(1:p,1:p,t) =  ht(1:p,1:p,(t-1)*timevar(4)+1)
             call dsymm('r','u',p,m,1.0d0,pt(1:m,1:m,t),m,zt(1:p,1:m,(t-1)*tvhz+1),p,&
                  0.0d0,pm(1:p,1:m),p)
             call dgemm('n','t',p,p,m,1.0d0,pm(1:p,1:m),p,&

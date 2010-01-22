@@ -16,7 +16,7 @@ double precision, intent(in) :: eps
 integer, intent(inout), dimension(n) :: ydimt
 integer, intent(inout), dimension(5) :: timevar
 double precision, intent(in), dimension(p,n) :: yt
-double precision, intent(in), dimension(p,m,(n-1)*timevar(5)+1) :: zt  
+double precision, intent(in), dimension(p,m,n) :: zt  
 double precision, intent(in), dimension(m,m,(n-1)*timevar(1)+1) :: tt 
 double precision, intent(in), dimension(m,r,(n-1)*timevar(2)+1) :: rtv 
 double precision, intent(inout), dimension(p,p,n) :: ht 
