@@ -5,7 +5,7 @@
   Function eflik0 computes approximate log-likelihood and approximate gaussian density of univariate exponential family state-space model, based on Durbin and Koopman (1997, 2001).
 }
 \usage{
-  eflik0(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1)
+  eflik0(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,tol=1e-10)
 }
 \arguments{
   \item{yt}{Matrix, array or vector of observations. Note that yt is univariate.}
@@ -18,6 +18,7 @@
   \item{P1inf}{Diffuse part of P1.}
   \item{dist}{Distribution of yt.}
   \item{offset}{Vector of length n. See details.}
+\item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero in diffuse phase. Default is 1e-10.}
 }
 
 \details{

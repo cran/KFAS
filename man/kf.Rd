@@ -9,7 +9,7 @@
   See function 'ks' for smoothing.
 }
 \usage{
-  kf(yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf=0, optcal=c(TRUE,TRUE,TRUE,TRUE), tol=1e-30)
+  kf(yt, Zt, Tt, Rt, Ht, Qt, a1, P1, P1inf=0, optcal=c(TRUE,TRUE,TRUE,TRUE), tol=1e-10)
 }
 \arguments{
   \item{yt}{Matrix or array of observations.}
@@ -22,7 +22,7 @@
   \item{P1}{Variance matrix of a1. In diffuse case P1star, the non-diffuse part of P1.}
   \item{P1inf}{Diffuse part of P1. If non-zero, filtering starts with exact diffuse initialisation.}
   \item{optcal}{Vector of length 4. Calculate multivariate vt, Ft, Kt, Lt and their diffuse counterparts Finf, Fstar, Kinf, Kstar, Linf and Lstar. Default is c(TRUE,TRUE,TRUE,TRUE) which calculates all. Note that Kt cannot be calculated without Ft and Lt cannot be calculated without Kt, so even if optcal=c(TRUE,FALSE,TRUE,TRUE), Kt and Lt are not calculated.}
-  \item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero. Default is 1e-10.}
+\item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero in diffuse phase. Default is 1e-10.}
 }
 \details{
   Function kf performs Kalman filtering of gaussian multivariate state space model using the univariate approach from Koopman and Durbin (2000, 2001). Univariate approach is also known as sequential processing, see Anderson and Moore (1979). In case where the distributions of some or all of the elements of initial state vector are not known, kf uses exact diffuse initialisation using univariate approach by Koopman and Durbin (2000, 2003). Note that in univariate approach the prediction error variance matrices Ft, Finf and Fstar does not need to be non-singular, as there is no matrix inversions in univariate approach algorithm. This provides much faster and more general filtering than normal multivariate Kalman filter algorithm.

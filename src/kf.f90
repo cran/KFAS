@@ -188,7 +188,7 @@ if(maxval(abs(pinf(1:m,1:m,1))) > eps) then
          vtuni(j,d) = yt(j,d) - ddot(m,zt(j,1:m,(d-1)*tvhz+1),1,arec,1) !arec
          call dsymv('u',m,1.0d0,psrec,m,zt(j,1:m,(d-1)*tvhz+1),1,0.0d0,kstaruni(1:m,j,d),1) ! kstar_t,i = pstar_t,i*t(z_t,i)
          call dsymv('u',m,1.0d0,pirec,m,zt(j,1:m,(d-1)*tvhz+1),1,0.0d0,kinfuni(1:m,j,d),1) ! kinf_t,i = pinf_t,i*t(z_t,i)
-         if (abs(finfuni(j,d)) > eps) then
+         if (finfuni(j,d) > eps) then
             call daxpy(m,vtuni(j,d)/finfuni(j,d),kinfuni(1:m,j,d),1,arec,1) !a_rec = a_rec + kinf(:,i,t)*vt(:,t)/finf(j,d)
             call dsyr('u',m,fstaruni(j,d)/(finfuni(j,d)**2),kinfuni(1:m,j,d),1,psrec,m) !psrec = psrec +  kinf*kinf'*fstar/finf^2
             call dsyr2('u',m,-1.0d0/finfuni(j,d),kstaruni(1:m,j,d),1,kinfuni(1:m,j,d),1,psrec,m) !psrec = psrec -(kstar*kinf'+kinf*kstar')/finf
@@ -196,14 +196,15 @@ if(maxval(abs(pinf(1:m,1:m,1))) > eps) then
             lik = lik - 0.5d0*log(finfuni(j,d))
          else
             call daxpy(m,vtuni(j,d)/fstaruni(j,d),kstaruni(1:m,j,d),1,arec,1) !a_rec = a_rec + kstar(:,i,t)*vt(:,t)/fstar(i,t)
-            call dsyr('u',m,(-1.0d0)/fstaruni(j,d),kstaruni(1:m,j,d),1,psrec,m) !psrec = psrec -kstar*kstar'/fstar
+            call dger(m,m,-1.0d0/fstaruni(j,d),kstaruni(1:m,j,d),1,kstaruni(1:m,j,d),1,psrec,m)
+!            call dsyr('u',m,(-1.0d0)/fstaruni(j,d),kstaruni(1:m,j,d),1,psrec,m) !psrec = psrec -kstar*kstar'/fstar
             lik = lik - 0.5d0*(log(fstaruni(j,d)) + vtuni(j,d)**2/fstaruni(j,d))
          end if
-         if(maxval(abs(pirec)) < eps) then
+         if(maxval(abs(pirec)) < eps) then !lisätty and jnep .AND. (j /= p)
             exit diffuse
          end if
       end do
-           
+       
       call dgemv('n',m,m,1.0d0,tt(1:m,1:m,(d-1)*timevar(1)+1),m,arec,1,0.0d0,at(1:m,d+1),1)  !at(:,t+1) = matmul(tt,a_rec)
       call dcopy(m,at(1:m,d+1),1,arec,1) ! a_rec = at(:,t+1)      
       call dsymm('r','u',m,m,1.0d0,psrec,m,tt(1:m,1:m,(d-1)*timevar(1)+1),m,0.0d0,mm,m)
@@ -223,7 +224,10 @@ if(maxval(abs(pinf(1:m,1:m,1))) > eps) then
       call dsymm('r','u',m,m,1.0d0,pirec,m,tt(1:m,1:m,(d-1)*timevar(1)+1),m,0.0d0,mm,m) 
       call dgemm('n','t',m,m,m,1.0d0,mm,m,tt(1:m,1:m,(d-1)*timevar(1)+1),m,0.0d0,pinf(1:m,1:m,d+1),m)
       pirec = pinf(1:m,1:m,d+1)   
-      j=p ! ????
+      j=ydimt(d) ! ???? oli j=p
+      if(maxval(abs(pirec)) < eps ) then !lisätty
+         exit diffuse
+      end if
    end do diffuse
 
 !non-diffuse filtering begins

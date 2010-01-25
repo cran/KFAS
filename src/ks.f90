@@ -333,7 +333,7 @@ rt0(1:m,d+1)=rt(1:m,d+1)
             call dgemm('t','n',m,m,m,1.0d0,linfuni,m,nrec2,m,0.0d0,mm,m) !mm =linf'*nt2
             call dgemm('n','n',m,m,m,1.0d0,mm,m,linfuni,m,0.0d0,nrec2,m) !nt2 = linf'*nt2*linf
             
-            call dger(m,m,-1.0d0*fstaruni(i,t)/(finfuni(i,t)**2.0d0),zt(i,1:m,t),1,zt(i,1:m,t),1,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2
+            call dger(m,m,-1.0d0*fstaruni(i,t)/(finfuni(i,t)**2.0d0),zt(i,1:m,(t-1)*tvhz+1),1,zt(i,1:m,(t-1)*tvhz+1),1,nrec2,m) !nt2 = linf'nt2'linf + z'z*fstar/finf^2
   
             call dsymm('l','u',m,m,1.0d0,nrec,m,l0,m,0.0d0,mm,m) !mm= nt0*l0
            
