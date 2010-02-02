@@ -5,7 +5,7 @@
   Function eflik computes log-likelihood function of univariate exponential family state-space model via simulation.
 }
 \usage{
-  eflik(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000,tol=1e-10)
+  eflik(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000)
 }
 \arguments{
   \item{yt}{Matrix, array or vector of observations. Note that yt is univariate.}
@@ -19,7 +19,6 @@
   \item{dist}{Distribution of yt.}
   \item{offset}{Vector of length n. See details.}
   \item{nsim}{Number of simulations.}
-\item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero in diffuse phase. Default is 1e-10.}
 }
 
 \details{
@@ -68,6 +67,7 @@ List with output from Kalman smoother, when model is approximated with gaussian 
 \item{likp}{Value of logL_p.}
 \item{offset}{}
 \item{dist}{Distribution of yt.}
+
 \item{lik}{Value of log-likelihood function.}
 }
 
@@ -106,12 +106,12 @@ lik<-eflik0(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset)$lik0
 lik
 }
 
-#not run
-#opt <- optim(par=c(1,1),yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn,method="BFGS", control=list(fnscale=-1,trace=1,REPORT=1))
+opt <- optim(par=c(1,1),yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn,method="BFGS",
+control=list(fnscale=-1,trace=1,REPORT=1))
 
-#Qt<-diag(exp(opt$par))
-#out<-eflik0(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
-#out$Qt*10000
+Qt<-diag(exp(opt$par))
+out<-eflik0(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
+out$Qt*10000
 
 
 likfn2<-function(pars,yt,Zt,Tt,Rt,a1,P1,P1inf,dist,offset=1)
@@ -121,12 +121,11 @@ lik<-eflik(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset,nsim=1000)$likp
 lik
 }
 
-#not run
+opt2 <- optim(par=opt$par,yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn2,method="BFGS",
+control=list(fnscale=-1,trace=1,REPORT=1))
 
-#opt2 <- optim(par=opt$par,yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn2,method="BFGS", control=list(fnscale=-1,trace=1,REPORT=1))
-
-#Qt<-diag(exp(opt2$par))
-#out<-eflik(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
-#out$Qt*10000
+Qt<-diag(exp(opt2$par))
+out<-eflik(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
+out$Qt*10000
 }
 
