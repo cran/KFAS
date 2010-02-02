@@ -2,10 +2,10 @@
 \alias{eflik0}
 \title{Approximate log-likelihood and gaussian density of exponential family state-space model.}
 \description{
-  Function eflik0 computes approximate log-likelihood and approximate gaussian density of univariate exponential family state-space model, based on Durbin and Koopman (1997, 2001).
+  Function expflik computes approximate log-likelihood and approximate gaussian density of univariate exponential family state-space model, based on Durbin and Koopman (1997, 2001).
 }
 \usage{
-  eflik0(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,tol=1e-10)
+  eflik0(yt, Zt, Tt, Rt, Qt, a1, P1, P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1)
 }
 \arguments{
   \item{yt}{Matrix, array or vector of observations. Note that yt is univariate.}
@@ -18,7 +18,6 @@
   \item{P1inf}{Diffuse part of P1.}
   \item{dist}{Distribution of yt.}
   \item{offset}{Vector of length n. See details.}
-\item{tol}{Tolerance parameter. Smallest covariance/variance value not counted for zero in diffuse phase. Default is 1e-10.}
 }
 
 \details{
@@ -103,12 +102,11 @@ lik<-eflik0(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf,dist,offset)$lik0
 lik
 }
 
-#not run
+opt <- optim(par=c(1,1),yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn,method="BFGS",
+control=list(fnscale=-1,trace=1,REPORT=1))
 
-#opt <- optim(par=c(1,1),yt=array(kk,dim=c(1,39)),Zt=Zt,Tt=Tt,Rt=Rt,a1=a1,P1=P1,P1inf=P1inf,offset=vlk,dist="Poisson",fn=likfn,method="BFGS", control=list(fnscale=-1,trace=1,REPORT=1))
-
-#Qt<-diag(exp(opt$par))
-#out<-eflik0(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
-#out$Qt*10000
+Qt<-diag(exp(opt$par))
+out<-eflik0(yt=kk,Zt,Tt,Rt,Qt,a1,P1,P1inf,offset=vlk)
+out$Qt*10000
 }
 
