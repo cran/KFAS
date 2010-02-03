@@ -292,7 +292,7 @@ if(optcal(2)==1) then
          else
             call dgemm('n','t',m,ydimt(t),m,1.0d0,pinf(1:m,1:m,t),m,zz(1:ydimt(t),1:m,(t-1)*timevar(5)+1),ydimt(t),&
                  0.0d0,mp(1:m,1:ydimt(t)),m) !mp = pinf*z'
-            call dgemm('n','n',p,p,m,1.0d0,zz(1:ydimt(t),1:m,(t-1)*timevar(5)+1),p,&
+            call dgemm('n','n',ydimt(t),ydimt(t),m,1.0d0,zz(1:ydimt(t),1:m,(t-1)*timevar(5)+1),p,&
                  mp(1:m,1:ydimt(t)),m,0.0d0,finf(1:ydimt(t),1:ydimt(t),t),ydimt(t)) !finf = z*mp
             
             call dgemm('n','t',m,ydimt(t),m,1.0d0,pstar(1:m,1:m,t),m,zz(1:ydimt(t),1:m,(t-1)*timevar(5)+1),&
