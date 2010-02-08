@@ -140,6 +140,7 @@ if(sum(ymiss)>0){
 
     Pinf[, , 1] <- P1inf
     lik <- info <- j <- d <- 0
+
     storage.mode(d) <- storage.mode(j) <- storage.mode(p) <- storage.mode(m) <- storage.mode(r) <- storage.mode(n) <- storage.mode(tv) <- storage.mode(info) <- storage.mode(optcal) <- storage.mode(ydimt) <- storage.mode(j) <- "integer"
 
     kfout <- NULL  
@@ -288,6 +289,7 @@ if(sum(ymiss)>0){
             Z[1:out$ydimt[i], , i] <- Z[!ymiss[, i], , i]
         }
     }}
+storage.mode(tv)<-"integer"
 
      ks.out <- .Fortran("ks", PACKAGE = "KFAS", NAOK = TRUE, out$ydimt, 
         tv, Z = Z, array(out$Tt, c(out$m, out$m, (out$n - 

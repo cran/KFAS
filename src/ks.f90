@@ -76,27 +76,26 @@ if(p>1) then !testing diagonality
    if(sum(hdiagtest)/=0) then 
       do t = 1, (n-1)*timevar(4)+1
          if(hdiagtest(t)==1 .AND. ydimt(t)>0) then          
-                    call dpotrf('l',ydimt(t),ht(1:ydimt(t),1:ydimt(t),t),ydimt(t),info)
-               if(info /=0) then
-                  info=1
-                  return
-               end if
-               do i = 1, ydimt(t)
-                  diag(i)=ht(i,i,t)
-                  ht(1:ydimt(t),i,t) =  ht(1:ydimt(t),i,t)/diag(i)
-               end do
-               do i = 1, ydimt(t)
-                  ht(i,i,t) = diag(i)**2 
-               end do               
-           
+            call dpotrf('l',ydimt(t),ht(1:ydimt(t),1:ydimt(t),t),ydimt(t),info)
+            if(info /=0) then
+               info=1
+               return
             end if
-         end do
+            do i = 1, ydimt(t)
+               diag(i)=ht(i,i,t)
+               ht(1:ydimt(t),i,t) =  ht(1:ydimt(t),i,t)/diag(i)
+            end do
+            do i = 1, ydimt(t)
+               ht(i,i,t) = diag(i)**2 
+            end do
+         end if
+      end do
       do t = 1, (n-1)*max(timevar(5),timevar(4))+1
          if(ydimt(t)>0 .AND. hdiagtest(t)/=0) then           
             call dtrsm('l','l','n','u',ydimt(t),m,1.0d0,ht(1:ydimt(t),1:ydimt(t),(t-1)*timevar(4)+1)&
                  ,ydimt(t),zt(1:ydimt(t),1:m,(t-1)*timevar(5)+1),ydimt(t)) !solve z*=inv(L) * zt            
          end if
-      end do    
+      end do
    end if
 end if
 
@@ -117,8 +116,8 @@ do t = n, d+1, -1 !do until diffuse starts
          lt = im
          call dger(m,m,-1.0d0,ktuni(1:m,i,t),1,zt(i,1:m,(t-1)*timevar(5)+1),1,lt,m) !l = I -kz 
          call dgemv('t',m,m,1.0d0,lt,m,rrec,1,0.0d0,rhelp,1) 
-         rrec = rhelp
-         call daxpy(m,vtuni(i,t)/ftuni(i,t),zt(i,1:m,(t-1)*timevar(5)+1),1,rrec,1)
+         rrec = rhelp + vtuni(i,t)/ftuni(i,t)*zt(i,1:m,(t-1)*timevar(5)+1)
+         !call daxpy(m,vtuni(i,t)/ftuni(i,t),zt(i,1:m,(t-1)*timevar(5)+1),1,rrec,1)         
          call dsymm('l','u',m,m,1.0d0,nrec,m,lt,m,0.0d0,mm,m) !n*l
          call dgemm('t','n',m,m,m,1.0d0,lt,m,mm,m,0.0d0,nrec,m) !n = l'nl
          call dger(m,m,(1.0d0/ftuni(i,t)),zt(i,1:m,(t-1)*timevar(5)+1),1,zt(i,1:m,(t-1)*timevar(5)+1),1,nrec,m) ! n = n+z'z/f  
@@ -382,6 +381,7 @@ rt0(1:m,d+1)=rt(1:m,d+1)
 
    end do
 end if
+
 
 end subroutine
 
