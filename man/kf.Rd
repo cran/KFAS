@@ -178,8 +178,8 @@ s2_eta<-1469.1
 f.out<-kf(yt = yt,  Zt = 1,  Tt=1,  Rt=1,  Ht= s2_eps,  Qt=s2_eta,  a1 =
 0,  P1=1e7)
 
-#a1 and P1 are not really estimated, should actually use exact diffuse
- initialisation:
+#a1 and P1 are not really estimated, 
+#should actually use exact diffuse initialisation:
 
 fd.out<-kf(yt = yt,  Zt = 1,  Tt=1,  Rt=1,  Ht=s2_eps,  Qt=s2_eta,  a1 =
 0, P1=0,  P1inf=1)
