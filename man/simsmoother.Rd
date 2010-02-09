@@ -23,14 +23,18 @@
 \details{
   Function simsmoother generates random samples of 
   state vector alpha = (alpha_1, ..., alpha_n) 
-  from conditional density p(alpha | y).
+  from conditional density p(alpha | y).  
 
-  The state space model is given by\cr
+  The state space model is given by  \cr
 
-  y_t = Z_t * alpha_t + eps_t (observation equation)\cr
-  alpha_t+1 = T_t * alpha_t + R_t * eta_t(transition equation)\cr
 
-  where eps_t ~ N(0,H_t) and eta_t ~ N(0,Q_t) \cr
+  y_t = Z_t * alpha_t + eps_t (observation equation)  \cr
+
+  alpha_t+1 = T_t * alpha_t + R_t * eta_t(transition equation)  \cr
+
+
+  where eps_t ~ N(0,H_t) and eta_t ~ N(0,Q_t)  \cr
+
 
   Simulation smoother algorithm is from article by J. Durbin and S.J. Koopman (2002).
 }
