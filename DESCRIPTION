@@ -1,6 +1,6 @@
 Package: KFAS
-Version: 0.5.7
-Date: 2010-02-09
+Version: 0.5.8
+Date: 2010-03-26
 Title: Kalman filter and smoothers for exponential family state space
         models.
 Author: Jouni Helske <jouni.helske@jyu.fi>
@@ -20,5 +20,5 @@ Description: Package KFAS provides functions for Kalman filtering,
         non-gaussian functions are still under heavy developement.
 License: GPL (>= 2)
 Repository: CRAN
-Date/Publication: 2010-02-09 16:30:10
-Packaged: 2010-02-09 16:24:09 UTC; root
+Date/Publication: 2010-03-26 11:16:57
+Packaged: 2010-03-26 06:32:25 UTC; jovetale

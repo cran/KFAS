@@ -368,27 +368,26 @@ if(optcal(3)==1 .AND. optcal(2)==1) then
          end if
       end if
    end do mulkd
-   if(info==0) then
-      mulk: do t=d+1, n
-         if(ydimt(t)>0) then
-            if(p==1) then
-               call dgemv('n',m,m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,ktuni(1:m,1,t),1,0.0d0,kt(1:m,1,t),1) !kt=t*ktuni
-            else
-               call dsymm('l','u',m,m,1.0d0,pt(1:m,1:m,t),m,tt(1:m,1:m,(t-1)*timevar(1)+1),m,0.0d0,mm,m) !TP
-               call dgemm('n','t',m,ydimt(t),m,1.0d0,mm,m,zz(1:ydimt(t),1:m,(t-1)*timevar(5)+1),ydimt(t),&
-                    1.0d0,kt(1:m,1:ydimt(t),t),m) !TPZ'
-               cholft(1:ydimt(t),1:ydimt(t)) = transpose(ft(1:ydimt(t),1:ydimt(t),t))
-               pm(1:ydimt(t),1:m) = transpose(kt(1:m,1:ydimt(t),t))
-               call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
-               if(info /=0) then
-                  info=4
-                  exit mulk
-               end if
-               kt(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))        
+   mulk: do t=d+1, n
+      if(ydimt(t)>0) then
+         if(p==1) then
+            call dgemv('n',m,m,1.0d0,tt(1:m,1:m,(t-1)*timevar(1)+1),m,ktuni(1:m,1,t),1,0.0d0,kt(1:m,1,t),1) !kt=t*ktuni
+         else
+            call dsymm('r','u',m,m,1.0d0,pt(1:m,1:m,t),m,tt(1:m,1:m,(t-1)*timevar(1)+1),m,0.0d0,mm,m) !TP
+            call dgemm('n','t',m,ydimt(t),m,1.0d0,mm,m,zz(1:ydimt(t),1:m,(t-1)*timevar(5)+1),ydimt(t),&
+                 1.0d0,kt(1:m,1:ydimt(t),t),m) !TPZ'
+            cholft(1:ydimt(t),1:ydimt(t)) = transpose(ft(1:ydimt(t),1:ydimt(t),t))
+            pm(1:ydimt(t),1:m) = transpose(kt(1:m,1:ydimt(t),t))
+            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
+            if(info /=0) then
+               info=4
+               exit mulk
             end if
+            kt(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))        
          end if
-      end do mulk
-   end if
+      end if
+   end do mulk
+   
 end if
 
 if(optcal(4)==1 .AND. optcal(3)==1  .AND. info==0) then
