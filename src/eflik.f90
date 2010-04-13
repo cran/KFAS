@@ -7,7 +7,8 @@ implicit none
 
 
 integer, intent(in) ::  p, m, r, n,dist
-integer, intent(inout) :: d, j, info
+integer, intent(inout) :: d, j
+integer, intent(inout), dimension(4) :: info
 integer :: i
 double precision, intent(in) :: eps
 integer, intent(in), dimension(n) :: ydimt
