@@ -134,7 +134,7 @@ TRUE,  TRUE,  TRUE),  tol=1e-7)
   zero at some t=d+1,...,n or Finfuni_i,t and Fstaruni_i,t was zero at
   some t=1,...,d.  }
   \item{optcal}{}
-  \item{info}{if info != 0, Finf, Fstar or Ft was singular.  }
+  \item{info}{if info[1]=1, could not diagonalize Ht. If info[i]=1, i=2,3,4, Finf, Fstar or Ft was singular.  }
   \item{vt}{p*1*n array of vt = yt - Zt * at.  }
   \item{Ft}{p*p*n array of Ft = Var(vt) of Kalman filter.  }
   \item{Kt}{m*p*n array of Kalman gain: Kt = Tt * Pt * Zt' * Ft^-1.  }

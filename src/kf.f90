@@ -5,7 +5,8 @@ subroutine kf(yt, ydimt, timevar, zt, tt, rt, ht, qt, a1, p1, at, pt, vtuni,&
 implicit none
 
 integer, intent(in) ::  p, m, r, n
-integer, intent(inout) :: d, j, info
+integer, intent(inout) :: d, j
+integer, intent(inout), dimension(4) :: info
 integer ::  t, i, k
 integer, intent(in), dimension(n) :: ydimt
 integer, intent(in), dimension(5) :: timevar
@@ -94,9 +95,9 @@ if(p>1) then !testing diagonality
    if(sum(hdiagtest)/=0) then 
       do t = 1, (n-1)*timevar(4)+1
          if(hdiagtest(t)==1 .AND. ydimt(t)>0) then           
-            call dpotrf('l',ydimt(t),ht(1:ydimt(t),1:ydimt(t),t),ydimt(t),info)
-            if(info /=0) then
-               info=1
+            call dpotrf('l',ydimt(t),ht(1:ydimt(t),1:ydimt(t),t),ydimt(t),info(1))
+            if(info(1) /=0) then
+               info(1)=1
                return
             end if
             do i = 1, ydimt(t)
@@ -329,18 +330,18 @@ if(optcal(3)==1 .AND. optcal(2)==1) then
                  kstar(1:m,1:ydimt(t),t),m) !kstar = t*mp
             pm(1:ydimt(t),1:m) = transpose(kstar(1:m,1:ydimt(t),t))
             cholft(1:ydimt(t),1:ydimt(t)) = fstar(1:ydimt(t),1:ydimt(t),t)
-            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
-            if(info /=0) then
-               info=2
+            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info(2))
+            if(info(2) /=0) then
+               info(2)=1
                exit mulkd
             end if
             kstar(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))
          else
             pm(1:ydimt(t),1:m) = zz(1:ydimt(t),1:m,(t-1)*timevar(5)+1)
             cholft(1:ydimt(t),1:ydimt(t)) = finf(1:ydimt(t),1:ydimt(t),t)
-            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
-            if(info/=0) then !if finf not pos.def
-               info=3
+            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info(3))
+            if(info(3)/=0) then !if finf not pos.def
+               info(3)=1
                exit mulkd
             end if
             kinf(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m)) !kinf = z'*inv(finf)
@@ -359,9 +360,9 @@ if(optcal(3)==1 .AND. optcal(2)==1) then
                  fstar(1:ydimt(t),1:ydimt(t),t),ydimt(t),0.0d0,mp(1:m,1:ydimt(t)),m) !mp =kinf*fstar
             kstar(1:m,1:ydimt(t),t) = kstar(1:m,1:ydimt(t),t) - mp(1:m,1:ydimt(t)) ! note the -, wrong in formula of Dk2003, corrected form in appendix!
             pm(1:ydimt(t),1:m) = transpose(kstar(1:m,1:ydimt(t),t))
-            call dpotrs('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info) !use cholesky from earlier point               
-            if(info /=0) then
-               info=3
+            call dpotrs('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info(3)) !use cholesky from earlier point               
+            if(info(3) /=0) then
+               info(3)=1
                 exit mulkd
             end if
             kstar(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))     
@@ -378,9 +379,9 @@ if(optcal(3)==1 .AND. optcal(2)==1) then
                  1.0d0,kt(1:m,1:ydimt(t),t),m) !TPZ'
             cholft(1:ydimt(t),1:ydimt(t)) = transpose(ft(1:ydimt(t),1:ydimt(t),t))
             pm(1:ydimt(t),1:m) = transpose(kt(1:m,1:ydimt(t),t))
-            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info)
-            if(info /=0) then
-               info=4
+            call dposv('l',ydimt(t),m,cholft(1:ydimt(t),1:ydimt(t)),ydimt(t),pm(1:ydimt(t),1:m),ydimt(t),info(4))
+            if(info(4) /=0) then
+               info(4)=1
                exit mulk
             end if
             kt(1:m,1:ydimt(t),t) = transpose(pm(1:ydimt(t),1:m))        
@@ -390,7 +391,7 @@ if(optcal(3)==1 .AND. optcal(2)==1) then
    
 end if
 
-if(optcal(4)==1 .AND. optcal(3)==1  .AND. info==0) then
+if(optcal(4)==1 .AND. optcal(3)==1  .AND. sum(info)==0) then
    do t=1, d
       if(ydimt(t)>0) then
          if(maxval(abs(finf(1:ydimt(t),1:ydimt(t),t)))<eps) then !finf=0

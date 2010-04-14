@@ -139,7 +139,8 @@ if(sum(ymiss)>0){
      
 
     Pinf[, , 1] <- P1inf
-    lik <- info <- j <- d <- 0
+    lik <- j <- d <- 0
+info<-rep(0,4)
 
     storage.mode(d) <- storage.mode(j) <- storage.mode(p) <- storage.mode(m) <- storage.mode(r) <- storage.mode(n) <- storage.mode(tv) <- storage.mode(info) <- storage.mode(optcal) <- storage.mode(ydimt) <- storage.mode(j) <- "integer"
 
@@ -248,18 +249,20 @@ Ht<-array(Ht,c(p,p,(n-1)*kfout$tv[4]+1))
     	kfout$Lstar <- array(kfout$Lstar[, , 1:kfout$d], c(m, m, kfout$d))
 	}
 
-    if (kfout$info != 0) {
-        if (kfout$info == 1) {
+    if (sum(kfout$info) != 0) {
+        if (kfout$info[1]) {
             kfout$lik <- -Inf
             warning("Could not diagonalize Ht")
         }
-        else if (kfout$info == 2) {
+        if (kfout$info[2]) {
             warning("Could not compute multivariate Kstar because multivariate Fstar is singular")
         }
-        else if (kfout$info == 3) {
+        if (kfout$info[3]) {
             warning("Could not compute multivariate Kinf because multivariate Finf is singular")
         }
-        else warning("Could not compute multivariate Kt because multivariate Ft is singular")
+        if (kfout$info[4]) {
+	 warning("Could not compute multivariate Kt because multivariate Ft is singular")
+	}
     }
     return(kfout)
 }
@@ -310,6 +313,8 @@ storage.mode(tv)<-"integer"
 
 distsmoother<-function(out)
 {
+if(sum(out$optcal[1:3])!=3)
+	stop("Distsmoother needs univariate vt, Ft and Kt!") 
 epshat <- array(0, dim = c(out$p, out$n))
 epshatvar <- array(0, dim = c(out$p, out$p, out$n))
 etahat <- array(0, dim = c(out$r, out$n))
@@ -475,7 +480,8 @@ Pt <- Pinf <- Pstar <- Nt <- Nt0 <- Nt1 <- Nt2 <- array(0, dim = c(m, m, n + 1))
 Kt <- Ktuni <- Kinf <- Kstar <- Kinfuni <- Kstaruni <- array(0, dim = c(m, 1, n))
 Lt <- Linf <- Lstar <- Vt <- array(0, dim = c(m, m, n))
 Pinf[, , 1] <- P1inf
-lik <- info <- d <- j <- 0
+lik <- d <- j <- 0
+info<-rep(0,4)
 ahat <- array(0, dim = c(m, n))
 etahat <- array(0, dim = c(r, n))
 etahatvar <- array(0, dim = c(r, r, n))
@@ -650,7 +656,8 @@ Pt <- Pinf <- Pstar <- Nt <- Nt0 <- Nt1 <- Nt2 <- array(0, dim = c(m, m, n + 1))
 Kt <- Ktuni <- Kinf <- Kstar <- Kinfuni <- Kstaruni <- array(0, dim = c(m, 1, n))
 Lt <- Linf <- Lstar <- Vt <- array(0, dim = c(m, m, n))
 Pinf[, , 1] <- P1inf
-lik <- info <- d <- j <- 0
+lik <- d <- j <- 0
+info<-rep(0,4)
 ahat <- array(0, dim = c(m, n))
 theta <- array(0,dim=n)
 offset <- array(offset,dim=n)
@@ -689,7 +696,7 @@ if(dist=="Poisson")
 {
 for(k in 1:nsim)
 	{
-	eg[k] <-sum(dpois(out$yt[1,],out$offset*exp(thetasim[1, , k]))/dnorm(out$ytilde[1,],mean=thetasim[1, , k],sd=sqrt(out$Ht[1,1,])))
+	eg[k] <-prod(dpois(out$yt[1,],out$offset*exp(thetasim[1, , k]))/dnorm(out$ytilde[1,],mean=thetasim[1, , k],sd=sqrt(out$Ht[1,1,])))
 	}
 }
 else
@@ -698,16 +705,16 @@ else
 	{
 		for(k in 1:nsim)
 		{
-			eg[k] <- sum(dbinom(x=out$yt[1,],size=offset,prob=exp(thetasim[1,,k])/(1+exp(thetasim[1,,k])))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
+			eg[k] <- prod(dbinom(x=out$yt[1,],size=offset,prob=exp(thetasim[1,,k])/(1+exp(thetasim[1,,k])))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
 		}
 	}
 	else
 		for(k in 1:nsim)
 		{
-			eg[k] <- sum(dnbinom(x=out$yt[1,],size=offset,prob=1 - exp(thetasim[1,,k]))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
+			eg[k] <- prod(dnbinom(x=out$yt[1,],size=offset,prob=1 - exp(thetasim[1,,k]))/dnorm(out$ytilde[1,],mean=thetasim[1,,k],sd=sqrt(out$Ht[1,1,])))
 		}
 }
-out$likp<-out$lik+log(sum(eg))
+out$likp<-out$lik+log(sum(eg)/nsim)
 out$dist<-dist
 invisible(out)
 
