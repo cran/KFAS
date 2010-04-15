@@ -433,7 +433,7 @@ storage.mode(nde) <-"integer"
     return(alphasim=sims.out$alphasim)
 }
 
-eflik0<-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1)
+eflik0<-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1, maxiter=50)
 {                                          
                                    
 dist <- match.arg(dist)
@@ -454,7 +454,7 @@ if (is.vector(Qt))
 else r <- dim(as.array(Qt))[2]
 
 alpha<-matrix(0,m,n)
-tv <- array(0, dim = 3)
+tv <- array(0, dim = 5)
     tv[1] <- !(is.na(dim(as.array(Tt))[3]) || dim(as.array(Tt))[3] == 
         1)
     tv[2] <- !(is.na(dim(as.array(Rt))[3]) || dim(as.array(Rt))[3] == 
@@ -478,7 +478,7 @@ vt <- vtuni <- Ftuni <- Finfuni <- Fstaruni <- epshat <- ytilde <-array(0, dim =
 Ft <- Finf <- Fstar <- epshatvar <- Ht <- array(0, dim = c(1, 1, n))
 Pt <- Pinf <- Pstar <- Nt <- Nt0 <- Nt1 <- Nt2 <- array(0, dim = c(m, m, n + 1))
 Kt <- Ktuni <- Kinf <- Kstar <- Kinfuni <- Kstaruni <- array(0, dim = c(m, 1, n))
-Lt <- Linf <- Lstar <- Vt <- array(0, dim = c(m, m, n))
+Lt <- Linf <- Lstar <- VVt <- array(0, dim = c(m, m, n))
 Pinf[, , 1] <- P1inf
 lik <- d <- j <- 0
 info<-rep(0,4)
@@ -488,7 +488,8 @@ etahatvar <- array(0, dim = c(r, r, n))
 theta <- array(0,dim=n)
 offset <- array(offset,dim=n)
 optcal<-array(1,dim=4)
-storage.mode(distr)<-storage.mode(n)<-storage.mode(p)<-storage.mode(r)<-storage.mode(m)<-storage.mode(d)<-storage.mode(j)<-storage.mode(tv)<-storage.mode(ydimt)<-storage.mode(info)<-storage.mode(optcal)<-"integer"
+storage.mode(distr)<-storage.mode(n)<-storage.mode(p)<-storage.mode(r)<-storage.mode(m)<-storage.mode(d)<-storage.mode(j)<-storage.mode(tv)<-storage.mode(ydimt)<-storage.mode(info)<-storage.mode(optcal)<-storage.mode(maxiter)<-"integer"
+storage.mode(yt)<-"double"
 
 out<-.Fortran("eflik0", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n)), 
         ydimt = ydimt, tv = tv, Zt = array(Zt,c(1,m,(n-1)*tv[5]+1)), Tt = array(Tt,c(m,m,(n-1)*tv[1]+1)), Rt = array(Rt,c(m,r,(n-1)*tv[2]+1)), Ht = Ht, Qt = array(Qt,c(r,r,(n-1)*tv[3]+1)), a1 = a1, P1 = P1, at = at, Pt = Pt, vtuni = vtuni, Ftuni = Ftuni, 
@@ -497,8 +498,8 @@ out<-.Fortran("eflik0", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n)
         d = d, j = j, p = p, m = m, r = r, n = n, lik = lik, 
         optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
         Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
-        Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
-        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
+        Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = VVt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
+        Nt1 = Nt1, Nt2 = Nt2, epshat=epshat, epshatvar=epshatvar, etahat=etahat, etahatvar=etahatvar, tol = 1e-07, theta=theta, offset=offset,ytilde=ytilde,dist=distr,maxiter=maxiter)
 
 if(dist=="Poisson")
 {
@@ -611,7 +612,7 @@ division[k] <- prod(dnbinom(x=out$yt[1,],size=offset,prob=1 - exp(thetasim[1,,k]
 
 
 
-eflik <-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000){
+eflik <-function(yt,Zt,Tt,Rt,Qt,a1,P1,P1inf, dist=c("Poisson", "Binomial", "Negative binomial"), offset=1,nsim=1000,maxiter=50){
 
 dist <- match.arg(dist)
 if(dist == "Poisson")
@@ -662,7 +663,7 @@ ahat <- array(0, dim = c(m, n))
 theta <- array(0,dim=n)
 offset <- array(offset,dim=n)
 optcal<-array(1,dim=4)
-storage.mode(distr)<-storage.mode(n)<-storage.mode(p)<-storage.mode(r)<-storage.mode(m)<-storage.mode(d)<-storage.mode(j)<-storage.mode(tv)<-storage.mode(ydimt)<-storage.mode(info)<-storage.mode(optcal)<-"integer"
+storage.mode(distr)<-storage.mode(n)<-storage.mode(p)<-storage.mode(r)<-storage.mode(m)<-storage.mode(d)<-storage.mode(j)<-storage.mode(tv)<-storage.mode(ydimt)<-storage.mode(info)<-storage.mode(optcal)<-storage.mode(maxiter)<-"integer"
 
 
 ytilde <- array(0, dim = c(p, n))
@@ -675,7 +676,7 @@ out<-.Fortran("eflik", PACKAGE = "KFAS", NAOK = TRUE,  yt = array(yt,dim=c(1,n))
         optcal = optcal, info = info, vt = vt, Ft = Ft, Kt = Kt, 
         Lt = Lt, Finf = Finf, Fstar = Fstar, Kinf = Kinf, Kstar = Kstar, 
         Linf = Linf, Lstar = Lstar, ahat = ahat, Vt = Vt, rt = rt, rt0 = rt0, rt1 = rt1, Nt = Nt, Nt0 = Nt0, 
-        Nt1 = Nt1, Nt2 = Nt2, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde,dist=distr)
+        Nt1 = Nt1, Nt2 = Nt2, tol = 1e-7, theta=theta, offset=offset,ytilde=ytilde,dist=distr,maxiter=maxiter)
 
 
 alphasim <-simsmoother(out$ytilde, out$Zt, out$Tt, out$Rt, out$Ht, out$Qt, a1, P1, P1inf, nsim)
@@ -696,7 +697,8 @@ if(dist=="Poisson")
 {
 for(k in 1:nsim)
 	{
-	eg[k] <-prod(dpois(out$yt[1,],out$offset*exp(thetasim[1, , k]))/dnorm(out$ytilde[1,],mean=thetasim[1, , k],sd=sqrt(out$Ht[1,1,])))
+	#eg[k] <-sum(dpois(out$yt[1,],out$offset*exp(thetasim[1, , k]),log=TRUE)-dnorm(out$ytilde[1,],mean=thetasim[1, , k],sd=sqrt(out$Ht[1,1,]),log=TRUE))
+	eg[k] <-prod(dpois(out$yt[1,],out$offset*exp(thetasim[1, , k]),)/dnorm(out$ytilde[1,],mean=thetasim[1, , k],sd=sqrt(out$Ht[1,1,])))
 	}
 }
 else

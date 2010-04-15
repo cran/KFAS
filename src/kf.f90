@@ -152,6 +152,11 @@ if(maxval(abs(pinf(1:m,1:m,1))) > eps) then
             call daxpy(m,vtuni(j,d)/finfuni(j,d),kinfuni(1:m,j,d),1,arec,1) !a_rec = a_rec + kinf(:,i,t)*vt(:,t)/finf(j,d)
             call dsyr('u',m,fstaruni(j,d)/(finfuni(j,d)**2),kinfuni(1:m,j,d),1,psrec,m) !psrec = psrec +  kinf*kinf'*fstar/finf^2
             call dsyr2('u',m,-1.0d0/finfuni(j,d),kstaruni(1:m,j,d),1,kinfuni(1:m,j,d),1,psrec,m) !psrec = psrec -(kstar*kinf'+kinf*kstar')/finf
+            
+            !call dger(m,m,fstaruni(j,d)/(finfuni(j,d)**2),kinfuni(1:m,j,d),1,kinfuni(1:m,j,d),1,psrec,m) !psrec = psrec +  kinf*kinf'*fstar/finf^2
+            !call dger(m,m,-1.0d0/finfuni(j,d),kstaruni(1:m,j,d),1,kinfuni(1:m,j,d),1,psrec,m)
+            !call dger(m,m,-1.0d0/finfuni(j,d),kinfuni(1:m,j,d),1,kstaruni(1:m,j,d),1,psrec,m)
+            
             call dger(m,m,-1.0d0/finfuni(j,d),kinfuni(1:m,j,d),1,kinfuni(1:m,j,d),1,pirec,m)
             lik = lik - 0.5d0*log(finfuni(j,d))
          else
@@ -167,6 +172,7 @@ if(maxval(abs(pinf(1:m,1:m,1))) > eps) then
       call dgemv('n',m,m,1.0d0,tt(1:m,1:m,(d-1)*timevar(1)+1),m,arec,1,0.0d0,at(1:m,d+1),1)  !at(:,t+1) = matmul(tt,a_rec)
       call dcopy(m,at(1:m,d+1),1,arec,1) ! a_rec = at(:,t+1)      
       call dsymm('r','u',m,m,1.0d0,psrec,m,tt(1:m,1:m,(d-1)*timevar(1)+1),m,0.0d0,mm,m)
+      !call dgemm('n','n',m,m,m,1.0d0,tt(1:m,1:m,(d-1)*timevar(1)+1),m,psrec,m,0.0d0,mm,m)
       call dgemm('n','t',m,m,m,1.0d0,mm,m,tt(1:m,1:m,(d-1)*timevar(1)+1),m,0.0d0,pstar(1:m,1:m,d+1),m)
       if(m /= r) then
          if(r>1) then
@@ -181,6 +187,7 @@ if(maxval(abs(pinf(1:m,1:m,1))) > eps) then
       end if
       psrec = pstar(1:m,1:m,d+1) 
       call dsymm('r','u',m,m,1.0d0,pirec,m,tt(1:m,1:m,(d-1)*timevar(1)+1),m,0.0d0,mm,m) 
+      !call dgemm('n','n',m,m,m,1.0d0,tt(1:m,1:m,(d-1)*timevar(1)+1),m,pirec,m,0.0d0,mm,m)
       call dgemm('n','t',m,m,m,1.0d0,mm,m,tt(1:m,1:m,(d-1)*timevar(1)+1),m,0.0d0,pinf(1:m,1:m,d+1),m)
       pirec = pinf(1:m,1:m,d+1)   
       j=ydimt(d) ! ????

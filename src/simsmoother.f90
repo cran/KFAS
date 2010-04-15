@@ -121,31 +121,43 @@ subroutine simsmoother(ydimt, timevar, yt, zt, tt, rtv, ht, qt, a1, p1, p1pd, p1
   
   do t = 1, (n-1)*timevar(4)+1       
      if(ydimt(t)>0) then
-        cholht(1:ydimt(t),1:ydimt(t),t) = ht(1:ydimt(t),1:ydimt(t),t)
-        call dpotrf('l',ydimt(t),cholht(1:ydimt(t),1:ydimt(t),t),ydimt(t),info)
-        if(info /= 0) then
-           info=1
-           return
+        if(p==1) then
+           cholht(1,1,t)=sqrt(ht(1,1,t))
+        else
+           cholht(1:ydimt(t),1:ydimt(t),t) = ht(1:ydimt(t),1:ydimt(t),t)
+           call dpotrf('l',ydimt(t),cholht(1:ydimt(t),1:ydimt(t),t),ydimt(t),info)
+           if(info /= 0) then
+              info=1
+              return
+           end if
         end if
      end if
   end do
   
   do t = 1, (n-1)*timevar(3)+1
-     cholqt(1:r,1:r,t) = qt(1:r,1:r,t)
-     call dpotrf('l',r,cholqt(1:r,1:r,t),r,info)
-     if(info /= 0) then
-        info=2
-        return
+     if(r==1) then
+        cholqt(1,1,t)=sqrt(qt(1,1,t))
+     else
+        cholqt(1:r,1:r,t) = qt(1:r,1:r,t)
+        call dpotrf('l',r,cholqt(1:r,1:r,t),r,info)
+        if(info /= 0) then
+           info=2
+           return
+        end if
      end if
   end do
 
 
-  if(nnd>0) then        
-     cholp1 = p1pd
-     call dpotrf('l',nnd,cholp1,nnd,info)
-     if(info /= 0) then
-        info=3
-        return
+  if(nnd>0) then  
+     if(m==1) then
+        cholp1(1,1)=sqrt(p1(1,1))
+     else
+        cholp1 = p1pd
+        call dpotrf('l',nnd,cholp1,nnd,info)
+        if(info /= 0) then
+           info=3
+           return
+        end if
      end if
   end if
 

@@ -7,7 +7,7 @@
 }
 \usage{
   eflik(yt,  Zt,  Tt,  Rt,  Qt,  a1,  P1,  P1inf,  dist=c("Poisson",
-"Binomial",  "Negative binomial"),  offset=1,  nsim=1000)
+"Binomial",  "Negative binomial"),  offset=1,  nsim=1000, maxiter=50)
 }
 \arguments{
   \item{yt}{Matrix, array or vector of observations. Note that yt is
@@ -23,6 +23,7 @@
   \item{dist}{Distribution of yt.  }
   \item{offset}{Vector of length n. See details.  }
   \item{nsim}{Number of simulations.  }
+  \item{maxiter}{Maximum number of iterations used in linearisation.  }
 }
 
 \details{

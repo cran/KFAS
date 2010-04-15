@@ -9,7 +9,7 @@
 }
 \usage{
   eflik0(yt,  Zt,  Tt,  Rt,  Qt,  a1,  P1,  P1inf,  dist=c("Poisson", 
-"Binomial",  "Negative binomial"),  offset=1)
+"Binomial",  "Negative binomial"),  offset=1, maxiter=50)
 }
 \arguments{
   \item{yt}{Matrix, array or vector of observations.  Note that yt is
@@ -24,6 +24,7 @@
   \item{P1inf}{Diffuse part of P1.  }
   \item{dist}{Distribution of yt.  }
   \item{offset}{Vector of length n. See details.  }
+\item{maxiter}{Maximum number of iterations used in linearisation.  }
 }
 
 \details{
