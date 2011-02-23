@@ -197,12 +197,14 @@ f.out$at[1,1:20]
 fd.out$at[1,1:20]
 
 
-#Example of multivariate local level model
-#Two temperature datas from David S. Stoffer's webpage
 
-y1<-scan("http://www.stat.pitt.edu/stoffer/tsa2/data/HL.dat")
-y2<-scan("http://www.stat.pitt.edu/stoffer/tsa2/data/folland.dat")
-yt<-rbind(y1,y2)
+#Example of multivariate local level model
+#Two series of average global temperature deviations for years 1880-1987
+#See Shumway and Stoffer (2006), p. 327 for details
+
+data(GlobalTemp)
+yt<-array(GlobalTemp,c(2,108))
+
 
 #Estimating the variance parameters
 
@@ -250,7 +252,7 @@ kfd$Ht
 kfnd$Ht
 #Estimated Qt and Ht differs
 
-ts.plot(ts(y1),ts(y2),ts(kfd$at[1,]),ts(kfnd$at[1,]),col=c(1,2,3,4))
+ts.plot(ts(yt[1,],start=1880),ts(yt[2,],start=1880),ts(kfd$at[1,],start=1880),ts(kfnd$at[1,],start=1880),col=c(1,2,3,4))
 #differs at start
 
 

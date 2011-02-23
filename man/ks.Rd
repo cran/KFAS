@@ -55,11 +55,11 @@ and Its Applications: With R examples.  \cr
 library(KFAS)
 
 #Example of multivariate local level model
-#Two temperature datas from David S. Stoffer's webpage
+#Two series of average global temperature deviations for years 1880-1987
+#See Shumway and Stoffer (2006), p. 327 for details
 
-y1<-scan("http://www.stat.pitt.edu/stoffer/tsa2/data/HL.dat")
-y2<-scan("http://www.stat.pitt.edu/stoffer/tsa2/data/folland.dat")
-yt<-rbind(y1,y2)
+data(GlobalTemp)
+yt<-array(GlobalTemp,c(2,108))
 
 #Estimating the variance parameters
 
@@ -109,7 +109,6 @@ kfnd$Ht
 #Estimated Qt and Ht differs
 
 #smoothed values:
-ts.plot(ts(y1),ts(y2),ts(ksd$ahat[1,]),ts(ksnd$ahat[1,]),col=c(1,2,3,4))
-#smoothed values of exact diffuse case are smoother than in non-diffuse case.
+ts.plot(ts(yt[1,],start=1880),ts(yt[2,],start=1880),ts(ksd$ahat[1,],start=1880),ts(ksnd$ahat[1,],start=1880),col=c(1,2,3,4))
 
 }
