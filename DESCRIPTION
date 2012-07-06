@@ -1,23 +1,22 @@
 Package: KFAS
-Version: 0.6.1
-Date: 2011-02-23
-Title: Kalman filter and smoothers for exponential family state space
-        models.
+Version: 0.9.9
+Date: 2012-07-5
+Title: Kalman Filter and Smoother for Exponential Family State Space
+        Models.
 Author: Jouni Helske <jouni.helske@jyu.fi>
 Maintainer: Jouni Helske <jouni.helske@jyu.fi>
 Depends: R (>= 2.8.0)
 Description: Package KFAS provides functions for Kalman filtering,
-        state, disturbance and simulation smoothing, forecasting and
-        simulation of state space models. All functions can use exact
-        diffuse initialisation when distributions of some or all
-        elements of initial state vector are unknown. Filtering, state
-        smoothing and simulation functions use sequential processing
-        algorithm, which is faster than standard approach, and it also
-        allows singularity of prediction error variance matrix. KFAS
-        also contains function for computing the likelihood of
-        exponential family state space models and function for state
-        smoothing of exponential family state space models.
+        smoothing, forecasting and simulation of Gaussian, Poisson and
+        Binomial state space models with exact diffuse initialization
+        when distributions of some or all elements of initial state
+        vector are unknown.
 License: GPL (>= 2)
-Packaged: 2011-02-23 14:48:04 UTC; jovetale
+Collate: 'KFAS-package.R' 'KFS.R' 'SSModel.R' 'approxSSM.R'
+        'arimaSSM.R' 'fitSSM.R' 'importanceSSM.R' 'ldl.R'
+        'logLik.SSModel.R' 'plot.objects.R' 'predict.KFS.R'
+        'print.objects.R' 'regSSM.R' 'simDisturbance.R' 'simObs.R'
+        'simState.R' 'simulateSSM.R' 'structSSM.R' 'transformSSM.R'
+Packaged: 2012-07-06 08:31:05 UTC; jovetale
 Repository: CRAN
-Date/Publication: 2011-02-23 16:18:39
+Date/Publication: 2012-07-06 10:16:12
