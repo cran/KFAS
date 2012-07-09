@@ -23,11 +23,11 @@
 
   Residuals based on the smoothed disturbance terms are
   defined as \deqn{\hat
-  \epsilon_{i,t}/\sqrt{Var(\epsilon_{i,t}}, \quad
+  \epsilon_{i,t}/\sqrt{Var(\epsilon_{i,t})}, \quad
   i=1,\ldots,p, t=1,\ldots,n,}{\hat
   \epsilon[i,t]Var(\epsilon[i,t])^-0.5, i=1,\ldots,p,
   t=1,\ldots,n,} and \deqn{L^{-1}_t \hat \eta_t, \quad
-  t=1,\ldots,n,}{L^-1[t] \eta[t], t=1,\ldots,n,} where
+  t=1,\ldots,n,}{L^{-1}[t] \eta[t], t=1,\ldots,n,} where
   \eqn{L_t}{L[t]} is the lower triangular matrix from
   Cholesky decomposition of \eqn{V_{\eta,t}}{V[\eta,t]}
 }

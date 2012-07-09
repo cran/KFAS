@@ -9,8 +9,8 @@
 #' 
 #' \deqn{\alpha_{t+1} = T_t \alpha_t + R_t \eta_t,}{\alpha[t+1] = T[t]\alpha[t] + R[t]\eta[t], (transition equation)}
 #' 
-#' where \eqn{\epsilon_t ~ N(0,H_t)}{\epsilon[t] ~ N(0,H[t])}, \eqn{\eta_t ~ N(0,Q_t)}{\eta[t] ~ N(0,Q[t])} 
-#' and \eqn{\alpha_1 ~ N(a_1,P_1)}{\alpha[1] ~ N(a[1],P[1])} independently of each other.
+#' where \eqn{\epsilon_t \sim N(0,H_t)}{\epsilon[t] ~ N(0,H[t])}, \eqn{\eta_t \sim N(0,Q_t)}{\eta[t] ~ N(0,Q[t])} 
+#' and \eqn{\alpha_1 \sim N(a_1,P_1)}{\alpha[1] ~ N(a[1],P[1])} independently of each other.
 #' 
 #' All system and covariance matrices Z, H, T, R and Q can be time-varying, and partially or totally missing observations \eqn{y_t}{y[t]} are allowed.
 #' 
@@ -95,7 +95,8 @@
 #' # Confidence intervals for the state
 #' lows<-c(kfsNile$alphahat-qnorm(0.95)*sqrt(c(kfsNile$V)))
 #' ups<-c(kfsNile$alphahat+qnorm(0.95)*sqrt(c(kfsNile$V)))
-#' plot.ts(cbind(y,c(kfsNile$alphahat),lows,ups), plot.type="single", col=c(1:2,3,3), ylab="Predicted Annual flow", main="River Nile")
+#' plot.ts(cbind(y,c(kfsNile$alphahat),lows,ups), plot.type="single", col=c(1:2,3,3), 
+#'         ylab="Predicted Annual flow", main="River Nile")
 #'
 #'
 #' # Missing observations, using same parameter estimates
@@ -107,10 +108,12 @@
 #' kfsNile<-KFS(modelNile,smoothing="state")
 #'
 #' # Filtered state
-#' plot.ts(cbind(y,c(NA,kfsNile$a[,-c(1,101)])), plot.type="single", col=c(1:2,3,3), ylab="Predicted Annual flow", main="River Nile")
+#' plot.ts(cbind(y,c(NA,kfsNile$a[,-c(1,101)])), plot.type="single", col=c(1:2,3,3), 
+#'        ylab="Predicted Annual flow", main="River Nile")
 #'
 #' #  Smoothed state
-#' plot.ts(cbind(y,c(kfsNile$alp)), plot.type="single", col=c(1:2,3,3), ylab="Predicted Annual flow", main="River Nile")
+#' plot.ts(cbind(y,c(kfsNile$alp)), plot.type="single", col=c(1:2,3,3), 
+#'        ylab="Predicted Annual flow", main="River Nile")
 #'
 #' 
 #' # Prediction of missing observations
@@ -118,7 +121,8 @@
 #' lows<-predictNile$y-qnorm(0.95)*sqrt(c(predictNile$F))
 #' ups<-predictNile$y+qnorm(0.95)*sqrt(c(predictNile$F))
 #'
-#' plot.ts(cbind(y,predictNile$y,lows,ups), plot.type="single", col=c(1:2,4,4), ylab="Predicted Annual flow", main="River Nile")
+#' plot.ts(cbind(y,predictNile$y,lows,ups), plot.type="single", col=c(1:2,4,4), 
+#'         ylab="Predicted Annual flow", main="River Nile")
 #' 
 #'
 #' 
@@ -128,7 +132,8 @@
 #'
 #' data(GlobalTemp) 
 #'
-#' modelTemp<-SSModel(y=GlobalTemp, Z = matrix(1,nrow=2), T=1, R=1, H=matrix(NA,2,2), Q=NA, a1=0, P1=0, P1inf=1)
+#' modelTemp<-SSModel(y=GlobalTemp, Z = matrix(1,nrow=2), T=1, R=1, H=matrix(NA,2,2), 
+#'         Q=NA, a1=0, P1=0, P1inf=1)
 #'
 #' # Estimating the variance parameters
 #' 
@@ -141,7 +146,8 @@
 #' legend("bottomright",legend=c(colnames(GlobalTemp), "Smoothed signal"), col=1:3, lty=1)
 #' 
 #' 
-#' # Example of multivariate series where first series follows stationary ARMA(1,1) process and second stationary AR(1) process.
+#' # Example of multivariate series where first series follows stationary ARMA(1,1) 
+#' # process and second stationary AR(1) process.
 #'
 #' y1<-arima.sim(model=list(ar=0.8,ma=0.3), n=100, sd=0.5)
 #'
@@ -161,7 +167,8 @@
 #' 
 #' 
 #' # Drivers
-#' model<-structSSM(y=log(Seatbelts[,"drivers"]),trend="level",seasonal="time",X=cbind(log(Seatbelts[,"kms"]),log(Seatbelts[,"PetrolPrice"]),Seatbelts[,c("law")]))
+#' model<-structSSM(y=log(Seatbelts[,"drivers"]),trend="level",seasonal="time",
+#'        X=cbind(log(Seatbelts[,"kms"]),log(Seatbelts[,"PetrolPrice"]),Seatbelts[,c("law")]))
 #' fit<-fitSSM(inits=rep(-1,3),model=model)
 #' out<-KFS(fit$model,smoothing="state")
 #'
@@ -173,7 +180,8 @@
 #'
 #' # Multivariate model with constant seasonal pattern in frequency domain
 #'
-#' model<-structSSM(y=log(Seatbelts[,c("front","rear")]),trend="level",seasonal="freq",X=cbind(log(Seatbelts[,c("kms")]),log(Seatbelts[,"PetrolPrice"]),Seatbelts[,"law"]),
+#' model<-structSSM(y=log(Seatbelts[,c("front","rear")]),trend="level",seasonal="freq",
+#'        X=cbind(log(Seatbelts[,c("kms")]),log(Seatbelts[,"PetrolPrice"]),Seatbelts[,"law"]),
 #'        H=NA,Q.level=NA,Q.seasonal=0)
 #'
 #' sbFit<-fitSSM(inits=rep(-1,6),model=model)
@@ -183,7 +191,9 @@
 #' ts.plot(signal(out,states=c(1:2,25:30))$s,model$y,col=1:4)
 #'
 #' # Poisson model
-#' model<-structSSM(y=Seatbelts[,"VanKilled"],trend="level",seasonal="time",X=Seatbelts[,"law"],distribution="Poisson")
+#' model<-structSSM(y=Seatbelts[,"VanKilled"],trend="level",seasonal="time",X=Seatbelts[,"law"],
+#'        distribution="Poisson")
+#' 
 #' # Estimate variance parameters
 #' fit<-fitSSM(inits=rep(0.5*log(0.005),2), model=model)  
 #'
@@ -195,7 +205,8 @@
 #' # State smoothing via importance sampling
 #' out<-KFS(model,nsim=1000)
 #'
-#' # Observations with exp(smoothed signal) computed by importance sampling in KFS, and by approximating model
+#' # Observations with exp(smoothed signal) computed by 
+#' # importance sampling in KFS, and by approximating model
 #' ts.plot(cbind(model$y,out$yhat,exp(amod$theta)),col=1:3) # Almost identical
 #'
 #' # It is more interesting to look at the smoothed values of exp(level + intervention)
@@ -203,7 +214,8 @@
 #' lev2<-exp(signal(out.amod,states=c(1,13))$s)
 #' # These are slightly biased as E[exp(x)] > exp(E[x]), better to use importance sampling:
 #' vansample<-importanceSSM(model,save.model=FALSE,nsim=250) 
-#' # nsim is number of independent samples, as default two antithetic variables are used, so total number of samples is 1000.
+#' # nsim is number of independent samples, as default two antithetic variables are used, 
+#' # so total number of samples is 1000.
 #'
 #' w<-vansample$weights/sum(vansample$weights)
 #' level<-colSums(t(exp(vansample$states[1,,]+model$Z[1,13,]*vansample$states[13,,]))*w)
@@ -229,9 +241,12 @@
 #' # Same without antithetic variables
 #' vansamplenat<-importanceSSM(model,save.model=FALSE,nsim=1000,antithetics=FALSE)
 #' w<-vansamplenat$weights/sum(vansamplenat$weights)
-#' levelnat<-colSums(t(exp(vansamplenat$states[1,,]+model$Z[1,13,]*vansamplenat$states[13,,]))*w)     
-#' varsimnat<-colSums((t(exp(vansamplenat$states[1,,]+model$Z[1,13,]*vansamplenat$states[13,,])-levelnat)*w)^2)
-#' varlevelnat<-colSums(t(exp(vansamplenat$states[1,,]+model$Z[1,13,]*vansamplenat$states[13,,])^2)*w)-levelnat^2 
+#' levelnat<-colSums(t(exp(vansamplenat$states[1,,]+
+#'           model$Z[1,13,]*vansamplenat$states[13,,]))*w)     
+#' varsimnat<-colSums((t(exp(vansamplenat$states[1,,]+
+#'             model$Z[1,13,]*vansamplenat$states[13,,])-levelnat)*w)^2)
+#' varlevelnat<-colSums(t(exp(vansamplenat$states[1,,]+
+#'             model$Z[1,13,]*vansamplenat$states[13,,])^2)*w)-levelnat^2 
 #' ts.plot(sqrt(varsimnat/varlevelnat)*100) 
 #' ts.plot((sqrt(varsimnat)-sqrt(varsim))/sqrt(varsimnat)*100) 
 

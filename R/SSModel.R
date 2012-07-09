@@ -17,8 +17,8 @@
 #' 
 #' \deqn{\alpha_{t+1} = T_t \alpha_t + R_t \eta_t,}{\alpha[t+1] = T[t]\alpha[t] + R[t]\eta[t], (transition equation)}
 #' 
-#' where \eqn{\epsilon_t ~ N(0,H_t)}{\epsilon[t] ~ N(0,H[t])}, \eqn{\eta_t ~ N(0,Q_t)}{\eta[t] ~ N(0,Q[t])} 
-#' and \eqn{\alpha_1 ~ N(a_1,P_1)}{\alpha[1] ~ N(a[1],P[1])} independently of each other. In case of non-Gaussian observations,
+#' where \eqn{\epsilon_t \sim N(0,H_t)}{\epsilon[t] ~ N(0,H[t])}, \eqn{\eta_t \sim N(0,Q_t)}{\eta[t] ~ N(0,Q[t])} 
+#' and \eqn{\alpha_1 \sim N(a_1,P_1)}{\alpha[1] ~ N(a[1],P[1])} independently of each other. In case of non-Gaussian observations,
 #' the observation equation is of form \eqn{p(y_t|\theta_t) = p(y_t|Z_t\alpha_t)}{p(y[t]|\theta[t]) = p(y[t]|Z[t]\alpha[t])},
 #' with \eqn{p(y_t|\theta_t)}{p(y[t]|\theta[t])} being one of the following:
 #'
@@ -50,7 +50,7 @@
 #' @param distribution Specify the distribution of the observations. Default is "Gaussian".
 #' @param transform The functions of \code{KFAS} require diagonal covariance matrix \eqn{H_t}{H[t]}. If \eqn{H_t}{H[t]} is not diagonal, model can be transformed using one of the two options.
 #' Option \code{"ldl"} performs LDL decomposition for covariance matrix \eqn{H_t}{H[t]}, and multiplies the observation equation with the \eqn{L_t^{-1}}{L[t]^{-1}}, so
-#' \eqn{\epsilon_t ~ N(0,D_t)}{\epsilon[t] ~ N(0,D[t])}. Option \code{"augment"} adds \eqn{\epsilon_t}{\epsilon[t]} to the state vector, when
+#' \eqn{\epsilon_t \sim N(0,D_t)}{\epsilon[t] ~ N(0,D[t])}. Option \code{"augment"} adds \eqn{\epsilon_t}{\epsilon[t]} to the state vector, when
 #' \eqn{Q_t}{Q[t]} becomes block diagonal with blocks \eqn{Q_t}{Q[t]} and \eqn{H_t}{H[t]}. 
 #' In case of univariate series, option \code{"ldl"} only changes the \code{H_type} argument of the model to \code{"Diagonal"}. Default is \code{"none"} 
 #' which does no transformation but checks if \eqn{H} is diagonal. If not, \code{H_type} is set to \code{"Untransformed"}.

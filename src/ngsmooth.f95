@@ -5,11 +5,12 @@ aplus1,c,tol,info,yo,n2,nsim2,alphahat,alphavar,meany,vary,maxiter,convtol,nd,nd
 
     implicit none
 
+    integer, intent(in) ::  p, m, r, n,nnd,info,nsim,n2,nsim2,dist,maxiter,ndl
     integer, intent(in), dimension(n,1) :: ymiss
     integer, intent(in), dimension(n2) :: yo
     integer, intent(in), dimension(5) :: timevar
     integer, intent(in), dimension(ndl) :: nd
-    integer, intent(in) ::  p, m, r, n,nnd,info,nsim,n2,nsim2,dist,maxiter,ndl
+
     integer, intent(inout) :: rankp
     integer ::  t, i
     double precision, intent(in) :: tolf,tol,convtol

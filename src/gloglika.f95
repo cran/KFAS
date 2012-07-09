@@ -72,6 +72,12 @@ p, m, r, n, lik, tolf,rankp)
                         call dsyr('u',m,(-1.0d0/finf(j)),kinf(1:m,j),1,pirec,m) !pirec = pirec -kinf*kinf'/finf
                         lik = lik - 0.5d0*log(finf(j))
                         rankp = rankp -1
+                        do i = 1, m
+                            if(pirec(i,i) .LT. tolf) then
+                                pirec(i,1:m) = 0.0d0
+                                pirec(1:m,i) = 0.0d0
+                            end if
+                        end do
                     else
                         if (ft(j) .GT. 0.0d0) then
                             call daxpy(m,vt(j)/ft(j),kt(1:m,j),1,arec,1) !a_rec = a_rec + kt(:,i,t)*vt(:,t)/ft(i,t)

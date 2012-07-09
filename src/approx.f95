@@ -3,9 +3,9 @@ r, n, theta, u, ytilde, dist,maxiter,tolf,rankp,convtol)
 
     implicit none
 
+    integer, intent(in) ::  p, m, r, n,dist
     integer, intent(in), dimension(n,1) :: ymiss
     integer, intent(in), dimension(5) :: timevar
-    integer, intent(in) ::  p, m, r, n,dist
     integer, intent(inout) :: maxiter,rankp
     integer ::  i, k,rankp2,d, j
 

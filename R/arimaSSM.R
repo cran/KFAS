@@ -145,9 +145,10 @@ arimaSSM <- function(y, arima, H = NULL, Q = NULL, u = NULL,
     
     if(sum(dn)>0){
         diffuse<-which(diag(P1inf)==1)        
-        P1[-diffuse,-diffuse] <- (solve(a = diag((m-length(diffuse))^2) - kronecker(T[-diffuse,-diffuse,1], T[-diffuse,-diffuse,1]), b = c(matrix(R[-diffuse,,1],m,r) %*%Q[,,1]%*%t(matrix(R[-diffuse,,1],m,r)))))
+        P1[-diffuse,-diffuse] <- solve(a = diag((m-length(diffuse))^2) - matrix(kronecker(T[-diffuse,-diffuse,1], T[-diffuse,-diffuse,1]),(m-length(diffuse))^2,(m-length(diffuse))^2), 
+                                    b = c(matrix(R[-diffuse,,1],m-length(diffuse),r) %*%Q[,,1]%*%t(matrix(R[-diffuse,,1],m-length(diffuse),r))))
     } else {
-        P1[] <- (solve(a = diag(m^2) - matrix(kronecker(T[,,1], T[,,1]),m^2,m^2), b = c(matrix(R[,,1],m,r) %*%Q[,,1]%*%t(matrix(R[,,1],m,r)))))        
+        P1[] <- solve(a = diag(m^2) - matrix(kronecker(T[,,1], T[,,1]),m^2,m^2), b = c(matrix(R[,,1],m,r) %*%Q[,,1]%*%t(matrix(R[,,1],m,r))))       
     }
     
     if(!identical(distribution,"Gaussian")){

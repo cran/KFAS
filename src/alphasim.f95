@@ -5,10 +5,10 @@ p1inf, nnd,nsim2, epsplus, etaplus, aplus1, p, n, m, r, info,tolf,rankp,c,asim,t
 
     implicit none
 
+    integer, intent(in) :: p, m, r, n, nsim2,nnd,ndl
     integer, intent(in), dimension(n,p) :: ymiss
     integer, intent(in), dimension(5) :: timevar
     integer, intent(in), dimension(ndl) :: nd
-    integer, intent(in) :: p, m, r, n, nsim2,nnd,ndl
     integer, intent(inout) :: info,rankp
     integer ::  t, i, d, j,k
     double precision, intent(in) :: tolf,tol
