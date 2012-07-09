@@ -4,9 +4,9 @@ kinf, finf, d, j, p, m, n, r, tolf, etahat)
 
     implicit none
 
+    integer, intent(in) :: d, j, p, m, n,r
     integer, intent(in), dimension(n,p) :: ymiss
     integer, intent(in), dimension(5) :: timevar
-    integer, intent(in) :: d, j, p, m, n,r
     integer :: t, i
     double precision, intent(in) :: tolf
     double precision, intent(in), dimension(p,m,(n-1)*timevar(1)+1) :: zt

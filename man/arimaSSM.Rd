@@ -47,8 +47,8 @@
   using one of the two options. Option \code{"ldl"}
   performs LDL decomposition for covariance matrix
   \eqn{H_t}{H[t]}, and multiplies the observation equation
-  with the \eqn{L_t^{-1}}{L[t]^{-1}}, so \eqn{\epsilon_t ~
-  N(0,D_t)}{\epsilon[t] ~ N(0,D[t])}. Option
+  with the \eqn{L_t^{-1}}{L[t]^{-1}}, so \eqn{\epsilon_t
+  \sim N(0,D_t)}{\epsilon[t] ~ N(0,D[t])}. Option
   \code{"augment"} adds \eqn{\epsilon_t}{\epsilon[t]} to
   the state vector, when \eqn{Q_t}{Q[t]} becomes block
   diagonal with blocks \eqn{Q_t}{Q[t]} and \eqn{H_t}{H[t]}.

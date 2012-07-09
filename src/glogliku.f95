@@ -5,9 +5,9 @@ m, r, n, lik, tolf,rankp)
 
     implicit none
 
+    integer, intent(in) ::  m, r, n
     integer, intent(in), dimension(n,1) :: ymiss
     integer, intent(in), dimension(5) :: timevar
-    integer, intent(in) ::  m, r, n
     integer, intent(inout) :: rankp
     integer ::  t, i, d
     double precision, intent(in), dimension(n,1) :: yt
@@ -74,7 +74,12 @@ m, r, n, lik, tolf,rankp)
                     !call dger(m,m,(-1.0d0/finf(j,d)),kinf(1:m,j,d),1,kinf(1:m,j,d),1,pirec,m)
                     call dsyr('u',m,(-1.0d0/finf),kinf(1:m,1),1,pirec,m) !pirec = pirec -kinf*kinf'/finf
                     lik = lik - 0.5d0*log(finf)
-
+                    do i = 1, m
+                            if(pirec(i,i) .LT. tolf) then
+                                pirec(i,1:m) = 0.0d0
+                                pirec(1:m,i) = 0.0d0
+                            end if
+                        end do
                     rankp = rankp -1
                 else
                     if (ft .GT. 0.0d0) then

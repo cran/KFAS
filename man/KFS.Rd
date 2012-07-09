@@ -52,11 +52,13 @@
   y_{1})}{P[t]=Cov(\alpha[t] | y[t-1], \ldots , y[1])}.  }
   \item{Pinf}{Diffuse part of \eqn{P_t}{P[t]}. }
   \item{v}{Prediction errors \eqn{v_{i,t} = y_{i,t} -
-  Z_{i,t}a_{i,t},\quad i=1,\ldots,p}{v[i,t] = y[i,t] -
-  Z[i,t]a[i,t], i=1,\ldots,p}, \\ where
-  \eqn{a_{i,t}=E(\alpha_t | y_{i-1,t}, \ldots, y_{1,t},
-  y_{t-1}, \ldots , y_{1})}{a[i,t]=E(\alpha[t] | y[i-1,t],
-  \ldots, y[1,t], y[t-1], \ldots , y[1])}.  }
+  Z_{i,t}a_{i,t}, i=1,\ldots,p}{v[i,t] = y[i,t] -
+  Z[i,t]a[i,t], i=1,\ldots,p},
+
+  where \eqn{a_{i,t}=E(\alpha_t | y_{i-1,t}, \ldots,
+  y_{1,t}, \ldots , y_{1,1})}{a[i,t]=E(\alpha[t] |
+  y[i-1,t], \ldots, y[1,t], \ldots , y[1,1])}.  }
+
   \item{F}{Prediction error variances
   \eqn{Var(v_t)}{Var(v[t])}.  } \item{Finf}{Diffuse part of
   \eqn{F_t}{F[t]}.  } \item{d}{The last index of diffuse
@@ -65,41 +67,43 @@
   diffuse phase.  } \item{alphahat}{Smoothed estimates of
   states, \eqn{E(\alpha_t | y_1, \ldots , y_n)}{E(\alpha[t]
   | y[1], \ldots , y[n])}. Only computed if
-  \code{smooth="state"} or \code{smooth="both"}.  }
+  \code{smoothing="state"} or \code{smoothing="both"}.  }
   \item{V}{Covariances \eqn{Var(\alpha_t | y_1, \ldots ,
   y_n).}{Var(\alpha[t] | y[1], \ldots , y[n]).} Only
-  computed if \code{smooth="state"} or
-  \code{smooth="both"}.  } \item{etahat}{Smoothed
+  computed if \code{smoothing="state"} or
+  \code{smoothing="both"}.  } \item{etahat}{Smoothed
   disturbance terms \eqn{E(\eta_t | y_1, \ldots ,
   y_n)}{E(\eta[t] | y[1], \ldots , y[n])}.Only computed if
-  \code{smooth="disturbance"} or \code{smooth="both"}.  }
-  \item{V_eta}{Covariances \eqn{Var(\eta_t | y_1, \ldots ,
-  y_n)}{Var(\eta[t] | y[1], \ldots , y[n])}. Only computed
-  if \code{smooth="disturbance"} or \code{smooth="both"}.
+  \code{smoothing="disturbance"} or
+  \code{smoothing="both"}.  } \item{V_eta}{Covariances
+  \eqn{Var(\eta_t | y_1, \ldots , y_n)}{Var(\eta[t] | y[1],
+  \ldots , y[n])}. Only computed if
+  \code{smoothing="disturbance"} or \code{smooth="both"}.
   } \item{epshat}{Smoothed disturbance terms
   \eqn{E(\epsilon_{t} | y_1, \ldots , y_n)}{E(\epsilon[t] |
   y[1], \ldots , y[n])}. Only computed if
-  \code{smooth="disturbance"} or \code{smooth="both"}. }
-  \item{V_eps}{Diagonal elements of \eqn{Var(\epsilon_{t} |
-  y_1, \ldots , y_n)}{Var(\epsilon[t] | y[1], \ldots ,
-  y[n])}. Note that due to the diagonalization,
-  off-diagonal elements are zero. Only computed if
-  \code{smooth="disturbance"} or \code{smooth="both"}.  }
-  In addition, if argument \code{simplify=FALSE}, list
-  contains following components: \item{K}{Covariances
-  \eqn{Cov(\alpha_{t,i}, y_{t,i} | y_{i-1,t}, \ldots,
-  y_{1,t}, y_{t-1}, \ldots , y_{1}), \quad
-  i=1,\ldots,p}{Cov(\alpha[t,i], y[t,i] | y[i-1,t], \ldots,
-  y[1,t], y[t-1], \ldots , y[1]), i=1,\ldots,p}.  }
-  \item{Kinf}{Diffuse part of \eqn{K_t}{K[t]}.  }
-  \item{r}{Weighted sums of innovations \eqn{v_{t+1},
-  \ldots , v_{n}}{v[t+1], \ldots , v[n]}.  Notice that in
-  literature t in \eqn{r_t}{r[t]} goes from \eqn{0, \ldots,
-  n}. Here \eqn{t=1, \ldots, n+1}. Same applies to all r
-  and N variables.  } \item{r0, r1}{Diffuse phase
-  decomposition of \eqn{r_t}{r[t]}.  } \item{N}{Covariances
-  \eqn{Var(r_t)}{Var(r[t])} .  } \item{N0, N1, N2}{Diffuse
-  phase decomposition of \eqn{N_t}{N[t]}.  }
+  \code{smoothing="disturbance"} or
+  \code{smoothing="both"}. } \item{V_eps}{Diagonal elements
+  of \eqn{Var(\epsilon_{t} | y_1, \ldots ,
+  y_n)}{Var(\epsilon[t] | y[1], \ldots , y[n])}. Note that
+  due to the diagonalization, off-diagonal elements are
+  zero. Only computed if \code{smoothing="disturbance"} or
+  \code{smoothing="both"}.  } In addition, if argument
+  \code{simplify=FALSE}, list contains following
+  components: \item{K}{Covariances \eqn{Cov(\alpha_{t,i},
+  y_{t,i} | y_{i-1,t}, \ldots, y_{1,t}, y_{t-1}, \ldots ,
+  y_{1}), \quad i=1,\ldots,p}{Cov(\alpha[t,i], y[t,i] |
+  y[i-1,t], \ldots, y[1,t], y[t-1], \ldots , y[1]),
+  i=1,\ldots,p}.  } \item{Kinf}{Diffuse part of
+  \eqn{K_t}{K[t]}.  } \item{r}{Weighted sums of innovations
+  \eqn{v_{t+1}, \ldots , v_{n}}{v[t+1], \ldots , v[n]}.
+  Notice that in literature t in \eqn{r_t}{r[t]} goes from
+  \eqn{0, \ldots, n}. Here \eqn{t=1, \ldots, n+1}. Same
+  applies to all r and N variables.  } \item{r0,
+  r1}{Diffuse phase decomposition of \eqn{r_t}{r[t]}.  }
+  \item{N}{Covariances \eqn{Var(r_t)}{Var(r[t])} .  }
+  \item{N0, N1, N2}{Diffuse phase decomposition of
+  \eqn{N_t}{N[t]}.  }
 
   For non-Gaussian model, a list with the following
   components: \item{model}{Original state space model with

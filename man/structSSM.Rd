@@ -90,8 +90,8 @@
   using one of the two options. Option \code{"ldl"}
   performs LDL decomposition for covariance matrix
   \eqn{H_t}{H[t]}, and multiplies the observation equation
-  with the \eqn{L_t^{-1}}{L[t]^{-1}}, so \eqn{\epsilon_t ~
-  N(0,D_t)}{\epsilon[t] ~ N(0,D[t])}. Option
+  with the \eqn{L_t^{-1}}{L[t]^{-1}}, so \eqn{\epsilon_t
+  \sim N(0,D_t)}{\epsilon[t] ~ N(0,D[t])}. Option
   \code{"augment"} adds \eqn{\epsilon_t}{\epsilon[t]} to
   the state vector, when \eqn{Q_t}{Q[t]} becomes block
   diagonal with blocks \eqn{Q_t}{Q[t]} and \eqn{H_t}{H[t]}.
@@ -115,20 +115,20 @@
   The structural time series model has form
 
   \deqn{y_t = \mu_t + \gamma_t + \epsilon_t, \quad
-  \epsilon_t ~ N(0, H_t) }{y[t] = \mu[t] + \epsilon[t],
+  \epsilon_t \sim N(0, H_t) }{y[t] = \mu[t] + \epsilon[t],
   \epsilon[t] ~ N(0, H[t])}
 
-  \deqn{\mu_{t+1} = \mu_t + \nu_t + \xi_t, \quad \xi_t ~
+  \deqn{\mu_{t+1} = \mu_t + \nu_t + \xi_t, \quad \xi_t \sim
   N(0, Q_{level,t})}{\mu[t+1] = \mu[t] + \nu[t] + \xi[t],
   \xi[t] ~ N(0, Q[level,t])}
 
-  \deqn{\nu_{t+1} = \nu_t + \zeta_t, \quad \zeta_t ~ N(0,
-  Q_{slope,t})}{\nu[t+1] = \nu[t] + \zeta[t], \zeta[t] ~
-  N(0, Q[slope,t]) }
+  \deqn{\nu_{t+1} = \nu_t + \zeta_t, \quad \zeta_t \sim
+  N(0, Q_{slope,t})}{\nu[t+1] = \nu[t] + \zeta[t], \zeta[t]
+  ~ N(0, Q[slope,t]) }
 
   with seasonal component being either time domain form
   \deqn{\gamma_{t+1} = -\sum_{j=1}^{s-1}\gamma_{t+1-j} +
-  \omega_t, \quad \omega_t ~ N(0,Q_{seasonal,t}),
+  \omega_t, \quad \omega_t \sim N(0,Q_{seasonal,t}),
   }{\gamma[t+1] = -\gamma[t] - \ldots - \gamma[t-s+2] +
   \omega[t], \omega[t] ~ N(0,Q[seasonal,t]), }
 

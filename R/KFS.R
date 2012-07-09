@@ -32,8 +32,11 @@
 #' \item{a}{One step predictions of states, \eqn{a_t=E(\alpha_t | y_{t-1}, \ldots , y_{1})}{a[t]=E(\alpha[t] | y[t-1], \ldots , y[1])}.  } 
 #' \item{P}{Covariance matrices of predicted states, \eqn{P_t=Cov(\alpha_t | y_{t-1}, \ldots , y_{1})}{P[t]=Cov(\alpha[t] | y[t-1], \ldots , y[1])}.  } 
 #' \item{Pinf}{Diffuse part of \eqn{P_t}{P[t]}. } 
-#' \item{v}{Prediction errors \eqn{v_{i,t} = y_{i,t} - Z_{i,t}a_{i,t},\quad i=1,\ldots,p}{v[i,t] = y[i,t] - Z[i,t]a[i,t], i=1,\ldots,p}, \\
-#' where \eqn{a_{i,t}=E(\alpha_t | y_{i-1,t}, \ldots, y_{1,t}, y_{t-1}, \ldots , y_{1})}{a[i,t]=E(\alpha[t] | y[i-1,t], \ldots, y[1,t], y[t-1], \ldots , y[1])}.  } 
+#' \item{v}{Prediction errors \eqn{v_{i,t} = y_{i,t} - Z_{i,t}a_{i,t}, i=1,\ldots,p}{v[i,t] = y[i,t] - Z[i,t]a[i,t], i=1,\ldots,p},
+#' 
+#' 
+#' where \eqn{a_{i,t}=E(\alpha_t | y_{i-1,t}, \ldots, y_{1,t}, \ldots , y_{1,1})}{a[i,t]=E(\alpha[t] | y[i-1,t], \ldots, y[1,t], \ldots , y[1,1])}.  } 
+#' 
 #' \item{F}{Prediction error variances \eqn{Var(v_t)}{Var(v[t])}.  } 
 #' \item{Finf}{Diffuse part of \eqn{F_t}{F[t]}.  } 
 #' \item{d}{The last index of diffuse phase, i.e. the non-diffuse phase began from time \eqn{d+1}.  } 

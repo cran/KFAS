@@ -16,11 +16,14 @@ subroutine ldl(a,n,tol,info)
             r(p)=d(p)*a(k,p)
         end do
         d(k)=a(k,k) - sum(a(k,1:(k-1))*r(1:(k-1)))
-        if(abs(d(k)) .GT. tol) then
+        if(d(k) .GT. tol) then
             do i = k+1, n
                 a(i,k)=(a(i,k)-sum(a(i,1:(k-1))*r(1:(k-1))))/d(k)
             end do
         else
+            if(d(k) .LT. -0.5d0) then
+                info = -1
+            end if
             d(k) = 0.0d0
             a((k+1):n,k)=0.0d0
         end if
@@ -29,8 +32,6 @@ subroutine ldl(a,n,tol,info)
         a(k,k) = d(k)
         a(k,(k+1):n) = 0.0d0
     end do
-    if(minval(d) .LT. -tol) then
-        info=-1
-    end if
+
 
 end subroutine ldl

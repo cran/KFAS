@@ -4,10 +4,10 @@ p, n, m, r, info,tolf,rankp,asim,tol,nd,ndl)
 
     implicit none
   
+      integer, intent(in) :: p, m, r, n, nnd,nsim,ndl
     integer, intent(in), dimension(n,1) :: ymiss
     integer, intent(in), dimension(5) :: timevar
      integer, intent(in), dimension(ndl) :: nd
-    integer, intent(in) :: p, m, r, n, nnd,nsim,ndl
     integer, intent(inout) :: info,rankp
     integer ::  t, i, d, j,k
     double precision, intent(in) :: tolf,tol
