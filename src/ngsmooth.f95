@@ -1,123 +1,107 @@
-subroutine ngsmooth(yt, ymiss, timevar, zt, tt, rtv, qt, a1, p1,p1inf, u, theta,&
-dist, p, n, m, r, tolf,rankp, nnd,nsim,epsplus,etaplus,&
-aplus1,c,tol,info,yo,n2,nsim2,alphahat,alphavar,meany,vary,maxiter,convtol,nd,ndl)
+! Smoothing of non-gaussian model
 
+subroutine ngsmooth(yt, ymiss, timevar, zt, tt, rtv, qt, a1, p1,p1inf, u, theta,&
+dist, p,n, m, r, rankp, nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,maxiter,&
+convtol,nd,ndl,alphahat,alphavar,thetahat,thetavar,yhat,yvar,smootha,smooths,smoothy)
 
     implicit none
 
-    integer, intent(in) ::  p, m, r, n,nnd,info,nsim,n2,nsim2,dist,maxiter,ndl
-    integer, intent(in), dimension(n,1) :: ymiss
-    integer, intent(in), dimension(n2) :: yo
+    integer, intent(in) ::  p,m, r, n,nnd,info,nsim,maxiter,ndl,smootha,smooths,smoothy
+    integer, intent(in), dimension(p) :: dist
+    integer, intent(in), dimension(n,p) :: ymiss
     integer, intent(in), dimension(5) :: timevar
     integer, intent(in), dimension(ndl) :: nd
-
     integer, intent(inout) :: rankp
-    integer ::  t, i
-    double precision, intent(in) :: tolf,tol,convtol
-    double precision, intent(in), dimension(n) :: u,theta
-    double precision, intent(in), dimension(n,1) :: yt
-    double precision, intent(in), dimension(1,m,(n-1)*timevar(1)+1) :: zt
-
+    integer ::  t, j
+    double precision, intent(in) :: tol,convtol
+    double precision, intent(in), dimension(n,p) :: u,theta
+    double precision, intent(in), dimension(n,p) :: yt
+    double precision, intent(in), dimension(p,m,(n-1)*timevar(1)+1) :: zt
     double precision, intent(in), dimension(m,m,(n-1)*timevar(3)+1) :: tt
     double precision, intent(in), dimension(m,r,(n-1)*timevar(4)+1) :: rtv
     double precision, intent(in), dimension(r,r,(n-1)*timevar(5)+1) :: qt
     double precision, intent(in), dimension(m) :: a1
     double precision, intent(in), dimension(m,m) ::  p1,p1inf
     double precision, intent(in),dimension(nsim) :: c
-    double precision, intent(inout), dimension(1,n,nsim) :: epsplus
+    double precision, intent(inout), dimension(p,n,nsim) :: epsplus
     double precision, intent(inout), dimension(r,n,nsim) :: etaplus
     double precision, intent(inout), dimension(m,nsim) :: aplus1
-    double precision, intent(inout), dimension(m,n) :: alphahat
-    double precision, intent(inout), dimension(m,m,n) :: alphavar
-    double precision, intent(inout), dimension(n) :: meany,vary
-    double precision, dimension(n,1) :: ytilde
-    double precision, dimension(1,1,n) :: htilde
-    double precision, dimension(m,n,nsim2) :: asim
-    double precision, dimension(n,nsim2) :: thetasim
-
-    double precision, dimension(n2) :: dn,ueth,uethk
-    double precision, dimension(nsim2) :: w
-    double precision :: help
-
+    double precision, intent(inout), dimension((m-1)*smootha+1,(n-1)*smootha+1) :: alphahat
+    double precision, intent(inout), dimension((m-1)*smootha+1,(m-1)*smootha+1,(n-1)*smootha+1) :: alphavar
+    double precision, intent(inout), dimension((p-1)*smoothy+1,(n-1)*smoothy+1) :: yhat
+    double precision, intent(inout), dimension((p-1)*smoothy+1,(p-1)*smoothy+1,(n-1)*smoothy+1) :: yvar
+    double precision, intent(inout), dimension((p-1)*smooths+1,(n-1)*smooths+1) :: thetahat
+    double precision, intent(inout), dimension((p-1)*smooths+1,(p-1)*smooths+1,(n-1)*smooths+1) :: thetavar
+    double precision, dimension(smootha*m+(1-smootha)*p,n,4*nsim) :: sim
+    double precision, dimension(smootha*p+(1-smootha),n,4*nsim*smootha+(1-smootha)) :: osim
+    double precision, dimension(4*nsim) :: w
+    double precision, dimension(p,m) :: pm
     double precision, external :: ddot
 
-    htilde=0.0d0
-    ytilde=0.0d0
-    call approx(yt, ymiss, timevar, zt, tt, rtv, htilde, qt, a1, p1,p1inf, p,  m, &
-    r, n, theta, u, ytilde, dist,maxiter,tolf,rankp,convtol)
+    if(smootha==1) then
 
-    call alphasim(ymiss,timevar, ytilde, zt, htilde, tt, rtv, qt, a1, p1, &
-    p1inf, nnd, nsim, epsplus, etaplus, aplus1, p, &
-    n, m, r, info, tolf,rankp,c,asim,tol,nd,ndl)
+        call isample(yt, ymiss, timevar, zt, tt, rtv, qt, a1, p1,p1inf, u, dist, &
+        p, n, m, r, theta, maxiter,rankp,convtol, nnd,nsim,epsplus,etaplus,&
+        aplus1,c,tol,info,1,w,sim,nd,ndl,4,m)
 
-    do i=1,nsim2
-        do t=1,n
-            thetasim(t,i) = ddot(m,zt(1,1:m,(t-1)*timevar(1)+1),1,asim(1:m,t,i),1)
-        end do
-    end do
+        w = w/sum(w)
 
-    dn= (ytilde(yo,1)-theta(yo))**2
+        call covmeanwprotect(sim,w,m,n,4*nsim,alphahat,alphavar)
 
-    select case(dist)
-        case(1)
-            ueth = exp(theta(yo))
-            !dp = ueth**yt(yo,1)*exp(-ueth)
-            do i=1,nsim2 !!!
-                !uethk = exp(thetasim(yo,i))
-                w(i) = product((exp(thetasim(yo, i)-theta(yo))**yt(yo,1)*exp(-u(yo)*(exp(thetasim(yo,i))-ueth)))/ &
-                (exp(-0.5d0/htilde(1,1,yo)*( (ytilde(yo,1)-thetasim(yo, i))**2 - dn ))))
-            end do
-        case(2)
-            ueth = exp(theta(yo))/(1.0d0+exp(theta(yo)))
-            do i=1,nsim2
-                uethk = exp(thetasim(yo,i))/(1.0d0+exp(thetasim(yo,i)))
-                w(i) = product( ((uethk/ueth)**yt(yo,1)*((1.0d0-uethk)/(1.0d0-ueth))**(u(yo)-yt(yo,1))) &
-                /(exp(-0.5d0/htilde(1,1,yo)*((ytilde(yo,1)-thetasim(yo, i))**2 -dn ))))
-            end do
-        case(3)
-            ueth = 1-exp(theta(yo))
-    end select
-
-
-    w = w/sum(w)
-
-    alphahat=0.0d0
-    alphavar=0.0d0
-
-    do i = 1, nsim2
-        alphahat(1:m,1:n) = alphahat(1:m,1:n) + asim(1:m,1:n,i)*w(i)
-    end do
-    do t = 1, n
-        do i = 1, nsim2
-            call dsyr('u',m,w(i),asim(1:m,t,i),1,alphavar(1:m,1:m,t),m)
-        end do
-        call dsyr('u',m,-1.0d0,alphahat(1:m,t),1,alphavar(1:m,1:m,t),m)
-        do i = 2, m
-            alphavar(i,1:(i-1),t)=alphavar(1:(i-1),i,t)
-        end do
-    end do
-    meany=0.0d0
-    vary=0.0d0
-    select case(dist)
-        case(1)
+        if(smooths==1) then
             do t = 1, n
-                do i = 1, nsim2
-                    meany(t) = meany(t) + exp(ddot(m,zt(1,1:m,(t-1)*timevar(1)+1),1,asim(1:m,t,i),1))*w(i)
+                call dgemv('n',p,m,1.0d0,zt(:,:,(t-1)*timevar(1)+1),p,alphahat(:,t),1,0.0d0,thetahat(:,t),1)
+                call dsymm('r','u',p,m,1.0d0,alphavar(:,:,t),m,zt(:,:,(t-1)*timevar(1)+1),p,0.0d0,pm,p)
+                call dgemm('n','t',p,p,m,1.0d0,pm,p,zt(:,:,(t-1)*timevar(1)+1),p,0.0d0,thetavar(:,:,t),p)
+            end do
+        end if
+
+        if(smoothy==1) then
+            do t = 1, n
+                do j = 1,p
+                    call dgemv('t',m,4*nsim,1.0d0,sim(:,t,:),m,zt(j,:,(t-1)*timevar(1)+1),1,0.0d0,osim(j,t,:),1)
                 end do
             end do
-            meany = meany*u
-            vary = meany
-        case(2)
-            do t = 1, n
-                do i = 1, nsim2
-                    help = exp(ddot(m,zt(1,1:m,(t-1)*timevar(1)+1),1,asim(1:m,t,i),1))
-                    vary(t) =  vary(t) + help/((1+help)**2)*w(i)
-                    meany(t) = meany(t) + help/(1+help)*w(i)
-                end do
+
+            do j= 1,p
+                select case(dist(j))
+                    case(1)
+
+                    case(3)
+                        osim(j,:,:) = exp(osim(j,:,:))/(1.0d0+exp(osim(j,:,:)))
+                    case default
+                        osim(j,:,:) = exp(osim(j,:,:))
+                end select
             end do
-            meany = meany*u
-            vary = vary*u
-    end select
+            call covmeanw(osim,w,p,n,4*nsim,yhat,yvar)
+        end if
+    else
+        call isample(yt, ymiss, timevar, zt, tt, rtv, qt, a1, p1,p1inf, u, dist, &
+        p, n, m, r, theta, maxiter,rankp,convtol, nnd,nsim,epsplus,etaplus,&
+        aplus1,c,tol,info,1,w,sim,nd,ndl,5,p)
+
+        w = w/sum(w)
+
+        if(smooths==1) then
+            call covmeanwprotect(sim,w,p,n,4*nsim,thetahat,thetavar)
+        end if
+
+        if(smoothy==1) then
+            do j= 1,p
+                select case(dist(j))
+                    case(1)
+
+                    case(3)
+                        sim(j,:,:) = exp(sim(j,:,:))/(1.0d0+exp(sim(j,:,:)))
+                    case default
+                        sim(j,:,:) = exp(sim(j,:,:))
+                end select
+            end do
+            call covmeanw(sim,w,p,n,4*nsim,yhat,yvar)
+        end if
+
+    end if
+
 
 
 

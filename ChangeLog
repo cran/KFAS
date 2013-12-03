@@ -1,0 +1,23 @@
+Changes from Version 1.0.0 to 1.0.2:
+ * Fixed a bug in SSMarima which caused function to fail if there was 
+   no ar part and stationarity option was TRUE.
+ * Fixed a bug regarding the deviance residuals for Gaussian model.
+ * Fixed a bugs in logLik.SSModel and transformSSM relating to the model transformation. 
+ * Fixed a bug in KFS signal smoothing regarding the multivariate model with
+   missing observations with time invariant Z and non-diagonal H.
+ * SSModel should now keep the time series attributes of the response variable.
+ * F is now set to 0 if F is smaller than the machine epsilon.
+ * transformSSM now keeps the proper dimnames of the system matrices.
+ * Changed the variable mu to muhat so it is similar to alphahat, thetahat etc.
+ * KFS now always returns the log-likelihood for the Gaussian models.
+ * Fixed a bug in residuals.KFS concerning the standardized deviance residuals.
+ * Fixed a bug in predict.SSModel concerning the interval computation for 
+   non-Gaussian models without simulation.
+ * Fixed a bug in SSMregression and SSMcustom where a test of equality of 
+   integer and double variables was done using function identical instead of ==.
+ * Fixed a bug in predict.SSModel regarding the standard error computations 
+   without simulation for non-Gaussian models.
+ * Added filtering for non-Gaussian models.
+ * Changed the filtering and smoothing options on KFS.
+ * Added option to simulate from predictive distributions.
+ * Other minor bug typo fixes.
