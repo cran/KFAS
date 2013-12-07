@@ -11,25 +11,25 @@
 #' whereas observations \eqn{y_t}{Z[t]} and system matrices \eqn{Z_t}{Z[t]} are multiplied with the inverse of \eqn{L_t}{L[t]}.
 #'
 #'
-#' @useDynLib KFAS ldlssm
 #' @export
 #' @param object State space model object from function SSModel.
-#' @param type Option \code{"ldl"} performs LDL decomposition for covariance
+#' @param type Option \code{'ldl'} performs LDL decomposition for covariance
 #' matrix \eqn{H_t}{H[t]}, and multiplies the observation equation with the \eqn{L_t^{-1}}{L[t]^-1}, so
-#' \eqn{\epsilon_t^* \sim N(0,D_t)}{\epsilon[t]* ~ N(0,D[t])}. Option \code{"augment"} adds \eqn{\epsilon_t}{\epsilon[t]} to the state vector, when
+#' \eqn{\epsilon_t^* \sim N(0,D_t)}{\epsilon[t]* ~ N(0,D[t])}. Option \code{'augment'} adds \eqn{\epsilon_t}{\epsilon[t]} to the state vector, when
 #' \eqn{Q_t}{Q[t]} becomes block diagonal with blocks \eqn{Q_t}{Q[t]} and \eqn{H_t}{H[t]}.
-#' In case of univariate series, option \code{"ldl"} only changes the \code{H_type} argument of the model to \code{"Diagonal"}.
 #' @return \item{model}{Transformed model.}
 transformSSM <- function(object, type = c("ldl", "augment")) {
-    if(object$distribution!="Gaussian")
-        stop("Nothing to transform as matrix H is not defined for non-Gaussian model.")
+    if (any(object$distribution != "gaussian")) 
+        stop("Nothing to transform as matrix H is not defined for non-gaussian model.")
+    
+    is.SSModel(object, return.logical = FALSE)
     
     type <- match.arg(type, choices = c("ldl", "augment"))
     
-    p <- object$p
-    n <- object$n
-    m <- object$m
-    r <- object$k
+    p <- attr(object, "p")
+    n <- attr(object, "n")
+    m <- attr(object, "m")
+    r <- attr(object, "k")
     
     tv <- array(0, dim = 5)
     tv[1] <- dim(object$Z)[3] > 1
@@ -41,7 +41,7 @@ transformSSM <- function(object, type = c("ldl", "augment")) {
     
     
     if (type == "ldl") {
-        if (p > 1) { 
+        if (p > 1) {
             yt <- t(object$y)
             ymiss <- is.na(yt)
             tv[1] <- max(tv[1], tv[2])
@@ -65,9 +65,9 @@ transformSSM <- function(object, type = c("ldl", "augment")) {
                 hchol <- rep(0, n)
                 uniqs <- numeric(nh)
                 for (i in 1:nh) {
-                    nhn <- which(colSums(ymiss == positions[, i]) == p)
-                    hchol[nhn] <- i
-                    uniqs[i] <- nhn[1]  #which(hchol==i)[1]
+                  nhn <- which(colSums(ymiss == positions[, i]) == p)
+                  hchol[nhn] <- i
+                  uniqs[i] <- nhn[1]  #which(hchol==i)[1]
                 }
             }
             
@@ -77,33 +77,29 @@ transformSSM <- function(object, type = c("ldl", "augment")) {
             yobs <- array(1:p, c(p, n))
             if (sum(ymiss) > 0) 
                 for (i in 1:n) {
-                    if (ydims[i] != p && ydims[i] != 0) 
-                        yobs[1:ydims[i], i] <- yobs[!ymiss[, i], i]
-                    if (ydims[i] < p) 
-                        yobs[(ydims[i] + 1):p, i] <- NA
+                  if (ydims[i] != p && ydims[i] != 0) 
+                    yobs[1:ydims[i], i] <- yobs[!ymiss[, i], i]
+                  if (ydims[i] < p) 
+                    yobs[(ydims[i] + 1):p, i] <- NA
                 }
             
             
             unidim <- ydims[uniqs]
             hobs <- yobs[, uniqs, drop = FALSE]
-            storage.mode(yobs)<-storage.mode(hobs)<-storage.mode(hchol)<-"integer"
-            out <- .Fortran("ldlssm", NAOK = TRUE, yt = yt, ydims = ydims, yobs = yobs, 
-                    tv = as.integer(tv), Zt = Z, p = p, m = m, n = n, ichols = ichols, 
-                    nh = as.integer(nh), hchol = hchol, unidim = as.integer(unidim), 
-                    info = as.integer(0), hobs = hobs, tol0 = object$tol0)
-            if (out$info != 0) 
-                stop("Error in diagonalization of H. Try option type=\"augment\".")
+            storage.mode(yobs) <- storage.mode(hobs) <- storage.mode(hchol) <- "integer"
+            out <- .Fortran(fldlssm, NAOK = TRUE, yt = yt, ydims = ydims, yobs = yobs, tv = as.integer(tv), Zt = Z, p = as.integer(p), m = as.integer(m), 
+                n = as.integer(n), ichols = ichols, nh = as.integer(nh), hchol = hchol, unidim = as.integer(unidim), info = as.integer(0), 
+                hobs = hobs, tol = max(abs(apply(object$H,3,diag))) * .Machine$double.eps)
+            if (out$info == -1) 
+                stop("Error in diagonalization of H. Matrix is not positive semidefinite.")
             
             H <- array(0, c(p, p, ((n - 1) * tv[2] + 1)))
-            for (t in 1:((n - 1) * tv[2] + 1)) diag(H[, , t]) <- diag(out$ichols[,, out$hchol[t]])
-            attry<-attributes(object$y)
+            for (t in 1:((n - 1) * tv[2] + 1)) diag(H[, , t]) <- diag(out$ichols[, , out$hchol[t]])
+            attry <- attributes(object$y)
             object$y <- t(out$yt)
-            attributes(object$y)<-attry
+            attributes(object$y) <- attry
             object$Z <- out$Z
             object$H <- H
-            object$H_type <- "LDL decomposed"
-        } else {
-            object$H_type <- "Diagonal"
         }
     } else {
         T <- array(object$T, dim = c(m, m, (n - 1) * tv[3] + 1))
@@ -140,19 +136,18 @@ transformSSM <- function(object, type = c("ldl", "augment")) {
         object$T <- Tt2
         object$R <- Rt2
         object$Q <- Qt2
-        object$m <- m2
-        object$k <- r2
-        if(object$p==1){
-            rownames(a12)<-c(rownames(object$a1),"eps")
+        attr(object, "m") <- m2
+        attr(object, "k") <- r2
+        if (attr(object, "p") == 1) {
+            rownames(a12) <- c(rownames(object$a1), "eps")
         } else {
-            rownames(a12)<-c(rownames(object$a1),paste0(rep("eps.",object$p),1:object$p))
+            rownames(a12) <- c(rownames(object$a1), paste0(rep("eps.", attr(object, "p")), 1:attr(object, "p")))
         }
         object$a1 <- a12
         object$P1 <- P12
         object$P1inf <- P1inf2
-        object$H_type <- "Augmented"
         
     }
     
-    object
+    invisible(object)
 } 

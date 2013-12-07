@@ -2,7 +2,7 @@
 \name{boat}
 \alias{boat}
 \title{Oxford-Cambridge boat race results 1829-2000}
-\format{An time series object containing 172 observations.}
+\format{A time series object containing 172 observations.}
 \source{
   http://www.ssfpack.com/DKbook.html
 }

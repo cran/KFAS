@@ -1,37 +1,36 @@
+! LDL decomposition
 subroutine ldl(a,n,tol,info)
   
     implicit none
   
     integer, intent(in) :: n
     integer, intent(inout) :: info
-    integer :: p,k,i
-    double precision, dimension(n) :: d,r
+    integer :: i,j,k
+    double precision :: di,tmp
     double precision, intent(inout), dimension(n,n) :: a
     double precision, intent(in) :: tol
-  
-    d=0.0d0
-    r=0.0d0
-    do k = 1, n
-        do p = 1,k-1
-            r(p)=d(p)*a(k,p)
-        end do
-        d(k)=a(k,k) - sum(a(k,1:(k-1))*r(1:(k-1)))
-        if(d(k) .GT. tol) then
-            do i = k+1, n
-                a(i,k)=(a(i,k)-sum(a(i,1:(k-1))*r(1:(k-1))))/d(k)
-            end do
+
+    do i = 1, n
+        di=a(i,i)
+        if(abs(di)<=tol) then
+            a(i,:) = 0.0d0
+            a(:,i) = 0.0d0
         else
-            if(d(k) .LT. -0.5d0) then
-                info = -1
-            end if
-            d(k) = 0.0d0
-            a((k+1):n,k)=0.0d0
+            do j = i+1, n
+                tmp = a(j,i)/di
+                a(j,i) = tmp
+                a(j,j) = a(j,j) - tmp**2*di
+                do k = j+1, n
+                    a(k,j) = a(k,j) - tmp*a(k,i)
+                end do
+            end do
         end if
     end do
-    do k = 1,n
-        a(k,k) = d(k)
-        a(k,(k+1):n) = 0.0d0
+    do i = 1,n
+        a(i,(i+1):n) = 0.0d0
+        if(a(i,i)<0.0d0) then
+            info = -1
+        end if
     end do
-
 
 end subroutine ldl

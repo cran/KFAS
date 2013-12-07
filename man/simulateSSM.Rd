@@ -1,16 +1,20 @@
 \name{simulateSSM}
 \alias{simulateSSM}
-\title{Simulation of a Gaussian State Space Model}
+\title{Simulation of a gaussian State Space Model}
 \usage{
   simulateSSM(object,
-    sim = c("states", "disturbances", "observations"),
-    nsim = 1, antithetics = FALSE, conditional = TRUE)
+    type = c("states", "signals", "disturbances", "observations", "epsilon", "eta"),
+    filtered = FALSE, nsim = 1, antithetics = FALSE,
+    conditional = TRUE)
 }
 \arguments{
-  \item{object}{Gaussian state space object.}
+  \item{object}{gaussian state space object.}
 
-  \item{sim}{What to simulate. Note that all the
-  simulations are done independently.}
+  \item{type}{What to simulate.}
+
+  \item{filtered}{Simulate from
+  \eqn{p(\alpha_t|y_{t-1},...,y_1)} instead of
+  \eqn{p(\alpha|y)}.}
 
   \item{nsim}{Number of independent samples. Default is 1.}
 
@@ -23,13 +27,18 @@
   \code{KFS}, and all the observations are removed from the
   model. Default is TRUE.}
 }
+\value{
+  An n x k x nsim array containing the simulated series,
+  where k is number of observations, signals, states or
+  disturbances.
+}
 \description{
-  Function \code{simulateSMM} simulates states,
-  disturbances or missing observations of the Gaussian
-  state space object conditionally on the data.
+  Function \code{simulateSMM} simulates states, signals,
+  disturbances or missing observations of the gaussian
+  state space model.
 }
 \details{
-  Simulation smoother algorithm is from article by J.
+  Simulation smoother algorithm is based to article by J.
   Durbin and S.J. Koopman (2002).
 
   Function can use two antithetic variables, one for

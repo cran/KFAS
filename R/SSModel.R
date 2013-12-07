@@ -1,170 +1,259 @@
-#' Create a State Space Model Object of class \code{SSModel}
+#' Create a State Space Model Object of Class SSModel
 #'
 #' Function \code{SSModel} creates a state space object object of class \code{SSModel}
 #' which can be used as an input object for various functions of \code{KFAS} package.
 #' 
-#' The custom state space model is constructed by using the given system matrices \code{Z}, \code{H}, \code{T}, \code{R}, \code{Q}, 
-#' \code{a1}, \code{P1} and \code{P1inf}.
-#' Matrix or scalar \code{Z} (array in case of time-varying \code{Z}) is used to determine the number of states \eqn{m}.  
-#' If some of the other elements of the object are missing, \code{SSModel} uses default values which are identity matrix for 
-#' \code{T}, \code{R} (or \eqn{k} first columns of identity matrix) and \code{P1inf}, and zero matrix for \code{H}, \code{Q}, \code{P1} and , \code{a1}. 
-#' If \code{P1} is given and \code{P1inf} is not, the it is assumed to be zero matrix. If \code{Q} is given, 
-#' it is used to define \eqn{r}, the dimensions of \code{Q}, which can be smaller than \eqn{m} (defaults to \eqn{m}).
-#'
-#' The linear Gaussian state space model is given by
-#' 
-#' \deqn{y_t = Z_t \alpha_t + \epsilon_t,}{y[t] = Z[t]\alpha[t] + \epsilon[t], (observation equation)}
-#' 
-#' \deqn{\alpha_{t+1} = T_t \alpha_t + R_t \eta_t,}{\alpha[t+1] = T[t]\alpha[t] + R[t]\eta[t], (transition equation)}
-#' 
-#' where \eqn{\epsilon_t \sim N(0,H_t)}{\epsilon[t] ~ N(0,H[t])}, \eqn{\eta_t \sim N(0,Q_t)}{\eta[t] ~ N(0,Q[t])} 
-#' and \eqn{\alpha_1 \sim N(a_1,P_1)}{\alpha[1] ~ N(a[1],P[1])} independently of each other. In case of non-Gaussian observations,
-#' the observation equation is of form \eqn{p(y_t|\theta_t) = p(y_t|Z_t\alpha_t)}{p(y[t]|\theta[t]) = p(y[t]|Z[t]\alpha[t])},
-#' with \eqn{p(y_t|\theta_t)}{p(y[t]|\theta[t])} being one of the following:
-#'
-#' If observations are Poisson distributed, parameter of Poisson distribution
-#' is \eqn{u_t\lambda_t}{u[t]\lambda[t]} and \eqn{\theta_t = log(\lambda_t)}{\theta[t]=log(\lambda[t])}. 
-#'
-#' If observations are from binomial distribution, \eqn{u} is a vector
-#' specifying number the of trials at times \eqn{1,\ldots,n}, and \eqn{\theta_t =
-#' log[\pi_t/(1-\pi_t)]}{\theta[t] = log(\pi[t]/(1-\pi[t]))}, where \eqn{\pi_t}{pi[t]} is the probability of success at time \eqn{t}.
-#'
-#' For non-Gaussian models \eqn{u_t=1}{u[t]=1} as a default. For Gaussian models, parameter is omitted.
-#'
-#' Only univariate observations are supported when observation equation is non-Gaussian.
+#' Formula of the model can contain the usual regression part 
+#' and additional functions defining different types of components of the model, named as
+#' \code{SSMarima}, \code{SSMcustom}, \code{SSMcycle}, \code{SSMregression}, \code{SSMseasonal} and \code{SSMtrend}. See examples.
 #'
 #' @export
-#' @seealso \code{\link{arimaSSM}} for state space representation of ARIMA model, \code{\link{regSSM}} 
-#' for state space representation of a regression model, and \code{\link{structSSM}} for structural time series model.
-#' @param y A time series object of class \code{ts}, or a object that can be coerced to such.
-#' @param Z System matrix or array of observation equation.
-#' @param H Covariance matrix or array of disturbance terms \eqn{\epsilon_t}{\epsilon[t]} of observation equation. Omitted in case of non-Gaussian distributions. Augment the state vector if you want to add additional noise.
-#' @param T System matrix or array of transition equation.
-#' @param R System matrix or array of transition equation.
-#' @param Q Covariance matrix or array of disturbance terms \eqn{\eta_t}{\eta[t]}.
-#' @param a1 Expected value of the initial state vector \eqn{\alpha_1}{\alpha[1]}.
-#' @param P1 Covariance matrix of \eqn{\alpha_1}{\alpha[1]}.  In the diffuse case the non-diffuse part of \eqn{P_1}{P[1]}.
-#' @param P1inf Diffuse part of \eqn{P_1}{P[1]}. Diagonal matrix with ones on diagonal elements which correspond to the unknown initial states.
-#' @param u Only used with non-Gaussian distribution. See details.
+#' @rdname SSModel
+#' @name SSModel
+#' @seealso \code{\link{KFAS}} for examples.
+#' @param formula an object of class \code{\link{formula}} containing the symbolic description of the model. See details and examples for special functions used in model construction.
+#' @param data an optional data frame, list or environment containing the variables in the model.
+#' @param H covariance matrix or array of disturbance terms \eqn{\epsilon_t}{\epsilon[t]} of observation equation. Omitted in case of non-gaussian distributions. Augment the state vector if you want to add additional noise.
+#' @param u additional parameters for non-gaussian models. See details in \code{\link{KFAS}}.
+#' @param distribution a vector of distributions of the observations. Default is \code{rep('gaussian',p)}.
+#' @param tol a tolerance parameter for a diffuse phase. Smallest value of Finf not counted for zero. Defaults to \code{.Machine$double.eps^0.5}.
 #' 
-#' @param distribution Specify the distribution of the observations. Default is "Gaussian".
-#' @param transform The functions of \code{KFAS} require diagonal covariance matrix \eqn{H_t}{H[t]}. If \eqn{H_t}{H[t]} is not diagonal, model can be transformed using one of the two options.
-#' Option \code{"ldl"} performs LDL decomposition for covariance matrix \eqn{H_t}{H[t]}, and multiplies the observation equation with the \eqn{L_t^{-1}}{L[t]^{-1}}, so
-#' \eqn{\epsilon_t \sim N(0,D_t)}{\epsilon[t] ~ N(0,D[t])}. Option \code{"augment"} adds \eqn{\epsilon_t}{\epsilon[t]} to the state vector, when
-#' \eqn{Q_t}{Q[t]} becomes block diagonal with blocks \eqn{Q_t}{Q[t]} and \eqn{H_t}{H[t]}. 
-#' In case of univariate series, option \code{"ldl"} only changes the \code{H_type} argument of the model to \code{"Diagonal"}. Default is \code{"none"} 
-#' which does no transformation but checks if \eqn{H} is diagonal. If not, \code{H_type} is set to \code{"Untransformed"}.
-#' @param tolF Tolerance parameter for Finf.  Smallest value not counted for zero.
-#' @param tol0 Tolerance parameter for LDL decomposition, determines which diagonal values are counted as zero.
-#' @return object of class \code{SSModel} with elements 
-SSModel <- function(y, Z = NULL, H = NULL, T = NULL, 
-        R = NULL, Q = NULL, a1 = NULL, P1 = NULL, P1inf = NULL, u = NULL, 
-        distribution = c("Gaussian", "Poisson", "Binomial"), 
-        transform = c("none", "ldl", "augment"), tolF = .Machine$double.eps^0.5, tol0 = .Machine$double.eps^0.5) {    
+#' @param index a vector indicating for which series the corresponding components are constructed.
+#' @param type for cycle, seasonal, trend and regression components, character string defining if \code{'distinct'} or \code{'common'} states are used for different series.
+#' 
+#' @param Q for arima, cycle and seasonal component, a \eqn{p \times p}{p x p} covariance matrix of the disturbances (or in the time varying case \eqn{p \times p \times n}{p x p x n} array), where where p=\code{length(index)}.
+#'  For trend component, list of length \code{degree} containing the \eqn{p \times p} or \eqn{p \times p \times n} covariance matrices. For a custom component, arbitrary covariance matrix or array of disturbance terms \eqn{\eta_t}{\eta[t]}
+#' @param a1 optional \eqn{m \times 1}{m x 1} matrix giving the expected value of the initial state vector \eqn{\alpha_1}{\alpha[1]}.
+#' @param P1 optional \eqn{m \times m}{m x m} matrix giving the covariance matrix of \eqn{\alpha_1}{\alpha[1]}.  In the diffuse case the non-diffuse part of \eqn{P_1}{P[1]}.
+#' @param P1inf optional \eqn{m \times m}{m x m} matrix giving the diffuse part of \eqn{P_1}{P[1]}. Diagonal matrix with ones on diagonal elements which correspond to the unknown initial states.
+#' @param R for a custom and regression components, optional \eqn{m \times k} system matrix or array of transition equation.
+#' @param ar for arima component, a numeric vector containing the autoregressive coeffients.
+#' @param ma for arima component, a numericvector containing the moving average coeffients. 
+#' @param d for arima component, a degree of differencing.  
+#' @param stationary for arima component, logical value indicating whether a stationarity of the arima part is assumed. Defaults to TRUE. 
+#' @param Z for a custom component, system matrix or array of observation equation.
+#' @param T for a custom component, system matrix or array of transition equation.
+#' @param period for a cycle and seasonal components, the length of the cycle/seasonal pattern.
+#' @param sea.type for seasonal component, character string defining whether to use \code{'dummy'} or \code{'trigonometric'} form of the seasonal component.
+#' @param degree for trend component, integer defining the degree of the polynomial trend. 1 corresponds to local level, 2 for local linear trend and so forth.
+#' @param rformula for regression component, right hand side formula or list of of such formulas defining the custom regression part.
+#' @param n length of the series, only used internally for dimensionality check.
+#' @param ynames names of the times series, only used internally.
+#' 
+#' @return object of class \code{SSModel}, which is a list with the following components:
+#' \item{y}{A n x p matrix containing the observations. }
+#' \item{Z}{A p x m x 1 or p x m x n array corresponding to the system matrix of observation equation. }
+#' \item{H}{A p x p x 1 or p x p x n array corresponding to the covariance matrix of observational disturbances epsilon. }
+#' \item{T}{A m x m x 1 or m x m x n array corresponding to the first system matrix of state equation. }
+#' \item{R}{A m x k x 1 or m x k x n array corresponding to the second system matrix of state equation. }
+#' \item{Q}{A k x k x 1 or k x k x n array corresponding to the covariance matrix of state disturbances eta }
+#' \item{a1}{A m x 1 matrix containing the expected values of the initial states. }
+#' \item{P1}{A m x m matrix containing the covariance matrix of the nondiffuse part of the initial state vector. }
+#' \item{P1inf}{A m x m matrix containing the covariance matrix of the diffuse part of the initial state vector. }
+#' \item{u}{A n x p matrix of an additional parameters in case of non-Gaussian model.}
+#' \item{distribution}{A vector of length p giving the distributions of the observations. }
+#' \item{tol}{A tolerance parameter for the diffuse phase. }
+#' \item{call}{Original call to the function. }
+#' In addition, object of class \code{SSModel} contains following attributes:
+#' \item{names}{Names of the list components. }
+#' \item{p, m, k, n}{Integer valued scalars defining the dimensions of the model components. }
+#' \item{state_types}{Types of the states in the model. } 
+#' @examples
+#' \dontrun{ 
+#' examplemodel<-SSModel(cbind(y1,y2,y3)  ~ x1+x2 
+#' + SSMregression(~-1+x3+x4,data=dataset,type='common',index=c(1,3),Q=diag(c(0.05,0.1)))                                   
+#' + SSMtrend(degree=1,index=1,Q=list(matrix(0.2)))
+#' + SSMtrend(degree=2,index=2:3,Q=list(matrix(c(0.2,0.1,0.1,0.2),2,2),diag(0.07,2)))
+#' + SSMcycle(period=25,Q=matrix(c(0.3,0.2,0.1,0.2,0.4,0.05,0.1,0.05,0.1),3,3))            
+#' , data=dataset, H=matrix(c(1,0.7,0.7,0.7,1,0.7,0.7,0.7,1),3,3))
+#' }
+SSModel <- function(formula, data, H, u, distribution, tol = .Machine$double.eps^0.5){
+  
+  # Modifying formula object, catching special functions
+  
+  mf <- mc <- match.call(expand.dots = FALSE)
+  mf <- mf[c(1L, match(c("formula", "data"), names(mf), 0L))]
+  mf[[1L]] <- as.name("model.frame")
+  mf$na.action <- as.name("na.pass")
+  
+  components <- c("SSMregression", "SSMtrend", "SSMseasonal", "SSMcycle", "SSMarima", "SSMcustom")
+  if (missing(data)){ 
+    data <- environment(formula)
+    tsp_data<-NULL
+  } else tsp_data<-tsp(data)
+  all_terms <- terms(formula, specials = components, data = data)
+  
+  specials <- attr(all_terms, "specials")
+  components <- components[!sapply(specials, is.null)]
+  
+  #browser()
+  if (length(unlist(specials)) > 0) {
+    if (length(attr(all_terms, "term.labels")) == length(unlist(specials))) 
+      all_terms <- terms(update.formula(all_terms, . ~ . + .emptyx.), specials = components)
+    mf$formula <- formula(drop.terms(all_terms, unlist(specials) - 1, keep.response = TRUE))
+    mf$formula <- update.formula(mf$formula, . ~ . - .emptyx., simplify = TRUE)
+  }
+  
+  if ("SSMtrend" %in% components || ("SSMarima" %in% components && isTRUE(eval(attr(all_terms, "variables")[[specials$SSMarima + 1]]$d,envir=parent.frame()) > 0))) {    
+    mf$formula <- update.formula(mf$formula, . ~ . - 1)
     
-    transform <- match.arg(arg=transform, choices = c("none", "ldl", "augment"))    
-    distribution <- match.arg(arg=distribution, choices = c("Gaussian", "Poisson", "Binomial"))    
-    
-    if(!(is.null(Z) | is.array(Z))){
-        if(is.vector(Z) & length(Z)>1){
-            stop("Error in defining the number of states, Z must be either vector of length 1, data frame, array or NULL.")
-        } else {
-            Z<-data.matrix(Z)
-        }
-    }    
-    
-    y<-as.ts(y)
-    if(is.array(y)){
-        p <- as.integer(dim(y)[2])
-        n <- as.integer(dim(y)[1])  
-    } else {
-        p <- as.integer(1)
-        n <- as.integer(length(y))  
-    }     
-    storage.mode(y)<-"double"
-    #define number of states
-    
-    m <- as.integer(dim(Z)[2]) #number of custom states
-    
-    
-    Z<-array(Z, dim=c(p, m, (n-1) * (max(dim(Z)[3], 0,na.rm=TRUE) > 1) + 1))
-    
-    if(is.null(T))  T <- diag(m)
-    T<-array(T, dim=c(m, m, (n-1) * (max(dim(T)[3], 0,na.rm=TRUE) > 1) + 1))
-    if(distribution!="Gaussian"){
-        H_type<-"Omitted"
-        H <- array(0, dim=c(p, p, 1))
-    } else {
-        if(is.null(H)){
-            H <- array(0, dim=c(p, p, 1))
-            H_type<-"Diagonal"
-        } else {            
-            H <- array(H, dim=c(p, p,  (n-1) * (max(dim(H)[3], 0,na.rm=TRUE) > 1) + 1))
-            if(sum(is.na(H))>0){
-                H_type<-"Untransformed"
-            } else {
-                if(transform=="none"){
-                    if(p==1){
-                        H_type<-"Diagonal"
-                    } else {      
-                        H_type<-"Diagonal"
-                        for(i in 1:dim(H)[3]){
-                            if(max(abs(H[,,i][-which(diag(p)==1)]), na.rm=TRUE)>0){
-                                H_type<-"Untransformed"
-                                break
-                            }
-                        }
-                    }
-                } else{
-                    H_type<-NULL
-                } 
-            }
-        }   
+  } else remove_intercept<-FALSE
+  mf <- eval(mf, parent.frame())
+  y <- model.response(mf, "numeric")
+  
+  mt <- attr(mf, "terms")
+  
+  vars <- attr(all_terms, "variables")
+  
+ 
+ 
+  
+  reg_in_formula <- as.integer(dim(model.matrix(mt, mf))[2] > 0)
+  specials <- unlist(specials)
+  lspecials <- length(specials)
+  n_blocks <- lspecials + reg_in_formula
+  blocks <- vector("list", n_blocks)
+  
+  # building y
+  
+  if (is.array(y)) {
+    p <- dim(y)[2]
+    n <- dim(y)[1]
+  } else {
+    y <- as.array(y)
+    if (length(dim(y)) != 2) {
+      p <- 1
+      n <- length(y)
+      dim(y) <- c(n, p)
     }
-    
-    if(is.null(Q)){
-        r<-as.integer(1)
-        Q <- array(0, dim=c(1, 1, 1))        
-    } else {       
-        r<-as.integer(max(dim(Q)[1],1))
-        Q <- array(Q, dim=c(r, r,  (n-1) * (max(dim(Q)[3], 0,na.rm=TRUE) > 1) + 1))        
-    }  
-    if(is.null(R)){
-        R<-diag(m)[,1:r,drop=FALSE]
-        dim(R)<-c(m,r,1)
+  }
+  y_names <- colnames(y)
+  if(is.null(y_names)){
+    y_names <- if (p > 1){
+      colnames(y)<-paste0(".y", 1:p)
+    } else ""
+  }
+  class(y)<-if(p>1) c("mts","ts","matrix") else "ts"
+  
+  if(is.null(tsp(y))){
+    if(!is.null(tsp_data)){
+    tsp(y)<-tsp_data       
+    } else tsp(y)<-c(1,n,1)
+  }
+  
+  
+  # defining the distributions of y
+  if (missing(distribution)) {
+    distribution <- rep("gaussian", length = p)
+  } else {
+    if (length(distribution) == 1 | length(distribution) == p) {
+      distribution <- rep(pmatch(x = distribution, table = c("gaussian", "poisson", "binomial", "gamma", "negative binomial"), 
+                                 duplicates.ok = TRUE), length = p)
+    } else stop("Length of the argument 'distribution' must be either 1 or p, the number of series.")
+    if (any(is.na(distribution))) 
+      stop("Misspeficied distribution, only 'gaussian', 'poisson', 'binomial', 'gamma', and 'negative binomial' are allowed.")
+    distribution <- c("gaussian", "poisson", "binomial", "gamma", "negative binomial")[distribution]
+  }
+  
+  # building H and u
+  if (all(distribution == "gaussian")) {
+    if (!missing(H)) {
+      if (length(H) == 1) 
+        dim(H) <- c(1, 1)
+      dims <- dim(H)
+      if (dims[1] != p || dims[2] != p) 
+        stop("Misspecified H, argument H must be NULL, a scalar, p x p matrix or p x p x n array, where p is the number of time series.")
+      H <- array(H, dim = c(p, p, 1 + (n - 1) * (max(dims[3], 0, na.rm = TRUE) > 1)))
     } else {
-        R <- array(R, dim=c(m, r,  (n-1) * (max(dim(R)[3], 0,na.rm=TRUE) > 1) + 1))        
-    }
-    
-    if(is.null(P1) & is.null(P1inf)){
-        P1<-matrix(0,m,m)
-        P1inf<-diag(1,m)
+      H <- array(diag(p), dim = c(p, p, 1))
+    }   
+    u <- "Omitted"
+  } else {
+    if (!missing(H)) 
+      warning("H ignored as model contains non-gaussian series.")
+    H <- "Omitted"
+    if (missing(u)) {
+      u <- array(1, c(n, p))
     } else {
-        if(is.null(P1)){
-            P1<-matrix(0,m,m)    
-        } else P1<-matrix(P1,m,m)
-        
-        if(is.null(P1inf)){
-            P1inf<-matrix(0,m,m)
-        } else P1inf<-matrix(P1inf,m,m)
+      if (is.data.frame(u)) {
+        u <- data.matrix(u)
+        if (!identical(dim(u), c(n, p))) 
+          stop("Mispecified u, argument u must be either vector of length p, or n x p matrix, where p is the number of time series.")
+      } else u <- matrix(u, n, p, byrow = is.vector(u))
+      storage.mode(u) <- "double"
     }
-    if(is.null(a1)){
-        a1<-matrix(0,m,1)    
-    } else a1<-matrix(a1,m,1)
-    a1[which(diag(P1inf)>0),1]<-0
-    
-    if(!identical(distribution,"Gaussian")){
-        if(is.null(u))
-            u<-rep(1,n)    
-        u<-array(u,dim=n)    
+    class(u)<-class(y)
+    tsp(u)<-tsp(y)
+  }
+  
+  
+  # building model components by calling appropriate component functions
+  
+  if (reg_in_formula) {
+    blocks[[1]] <- SSMregression(rformula = formula(delete.response(mt)), 
+                                 data = mf, index = 1:p, n = n, ynames = if(p > 1) y_names)
+    blocks[[1]]$state_types <- "regression"
+  }  
+  
+  if (lspecials > 0) 
+    for (i in 1:lspecials) {      
+      comp <- vars[[1 + specials[i]]]    
+      comp <- match.call(definition = eval(comp[[1]]), call = comp)      
+      if (is.null(comp$index)) {
+        comp$index <- 1:p
+      } else if (!all(eval(comp$index) %in% (1:p))) 
+        stop("Index must have values between 1 to p. ")
+      comp$n <- n
+      if (comp[[1]] != "SSMcustom" && p > 1 && is.null(comp$ynames) && (is.null(comp$type) || comp$type!='common')) 
+        comp$ynames <- y_names[eval(comp$index)]
+      blocks[[i + reg_in_formula]] <- eval(comp,envir=parent.frame())###
+      blocks[[i + reg_in_formula]]$state_types <- substr(as.character(comp[[1]]),start=4,stop=15L)
     }
-    if(is.null(rownames(a1)))
-        rownames(a1)<-paste0("state",1:m)
+  
+  
+  # building combined model arrays
+  
+  cum_m <- c(0, cumsum(unlist(sapply(blocks, "[", "m"))))
+  cum_k <- c(0, cumsum(unlist(sapply(blocks, "[", "k"))))
+  m <- max(cum_m)
+  k <- max(cum_k, 1)
+  Z <- array(0, c(p, m, 1 + (n - 1) * max(0, unlist(sapply(blocks, "[", "tvz")))))
+  T <- array(0, c(m, m, 1 + (n - 1) * max(0, unlist(sapply(blocks, "[", "tvt")))))
+  R <- array(0, c(m, k, 1 + (n - 1) * max(0, unlist(sapply(blocks, "[", "tvr")))))
+  Q <- array(0, c(k, k, 1 + (n - 1) * max(0, unlist(sapply(blocks, "[", "tvq")))))
+  P1 <- P1inf <- matrix(0, m, m)
+  a1 <- matrix(0, nrow = m)  
+  
+  state_names <- unname(unlist(sapply(blocks, "[", "state_names")))   
+  rownames(a1) <- rownames(T) <- colnames(T) <- colnames(Z) <- rownames(R) <- rownames(P1) <- colnames(P1) <- rownames(P1inf) <- colnames(P1inf) <- state_names
+  rownames(Z) <- colnames(y)
+  
+  state_types <- character(m)
+  eta_types <- character(k)
+  for (i in 1:n_blocks) {
+    Z[blocks[[i]]$index, (cum_m[i] + 1):cum_m[i + 1], ] <- blocks[[i]]$Z
+    T[(cum_m[i] + 1):cum_m[i + 1], (cum_m[i] + 1):cum_m[i + 1], ] <- blocks[[i]]$T
+    R[(cum_m[i] + 1):cum_m[i + 1], seq_len(cum_k[i + 1] - cum_k[i]) + cum_k[i], ] <- blocks[[i]]$R
+    Q[seq_len(cum_k[i + 1] - cum_k[i]) + cum_k[i], seq_len(cum_k[i + 1] - cum_k[i]) + cum_k[i], ] <- blocks[[i]]$Q
+    a1[(cum_m[i] + 1):cum_m[i + 1], ] <- blocks[[i]]$a1
+    P1[(cum_m[i] + 1):cum_m[i + 1], (cum_m[i] + 1):cum_m[i + 1]] <- blocks[[i]]$P1
+    P1inf[(cum_m[i] + 1):cum_m[i + 1], (cum_m[i] + 1):cum_m[i + 1]] <- blocks[[i]]$P1inf
+    state_types[(cum_m[i] + 1):cum_m[i + 1]] <- eta_types[seq_len(cum_k[i + 1] - cum_k[i]) + cum_k[i]] <- blocks[[i]]$state_types
     
-    object<-list(y=y,Z=Z,H=H,T=T,R=R,Q=Q,a1=a1,P1=P1,P1inf=P1inf,u=as.double(u),p=p,n=n,m=m,k=r,distribution=distribution,H_type=H_type,tolF=tolF,tol0=tol0)
-    class(object) <- c("SSModel","customSSM")
-    if (transform %in% c("ldl", "augment") & sum(is.na(H))==0) 
-        object <- transformSSM(object, type = transform)
-    
-    invisible(object)
+  }
+  if(all(dim(R)==c(1,1,1)) && R[1]==0)
+    R[1]<-1
+  
+  model <- list(y = y, Z = Z, H = H, T = T, R = R, Q = Q, a1 = a1, P1 = P1, P1inf = P1inf, u = u, distribution = distribution, 
+                tol = tol)
+  
+  class(model) <- "SSModel"
+  attr(model, "p") <- as.integer(p)
+  attr(model, "m") <- as.integer(m)
+  attr(model, "k") <- as.integer(k)
+  attr(model, "n") <- as.integer(n)
+  attr(model, "state_types") <- state_types
+  attr(model, "eta_types") <- eta_types
+  model$call <- mc
+  invisible(model)
 } 

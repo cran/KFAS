@@ -1,6 +1,5 @@
+! Transform multivariate model using LDL decomposition of H
 subroutine ldlssm(yt, ydimt, yobs, timevar, zt, p, m, n, ichols,nh,hchol,dim,info,hobs,tol)
-    !Function for LDL decomposition of positive semidefinite covariance matrix H
-    !Called by R function transformSSM
 
     implicit none
 
@@ -54,32 +53,17 @@ subroutine ldlssm(yt, ydimt, yobs, timevar, zt, p, m, n, ichols,nh,hchol,dim,inf
                         return
                     end if
                     ichols(hobs(1:dim(i),i),hobs(1:dim(i),i),i) = cholhelp(1:dim(i),1:dim(i))
-                end if
-
-               !if(dim2(i).GT.0 .AND. hdiagtest(i).EQ.1) then !.AND. diag(i)==0) then
-               !   cholhelp(1:dim2(i),1:dim2(i)) = ichols(hobs(1:dim2(i),i),hobs(1:dim2(i),i),i)
-               !   call ldl(cholhelp(1:dim2(i),1:dim2(i)),dim2(i),tol,info)
-               !   if(info .EQ. -1) then
-               !     info=1
-               !      return
-               !   end if
-               !   call dtrtri('l','u',dim2(i),cholhelp(1:dim2(i),1:dim2(i)),dim2(i),info)
-               !   if(info .NE. 0) then
-               !      info=2
-               !      return
-               !   end if
-               !   ichols(hobs(1:dim2(i),i),hobs(1:dim2(i),i),i) = cholhelp(1:dim2(i),1:dim2(i))
-               !end if
+               end if
 
             end do
       
             do t = 1,(n-1)*max(timevar(1),timevar(2))+1
                 if(ydimt(t).GT.0 .AND. hdiagtest(hchol(t)).NE.0) then
                     cholhelp(1:ydimt(t),1:ydimt(t)) = ichols(yobs(1:ydimt(t),t),yobs(1:ydimt(t),t),hchol(t))
-                    zhelp(1:ydimt(t),1:m) = zt(yobs(1:ydimt(t),t),1:m,(t-1)*timevar(1)+1)
+                    zhelp(1:ydimt(t),:) = zt(yobs(1:ydimt(t),t),:,(t-1)*timevar(1)+1)
                     call dtrmm('l','l','n','u',ydimt(t),m,1.0d0,cholhelp(1:ydimt(t),1:ydimt(t)),&
-                    ydimt(t),zhelp(1:ydimt(t),1:m),ydimt(t))
-                    zt(yobs(1:ydimt(t),t),1:m,(t-1)*timevar(1)+1) = zhelp(1:ydimt(t),1:m)
+                    ydimt(t),zhelp(1:ydimt(t),:),ydimt(t))
+                    zt(yobs(1:ydimt(t),t),:,(t-1)*timevar(1)+1) = zhelp(1:ydimt(t),:)
             
                 end if
             end do
