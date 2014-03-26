@@ -2,7 +2,7 @@
 \alias{ldl}
 \title{LDL Decomposition of a Matrix}
 \usage{
-  ldl(x, tol = max(abs(diag(x))) * .Machine$double.eps)
+ldl(x, tol = max(abs(diag(x))) * .Machine$double.eps)
 }
 \arguments{
   \item{x}{Symmetrix matrix.}
@@ -12,11 +12,11 @@
   Same value is used in isSymmetric function.}
 }
 \value{
-  Transformed matrix with D in diagonal, L in strictly
-  lower diagonal and zeros on upper diagonal.
+Transformed matrix with D in diagonal, L in strictly lower
+diagonal and zeros on upper diagonal.
 }
 \description{
-  Function \code{ldl} computes the LDL decomposition of a
-  positive semidefinite matrix.
+Function \code{ldl} computes the LDL decomposition of a
+positive semidefinite matrix.
 }
 

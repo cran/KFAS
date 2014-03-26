@@ -14,7 +14,7 @@
 #' @method predict SSModel
 #' @S3method predict SSModel
 #' @aliases predict predict.SSModel
-#' @param object object of class \code{SSModel}.
+#' @param object Object of class \code{SSModel}.
 #' @param newdata A compatible \code{SSModel} object to be added in the end of the old object for which the predictions are required.
 #' @param interval Type of interval calculation.
 #' @param level Confidence level for intervals.
@@ -28,8 +28,9 @@
 #' @param prob if TRUE (default), the predictions in binomial/poisson case are probabilities/rates instead of counts.
 #' @param \dots Ignored.
 #' @return A matrix or list of matrices containing the predictions, and optionally standard errors.
-predict.SSModel <- function(object, newdata, interval = c("none", "confidence", "prediction"), level = 0.95, type = c("response", 
-                                                                                                                      "link"), states = NULL, se.fit = FALSE, nsim = 0, prob = TRUE, ...) {
+predict.SSModel <- function(object, newdata, interval = c("none", "confidence", "prediction"), 
+                            level = 0.95, type = c("response", "link"), states=NULL,se.fit = FALSE, nsim = 0, 
+                            prob = TRUE, ...) {
   
   
   interval <- match.arg(interval)
@@ -42,14 +43,30 @@ predict.SSModel <- function(object, newdata, interval = c("none", "confidence", 
   p <- attr(object, "p")
   k <- attr(object, "k")
   
+  if (missing(states)) {
+    states <- as.integer(1:m)
+  } else {
+    if (is.numeric(states)) {
+      states <- as.integer(states)
+      if (min(states) < 1 | max(states) > m) 
+        stop("Vector states should contain the indices or types of the states which are combined.")
+    } else {
+      states <- match.arg(arg = states, choices = c("all", "arima", "custom", "cycle", "seasonal", "trend", "regression"), 
+                          several.ok = TRUE)
+      if ("all" %in% states) {
+        states <- as.integer(1:m)
+      } else states <- which(attr(object, "state_types") %in% states)
+    }
+  }
+  
   if (!missing(newdata) && !is.null(newdata)) {
     
     is.SSModel(newdata, na.check = TRUE, return.logical = FALSE)
-    if (attr(object, "p") != attr(newdata, "p")) 
+    if (p != attr(newdata, "p")) 
       stop("Different number of time series for 'object' and 'newdata'.")
-    if (attr(object, "m") != attr(newdata, "m")) 
+    if (m != attr(newdata, "m")) 
       stop("Different number of states for 'object' and 'newdata'.")
-    if (attr(object, "k") != attr(newdata, "k")) 
+    if (k != attr(newdata, "k")) 
       stop("Different number of disturbance terms for 'object' and 'newdata'.")
     if (!identical(object$distribution, newdata$distribution)) 
       stop("Different distributions for 'object' and 'newdata'")
@@ -104,22 +121,6 @@ predict.SSModel <- function(object, newdata, interval = c("none", "confidence", 
     
   } else timespan <- 1:attr(object, "n")
   
-  if (missing(states)) {
-    states <- as.integer(1:m)
-  } else {
-    if (is.numeric(states)) {
-      states <- as.integer(states)
-      if (min(states) < 1 | max(states) > m) 
-        stop("Vector states should contain the indices or types of the states which are combined.")
-    } else {
-      states <- match.arg(arg = states, choices = c("all", "arima", "custom", "cycle", "seasonal", "trend", "regression"), 
-                          several.ok = TRUE)
-      if ("all" %in% states) {
-        states <- as.integer(1:m)
-      } else states <- which(attr(object, "state_types") %in% states)
-    }
-  }
-  
   gaussianmodel <- all(object$distribution == "gaussian")
   if (!gaussianmodel && interval == "prediction") {
     if (type == "link") 
@@ -130,80 +131,119 @@ predict.SSModel <- function(object, newdata, interval = c("none", "confidence", 
   
   pred <- vector("list", length = p)
   
-  if (nsim < 1 || gaussianmodel) {
+  if(gaussianmodel){
     if (identical(states, as.integer(1:m))) {
-      out <- KFS(model = object, smoothing = "signal")
+      out <- KFS(model = object, smoothing = "mean")
     } else {
       out <- signal(KFS(model = object, smoothing = "state"), states = states)
+      names(out)<-c("muhat","V_mu")
     }
     
     for (i in 1:p) {
-      pred[[i]] <- cbind(fit=out$thetahat[timespan, i], switch(interval, none = NULL, out$thetahat[timespan, i] + qnorm((1 - 
-                                                                                                                           level)/2) * sqrt(out$V_theta[i, i, timespan]+ switch(interval, prediction = object$H[i, i, if (all(object$distribution == 
-                                                                                                                                                                                                                                "gaussian") && (dim(object$H)[3] > 1)) timespan else 1], 0)) %o% c(1, -1)),
-                         se.fit=if (se.fit)  sqrt(out$V_theta[i, i, timespan])           )
+      pred[[i]] <- 
+        cbind(fit=out$muhat[timespan, i], 
+              switch(interval, none = NULL, 
+                     confidence = out$muhat[timespan, i] +
+                       qnorm((1 - level)/2) * 
+                       sqrt(out$V_mu[i, i, timespan])%o% c(1, -1),
+                     prediction = out$muhat[timespan, i] + 
+                       qnorm((1 - level)/2) * 
+                       sqrt(out$V_mu[i, i, timespan] + 
+                              object$H[i, i, if (dim(object$H)[3] > 1) timespan else 1]) %o% c(1, -1)),
+              se.fit=if(se.fit)  sqrt(out$V_mu[i, i, timespan]))
       if(interval!="none")
         colnames(pred[[i]])[2:3] <- c("lwr", "upr")
     }
-    
-    if (!gaussianmodel && type == "response") {
-      
-      if (se.fit) {
-        tmp<-which(colnames(pred[[1]])=="se.fit")
-        for (i in 1:p) {
-          pred[[i]][,"se.fit"] <- switch(object$distribution[i], 
-                                         gaussian = pred[[i]][,"se.fit"], 
-                                         poisson = pred[[i]][,"se.fit"] * (if (!prob) object$u[timespan, i] else 1) * exp(pred[[i]][, 1]), 
-                                         binomial = pred[[i]][,"se.fit"] * (if (!prob) object$u[timespan,i] else 1) * 
-                                           exp(pred[[i]][, 1])/(1 + exp(pred[[i]][, 1]))^2, 
-                                         gamma = pred[[i]][,"se.fit"] * exp(pred[[i]][, 1]), 
-                                         `negative binomial` = pred[[i]][,"se.fit"] * exp(pred[[i]][, 1]))         
-          pred[[i]][,-tmp] <- switch(object$distribution[i], gaussian = pred[[i]][,-tmp], 
-                                     poisson = (if (!prob) object$u[timespan, i] else 1) * exp(pred[[i]][,-tmp]), 
-                                     binomial = (if (!prob) object$u[timespan, i] else 1) * exp(pred[[i]][,-tmp])/(1 + exp(pred[[i]][,-tmp])), 
-                                     gamma = exp(pred[[i]][,-tmp]), `negative binomial` = exp(pred[[i]][,-tmp]))  
-        }
+  } else{
+    if(nsim < 1){
+      if (identical(states, as.integer(1:m))) {
+        out <- KFS(model = object, smoothing = "signal")
       } else {
-        for (i in 1:p)     
-          pred[[i]] <- switch(object$distribution[i], gaussian = pred[[i]], 
-                              poisson = (if (!prob) object$u[timespan, i] else 1) * exp(pred[[i]]), 
-                              binomial = (if (!prob) object$u[timespan, i] else 1) * exp(pred[[i]])/(1 + exp(pred[[i]])), 
-                              gamma = exp(pred[[i]]), `negative binomial` = exp(pred[[i]]))
+        out <- signal(KFS(model = object, smoothing = "state"), states = states)
+        names(out)<-c("thetahat","V_theta")
       }
-    }
-  } else {
-    
-    if (interval == "none") {
-      imp <- importanceSSM(object, ifelse(identical(states, as.integer(1:m)), "signal", "states"), nsim = nsim, antithetics = TRUE)
-      nsim <- as.integer(4 * nsim)
-      w <- imp$weights/sum(imp$weights)
-      
-      if (!identical(states, as.integer(1:m))) 
-        imp$samples <- .Fortran(fzalpha, as.integer(dim(object$Z)[3] > 1), object$Z, imp$samples, signal = array(0, c(n, 
-                                                                                                                      p, nsim)), p, n, m, nsim, as.integer(length(states)), states)$signal
-      
-      
-      if (type == "response") {
-        for (i in 1:p) {
-          imp$samples[timespan, i, ] <- switch(object$distribution[i], gaussian = imp$samples[timespan, i, ], poisson = (if (!prob) object$u[timespan, 
-                                                                                                                                             i] else 1) * exp(imp$samples[timespan, i, ]), binomial = (if (!prob) object$u[timespan, i] else 1) * exp(imp$samples[timespan, 
-                                                                                                                                                                                                                                                                  i, ])/(1 + exp(imp$samples[timespan, i, ])), gamma = exp(imp$samples[timespan, i, ]), `negative binomial` = exp(imp$samples[timespan, 
-                                                                                                                                                                                                                                                                                                                                                                                              i, ]))
+      out <- KFS(model = object, smoothing = "signal")
+      for (i in 1:p) {
+        pred[[i]] <- cbind(fit=out$thetahat[timespan, i]+(if(object$distribution[i]=="poisson") log(object$u[timespan, i]) else 0), 
+                           switch(interval, none = NULL, out$thetahat[timespan, i] +
+                                    (if(object$distribution[i]=="poisson") log(object$u[timespan, i]) else 0) +
+                                    qnorm((1 - level)/2) * sqrt(out$V_theta[i, i, timespan]) %o% c(1, -1)),
+                           se.fit=if (se.fit)  sqrt(out$V_theta[i, i, timespan])           )
+        if(interval=="confidence")
+          colnames(pred[[i]])[2:3] <- c("lwr", "upr")
+      }
+      if(type=="response"){
+        if (se.fit) {
+          tmp<-which(colnames(pred[[1]])=="se.fit")
+          for (i in 1:p) {
+            pred[[i]][,"se.fit"] <- switch(object$distribution[i], 
+                                           gaussian = pred[[i]][,"se.fit"], 
+                                           poisson = pred[[i]][,"se.fit"] * exp(pred[[i]][, 1]), 
+                                           binomial = pred[[i]][,"se.fit"] * (if (!prob) object$u[timespan,i] else 1) * 
+                                             exp(pred[[i]][, 1])/(1 + exp(pred[[i]][, 1]))^2, 
+                                           gamma = pred[[i]][,"se.fit"] * exp(pred[[i]][, 1]), 
+                                           `negative binomial` = pred[[i]][,"se.fit"] * exp(pred[[i]][, 1]))         
+            pred[[i]][,-tmp] <- switch(object$distribution[i], gaussian = pred[[i]][,-tmp], 
+                                       poisson = exp(pred[[i]][,-tmp]), 
+                                       binomial = (if (!prob) object$u[timespan, i] else 1) * exp(pred[[i]][,-tmp])/(1 + exp(pred[[i]][,-tmp])), 
+                                       gamma = exp(pred[[i]][,-tmp]), `negative binomial` = exp(pred[[i]][,-tmp]))  
+          }
+        } else {
+          for (i in 1:p)     
+            pred[[i]] <- switch(object$distribution[i], gaussian = pred[[i]], 
+                                poisson = exp(pred[[i]]), 
+                                binomial = (if (!prob) object$u[timespan, i] else 1) * exp(pred[[i]])/(1 + exp(pred[[i]])), 
+                                gamma = exp(pred[[i]]), `negative binomial` = exp(pred[[i]]))
         }
       }
-      varmean <- .Fortran(fvarmeanw, imp$samples[timespan, , ], w, p, as.integer(length(timespan)), nsim, mean = array(0, 
-                                                                                                                       c(length(timespan), p)), var = array(0, c(length(timespan), p)), as.integer(se.fit))
-      if (se.fit) {
-        pred <- lapply(1:p, function(j) cbind(fit = varmean$mean[, j], se.fit = sqrt(varmean$var[, j])))
+    } else{
+      if (interval == "none") {
+        imp <- importanceSSM(object, ifelse(identical(states, as.integer(1:m)), "signal", "states"), 
+                             nsim = nsim, antithetics = TRUE) 
+        if (!identical(states, as.integer(1:m))) 
+          imp$samples <- .Fortran(fzalpha, as.integer(dim(object$Z)[3] > 1), object$Z, imp$samples, 
+                                  signal = array(0, c(n, p, nsim)), p, n, m, nsim, 
+                                  as.integer(length(states)), states)$signal
+        
+        
+        imp <- importanceSSM(object, "signal", nsim = nsim, antithetics = TRUE)
+        nsim <- as.integer(4 * nsim)
+        w <- imp$weights/sum(imp$weights) 
+        
+        if (type == "response") {
+          for (i in 1:p) {
+            imp$samples[timespan, i, ] <- 
+              switch(object$distribution[i], 
+                     gaussian = imp$samples[timespan, i, ], 
+                     poisson = object$u[timespan, i] * exp(imp$samples[timespan, i, ]), 
+                     binomial = (if (!prob) object$u[timespan, i] else 1) * 
+                       exp(imp$samples[timespan, i, ])/(1 + exp(imp$samples[timespan, i, ])), 
+                     gamma = exp(imp$samples[timespan, i, ]), 
+                     `negative binomial` = exp(imp$samples[timespan, i, ]))
+          }
+        } else{
+          for (i in 1:p) 
+            if(object$distribution[i]=="poisson")
+              imp$samples[timespan, i, ] <- imp$samples[timespan, i, ]+ log(object$u[timespan, i])
+          
+        }
+        varmean <- .Fortran(fvarmeanw, imp$samples[timespan, , ], w, p, as.integer(length(timespan)), 
+                            nsim, mean = array(0, c(length(timespan), p)), 
+                            var = array(0, c(length(timespan), p)), as.integer(se.fit))
+        if (se.fit) {
+          pred <- lapply(1:p, function(j) cbind(fit = varmean$mean[, j], se.fit = sqrt(varmean$var[, j])))
+        } else {
+          pred <- lapply(1:p, function(j) fit = varmean$mean[, j])
+        }
+        
       } else {
-        pred <- lapply(1:p, function(j) fit = varmean$mean[, j])
+        pred <- interval(object, interval = interval, level = level, type = type, states = states, 
+                         nsim = nsim, se.fit = se.fit, timespan = timespan, prob = prob)
       }
       
-    } else {
-      pred <- interval(object, interval = interval, level = level, type = type, states = states, nsim = nsim, se.fit = se.fit, 
-                       timespan = timespan, prob = prob)
     }
   }
+  
   
   names(pred) <- colnames(object$y)
   

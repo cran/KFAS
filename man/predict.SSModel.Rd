@@ -3,14 +3,12 @@
 \alias{predict.SSModel}
 \title{State Space Model Predictions}
 \usage{
-  \method{predict}{SSModel} (object, newdata,
-    interval = c("none", "confidence", "prediction"),
-    level = 0.95, type = c("response", "link"),
-    states = NULL, se.fit = FALSE, nsim = 0, prob = TRUE,
-    ...)
+\method{predict}{SSModel}(object, newdata, interval = c("none", "confidence",
+  "prediction"), level = 0.95, type = c("response", "link"),
+  states = NULL, se.fit = FALSE, nsim = 0, prob = TRUE, ...)
 }
 \arguments{
-  \item{object}{object of class \code{SSModel}.}
+  \item{object}{Object of class \code{SSModel}.}
 
   \item{newdata}{A compatible \code{SSModel} object to be
   added in the end of the old object for which the
@@ -45,28 +43,27 @@
   \item{\dots}{Ignored.}
 }
 \value{
-  A matrix or list of matrices containing the predictions,
-  and optionally standard errors.
+A matrix or list of matrices containing the predictions,
+and optionally standard errors.
 }
 \description{
-  Function \code{predict.SSModel} predicts the future
-  observations of a state space model of class
-  \code{\link{SSModel}}
+Function \code{predict.SSModel} predicts the future
+observations of a state space model of class
+\code{\link{SSModel}}
 }
 \details{
-  For non-Gaussian models, the results depend whether
-  importance sampling is used (\code{nsim>0}). without
-  simulations, the confidence intervals in response scale
-  are computed in linear predictor scale, and then
-  transformed to response scale. The prediction intervals
-  are not supported. With importance sampling, the
-  confidence intervals are computed as the empirical
-  quantiles from the weighted sample, whereas the
-  prediction intervals contain additional step of
-  simulating the response variables from the sampling
-  distribution \eqn{p(y|\theta^i)}.
+For non-Gaussian models, the results depend whether
+importance sampling is used (\code{nsim>0}). without
+simulations, the confidence intervals in response scale are
+computed in linear predictor scale, and then transformed to
+response scale. The prediction intervals are not supported.
+With importance sampling, the confidence intervals are
+computed as the empirical quantiles from the weighted
+sample, whereas the prediction intervals contain additional
+step of simulating the response variables from the sampling
+distribution \eqn{p(y|\theta^i)}.
 
-  If no simulations are used, the standard errors in
-  response scale are computed using delta method.
+If no simulations are used, the standard errors in response
+scale are computed using delta method.
 }
 

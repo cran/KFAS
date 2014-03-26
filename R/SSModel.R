@@ -5,18 +5,27 @@
 #' 
 #' Formula of the model can contain the usual regression part 
 #' and additional functions defining different types of components of the model, named as
-#' \code{SSMarima}, \code{SSMcustom}, \code{SSMcycle}, \code{SSMregression}, \code{SSMseasonal} and \code{SSMtrend}. See examples.
+#' \code{SSMarima}, \code{SSMcustom}, \code{SSMcycle}, \code{SSMregression}, \code{SSMseasonal} and \code{SSMtrend}. 
+#' 
+#' 
 #'
 #' @export
 #' @rdname SSModel
 #' @name SSModel
 #' @seealso \code{\link{KFAS}} for examples.
-#' @param formula an object of class \code{\link{formula}} containing the symbolic description of the model. See details and examples for special functions used in model construction.
+#' @param formula an object of class \code{\link{formula}} containing the symbolic description of the model. 
+#' The intercept term can be removed with \code{-1} as in \code{lm}. 
+#' In case of trend or differenced arima component intercept is removed automatically. 
+#' Note that in order to be compatible with nonstationary elements, first level of each factor is 
+#' always added to intercept, so if intercept is removed via \code{-1}, one level will be missing.
+#' See details and examples in \code{\link{KFAS}} for special functions used in model construction.
 #' @param data an optional data frame, list or environment containing the variables in the model.
 #' @param H covariance matrix or array of disturbance terms \eqn{\epsilon_t}{\epsilon[t]} of observation equation. Omitted in case of non-gaussian distributions. Augment the state vector if you want to add additional noise.
 #' @param u additional parameters for non-gaussian models. See details in \code{\link{KFAS}}.
 #' @param distribution a vector of distributions of the observations. Default is \code{rep('gaussian',p)}.
-#' @param tol a tolerance parameter for a diffuse phase. Smallest value of Finf not counted for zero. Defaults to \code{.Machine$double.eps^0.5}.
+#' @param tol a tolerance parameter for a diffuse phase. Smallest value of Finf not counted for zero.
+#'  Defaults to \code{.Machine$double.eps^0.5}. 
+#'  If smoothing gives negative variances for smoothed states, try adjusting this.
 #' 
 #' @param index a vector indicating for which series the corresponding components are constructed.
 #' @param type for cycle, seasonal, trend and regression components, character string defining if \code{'distinct'} or \code{'common'} states are used for different series.
@@ -36,7 +45,8 @@
 #' @param period for a cycle and seasonal components, the length of the cycle/seasonal pattern.
 #' @param sea.type for seasonal component, character string defining whether to use \code{'dummy'} or \code{'trigonometric'} form of the seasonal component.
 #' @param degree for trend component, integer defining the degree of the polynomial trend. 1 corresponds to local level, 2 for local linear trend and so forth.
-#' @param rformula for regression component, right hand side formula or list of of such formulas defining the custom regression part.
+#' @param rformula for regression component, right hand side formula or list of of such formulas 
+#' defining the custom regression part.
 #' @param n length of the series, only used internally for dimensionality check.
 #' @param ynames names of the times series, only used internally.
 #' 
@@ -81,32 +91,41 @@ SSModel <- function(formula, data, H, u, distribution, tol = .Machine$double.eps
     data <- environment(formula)
     tsp_data<-NULL
   } else tsp_data<-tsp(data)
-  all_terms <- terms(formula, specials = components, data = data)
   
+  all_terms <- terms(formula, specials = components, data = data)  
   specials <- attr(all_terms, "specials")
   components <- components[!sapply(specials, is.null)]
-  
+
+#   errorterm <- attr(all_terms, "variables")[[1 + unlist(specials)]]
+#   eTerm <- deparse(errorterm[[2L]], width.cutoff = 500L, 
+#                    backtick = TRUE)
+#   intercept <- attr(Terms, "intercept")
+#   ecall <- lmcall
+#   ecall$formula <- as.formula(paste(deparse(formula[[2L]], 
+#                                             width.cutoff = 500L, backtick = TRUE), "~", eTerm, 
+#                                     if (!intercept) 
+#                                       "- 1"), env = environment(formula))
+#   
   #browser()
   if (length(unlist(specials)) > 0) {
     if (length(attr(all_terms, "term.labels")) == length(unlist(specials))) 
       all_terms <- terms(update.formula(all_terms, . ~ . + .emptyx.), specials = components)
-    mf$formula <- formula(drop.terms(all_terms, unlist(specials) - 1, keep.response = TRUE))
+    drops<-which(attr(all_terms,"term.labels") %in%rownames(attr(all_terms,"factors")) [unlist(specials)]) 
+    mf$formula <- formula(drop.terms(all_terms, drops, keep.response = TRUE))
+    #mf$formula <- formula(drop.terms(all_terms, unlist(specials) - 1, keep.response = TRUE))
     mf$formula <- update.formula(mf$formula, . ~ . - .emptyx., simplify = TRUE)
   }
   
   if ("SSMtrend" %in% components || ("SSMarima" %in% components && isTRUE(eval(attr(all_terms, "variables")[[specials$SSMarima + 1]]$d,envir=parent.frame()) > 0))) {    
     mf$formula <- update.formula(mf$formula, . ~ . - 1)
     
-  } else remove_intercept<-FALSE
+  } #else remove_intercept<-FALSE
   mf <- eval(mf, parent.frame())
   y <- model.response(mf, "numeric")
   
   mt <- attr(mf, "terms")
   
   vars <- attr(all_terms, "variables")
-  
- 
- 
   
   reg_in_formula <- as.integer(dim(model.matrix(mt, mf))[2] > 0)
   specials <- unlist(specials)
@@ -130,7 +149,7 @@ SSModel <- function(formula, data, H, u, distribution, tol = .Machine$double.eps
   y_names <- colnames(y)
   if(is.null(y_names)){
     y_names <- if (p > 1){
-      colnames(y)<-paste0(".y", 1:p)
+      colnames(y)<-paste0("y", 1:p)
     } else ""
   }
   class(y)<-if(p>1) c("mts","ts","matrix") else "ts"
@@ -194,7 +213,7 @@ SSModel <- function(formula, data, H, u, distribution, tol = .Machine$double.eps
                                  data = mf, index = 1:p, n = n, ynames = if(p > 1) y_names)
     blocks[[1]]$state_types <- "regression"
   }  
-  
+
   if (lspecials > 0) 
     for (i in 1:lspecials) {      
       comp <- vars[[1 + specials[i]]]    
@@ -206,6 +225,7 @@ SSModel <- function(formula, data, H, u, distribution, tol = .Machine$double.eps
       comp$n <- n
       if (comp[[1]] != "SSMcustom" && p > 1 && is.null(comp$ynames) && (is.null(comp$type) || comp$type!='common')) 
         comp$ynames <- y_names[eval(comp$index)]
+      
       blocks[[i + reg_in_formula]] <- eval(comp,envir=parent.frame())###
       blocks[[i + reg_in_formula]]$state_types <- substr(as.character(comp[[1]]),start=4,stop=15L)
     }

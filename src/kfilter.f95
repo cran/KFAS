@@ -34,7 +34,7 @@ at, pt, vt, ft,kt, pinf, finf, kinf, lik, tol,rankp,theta,thetavar,filtersignal)
     double precision, external :: ddot
     double precision :: meps
 
-    meps = epsilon(meps)
+    meps = tiny(meps) !was epsilon!
 
     c = 0.5d0*log(2.0d0*3.141592653589793115998d0)
 
@@ -179,7 +179,7 @@ at, pt, vt, ft,kt, pinf, finf, kinf, lik, tol,rankp,theta,thetavar,filtersignal)
             if(ymiss(t,i).EQ.0) then
                 vt(i,t) = yt(t,i) - ddot(m,zt(i,:,(t-1)*timevar(1)+1),1,arec,1)
 
-                if (ft(i,t) .GT.  meps) then
+                if (ft(i,t) .GT. meps) then
                     call daxpy(m,vt(i,t)/ft(i,t),kt(:,i,t),1,arec,1) !a_rec = a_rec + kt(:,i,t)*vt(:,t)
                     call dsyr('u',m,-1.0d0/ft(i,t),kt(:,i,t),1,prec,m) !p_rec = p_rec - kt*kt'*ft(i,i,t)
                     lik = lik - 0.5d0*(log(ft(i,t)) + vt(i,t)**2/ft(i,t))-c

@@ -37,7 +37,7 @@
 #' (although care is needed when making inferences as then \eqn{y_t=\theta_t})
 #' 
 #' If observations are distributed as \eqn{Poisson(u_t\lambda_t)}, where \eqn{u_t}{u[t]} is offset term, then
-#' \eqn{\theta_t = log(\lambda_t)}{\theta[t]=log(\lambda[t])}.
+#' \eqn{\theta_t = log(u_t\lambda_t)}{\theta[t]=log(u[t]\lambda[t])}.
 #'
 #' If observations are distributed as \eqn{binomial(u_t,\pi_t)}, then \eqn{\theta_t =
 #' log[\pi_t/(1-\pi_t)]}{\theta[t] = log(\pi[t]/(1-\pi[t]))}, where \eqn{\pi_t}{\pi[t]} is the probability of success at time \eqn{t}.
@@ -88,7 +88,6 @@
 #' @useDynLib KFAS .registration=TRUE
 #' @examples
 #'
-#' library(KFAS)
 #' 
 # 
 #' # Example of local level model for Nile series
@@ -98,7 +97,7 @@
 #' modelNile<-fitSSM(inits=c(log(var(Nile)),log(var(Nile))),model=modelNile,
 #'                   method='BFGS',control=list(REPORT=1,trace=1))$model
 #' # Filtering and state smoothing
-#' out<-KFS(modelNile,smoothing='state') 
+#' out<-KFS(modelNile,filtering='state',smoothing='state') 
 #' out
 #'
 #' # Confidence and prediction intervals for the expected value and the observations.
@@ -116,10 +115,10 @@
 #' y[c(21:40,61:80)]<-NA
 #' modelNile<-SSModel(y~SSMtrend(1,Q=list(modelNile$Q)),H=modelNile$H)
 #'
-#' out<-KFS(modelNile,smoothing='state')
+#' out<-KFS(modelNile,filtering='mean',smoothing='mean')
 #'
 #' # Filtered and smoothed states
-#' plot.ts(cbind(y,c(NA,out$a[-c(1,101),]),out$alphahat), plot.type='single', 
+#' plot.ts(cbind(y,fitted(out,filtered=TRUE),fitted(out)), plot.type='single', 
 #'         col=1:3, ylab='Predicted Annual flow', main='River Nile')
 #' 
 #' 
@@ -138,7 +137,7 @@
 #' 
 #' out<-KFS(fit$model)
 #'
-#' ts.plot(cbind(model$y,out$alphahat),col=1:3)
+#' ts.plot(cbind(model$y,coef(out)),col=1:3)
 #' legend('bottomright',legend=c(colnames(GlobalTemp), 'Smoothed signal'), col=1:3, lty=1)
 #'
 #'
@@ -164,11 +163,11 @@
 #' fit<-fitSSM(inits=log(c(var(log(Seatbelts[,'drivers'])),0.001,0.0001)),
 #'             model=model,updatefn=ownupdatefn,method='BFGS')
 #' 
-#' out<-KFS(fit$model,smoothing=c('state','signal'))
+#' out<-KFS(fit$model,smoothing=c('state','mean'))
 #' out
-#' ts.plot(cbind(out$model$y,out$thetahat),lty=1:2,col=1:2,
+#' ts.plot(cbind(out$model$y,fitted(out)),lty=1:2,col=1:2,
 #' main='Observations and smoothed signal with and without seasonal component')
-#' lines(signal(out,states=1:3)$thetahat,col=4,lty=1)
+#' lines(signal(out,states=c("regression","trend"))$signal,col=4,lty=1)
 #' legend('bottomleft',
 #' legend=c('Observations', 'Smoothed signal','Smoothed level'), 
 #' col=c(1,2,4), lty=c(1,2,1))
@@ -203,7 +202,7 @@
 #' 
 #' out<-KFS(model)
 #' out
-#' ts.plot(cbind(signal(out,states=c('custom','regression'))$thetahat,model$y),col=1:4)
+#' ts.plot(cbind(signal(out,states=c('custom','regression'))$signal,model$y),col=1:4)
 #' 
 #' # For confidence or prediction intervals, use predict on the original model
 #' pred <- predict(model,states=c('custom','regression'),interval='prediction')
@@ -222,9 +221,9 @@
 #' model<-fit$model
 #' 
 #' # use approximating model, gives posterior mode of the signal and the linear predictor
-#' out_nosim<-KFS(model,smoothing=c('signal','invlink'),nsim=0)
+#' out_nosim<-KFS(model,smoothing=c('signal','mean'),nsim=0)
 #' # State smoothing via importance sampling
-#' out_sim<-KFS(model,smoothing=c('signal','invlink'),nsim=1000)
+#' out_sim<-KFS(model,smoothing=c('signal','mean'),nsim=1000)
 #' 
 #' out_nosim
 #' out_sim
@@ -244,34 +243,34 @@
 #'                distribution = 'poisson')
 #' 
 #' out<-KFS(model)
-#' out$alphahat[9,]
-#' glm.D93$coef
+#' coef(out,start=1,end=1)
+#' coef(glm.D93)
 #' 
-#' summary(glm.D93)$cov.u
-#' out$V[,,9]
+#' summary(glm.D93)$cov.s
+#' out$V[,,1]
 #' 
-#' outnosim<-KFS(model,smoothing=c('state','signal','invlink'))
+#' outnosim<-KFS(model,smoothing=c('state','signal','mean'))
 #' set.seed(1)
-#' outsim<-KFS(model,smoothing=c('state','signal','invlink'),nsim=100)
+#' outsim<-KFS(model,smoothing=c('state','signal','mean'),nsim=1000)
 #' 
 #' 
 #' ## linear 
 #' # GLM
-#' as.numeric(predict(glm.D93,type='link')) 
+#' glm.D93$linear.predictor
 #' # approximate model, this is the posterior mode of p(theta|y)
-#' c(outnosim$theta)            
+#' c(outnosim$thetahat)            
 #' # importance sampling on theta,  gives E(theta|y)            
-#' c(outsim$theta)                         
+#' c(outsim$thetahat)                         
 #' 
 #' 
 #' 
 #' ## predictions on response scale
 #' # GLM
-#' as.numeric(predict(glm.D93,type='response')) 
+#' fitted(glm.D93) 
 #' # approximate model with backtransform, equals GLM
-#' c(exp(outnosim$theta))                
+#' c(fitted(outnosim))                
 #' # importance sampling on exp(theta)       
-#' c(outsim$mu)                                 
+#' fitted(outsim)                                 
 #' 
 #' # prediction variances on link scale
 #' # GLM
@@ -328,7 +327,7 @@
 #'}
 #' # Example of Cubic spline smoothing
 #' \dontrun{
-#' library(MASS)
+#' require(MASS)
 #' data(mcycle)
 #' 
 #' model<-SSModel(accel~-1+SSMcustom(Z=matrix(c(1,0),1,2),

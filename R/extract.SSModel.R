@@ -6,18 +6,18 @@
 #' @S3method [<- SSModel
 #' @rdname Extract.SSModel
 #' @param x Object of class \code{SSModel}.
-#' @param element which element chosen. Possible choices are 'y','Z','H','T','R','Q','a1','P1','P1inf', and 'u'.
-#' @param states which states are chosen. Either a numeric vector containing the indices of the corresponding states,
+#' @param element Which element is chosen. Possible choices are 'y','Z','H','T','R','Q','a1','P1','P1inf', and 'u'.
+#' @param states Which states are chosen. Either a numeric vector containing the indices of the corresponding states,
 #' or a character vector defining the types of the corresponding states. 
 #' Possible choices are \dQuote{all}, \dQuote{arima}, \dQuote{custom}, \dQuote{cycle}, \dQuote{seasonal}, 
 #' \dQuote{trend}, or \dQuote{regression}. These can be combined. Default is \dQuote{all}.
-#' @param etas which disturbances eta are chosen. Used for elements \dQuote{R} and \dQuote{Q}.Either a numeric vector containing the indices of the corresponding etas,
+#' @param etas Which disturbances eta are chosen. Used for elements \dQuote{R} and \dQuote{Q}.Either a numeric vector containing the indices of the corresponding etas,
 #' or a character vector defining the types of the corresponding etas. 
 #' Possible choices are \dQuote{all}, \dQuote{arima}, \dQuote{custom}, \dQuote{cycle}, \dQuote{seasonal}, 
 #' \dQuote{trend}, or \dQuote{regression}. These can be combined. 
-#' @param series numeric. Which series are chosen. Used for elements \dQuote{y}, \dQuote{Z}, and \dQuote{u}.
-#' @param times numeric. Which time points are chosen.
-#' @param value a value to be assigned to x.
+#' @param series Numeric. Which series are chosen. Used for elements \dQuote{y}, \dQuote{Z}, and \dQuote{u}.
+#' @param times Numeric. Which time points are chosen.
+#' @param value A value to be assigned to x.
 #' @return A selected subset of the chosen element or a value.
 `[<-.SSModel` <- function(x, element, states, etas, series, times, value) {
     

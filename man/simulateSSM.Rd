@@ -2,10 +2,9 @@
 \alias{simulateSSM}
 \title{Simulation of a gaussian State Space Model}
 \usage{
-  simulateSSM(object,
-    type = c("states", "signals", "disturbances", "observations", "epsilon", "eta"),
-    filtered = FALSE, nsim = 1, antithetics = FALSE,
-    conditional = TRUE)
+simulateSSM(object, type = c("states", "signals", "disturbances",
+  "observations", "epsilon", "eta"), filtered = FALSE, nsim = 1,
+  antithetics = FALSE, conditional = TRUE)
 }
 \arguments{
   \item{object}{gaussian state space object.}
@@ -28,28 +27,28 @@
   model. Default is TRUE.}
 }
 \value{
-  An n x k x nsim array containing the simulated series,
-  where k is number of observations, signals, states or
-  disturbances.
+An n x k x nsim array containing the simulated series,
+where k is number of observations, signals, states or
+disturbances.
 }
 \description{
-  Function \code{simulateSMM} simulates states, signals,
-  disturbances or missing observations of the gaussian
-  state space model.
+Function \code{simulateSMM} simulates states, signals,
+disturbances or missing observations of the gaussian state
+space model.
 }
 \details{
-  Simulation smoother algorithm is based to article by J.
-  Durbin and S.J. Koopman (2002).
+Simulation smoother algorithm is based to article by J.
+Durbin and S.J. Koopman (2002).
 
-  Function can use two antithetic variables, one for
-  location and other for scale, so output contains four
-  blocks of simulated values which correlate which each
-  other (ith block correlates negatively with (i+1)th
-  block, and positively with (i+2)th block etc.).
+Function can use two antithetic variables, one for location
+and other for scale, so output contains four blocks of
+simulated values which correlate which each other (ith
+block correlates negatively with (i+1)th block, and
+positively with (i+2)th block etc.).
 }
 \references{
-  Durbin J. and Koopman, S.J. (2002). A simple and
-  efficient simulation smoother for state space time series
-  analysis, Biometrika, Volume 89, Issue 3
+Durbin J. and Koopman, S.J. (2002). A simple and efficient
+simulation smoother for state space time series analysis,
+Biometrika, Volume 89, Issue 3
 }
 

@@ -32,7 +32,7 @@ p, n, m, r,tol,rankp,thetahat)
     double precision, external :: ddot
     double precision :: meps
 
-    meps = epsilon(meps)
+    meps = tiny(meps)
     tv = max(timevar(4),timevar(5))
     pinf = p1inf
     im = 0.0d0

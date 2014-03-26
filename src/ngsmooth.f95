@@ -66,7 +66,10 @@ convtol,nd,ndl,alphahat,alphavar,thetahat,thetavar,yhat,yvar,smootha,smooths,smo
             do j= 1,p
                 select case(dist(j))
                     case(1)
-
+                    case(2)
+                        do t=1, n
+                            osim(j,t,:) = exp(osim(j,t,:))*u(t,j)
+                        end do
                     case(3)
                         osim(j,:,:) = exp(osim(j,:,:))/(1.0d0+exp(osim(j,:,:)))
                     case default
@@ -91,6 +94,10 @@ convtol,nd,ndl,alphahat,alphavar,thetahat,thetavar,yhat,yvar,smootha,smooths,smo
                 select case(dist(j))
                     case(1)
 
+                    case(2)
+                        do t=1, n
+                            sim(j,t,:) = exp(sim(j,t,:))*u(t,j)
+                        end do
                     case(3)
                         sim(j,:,:) = exp(sim(j,:,:))/(1.0d0+exp(sim(j,:,:)))
                     case default

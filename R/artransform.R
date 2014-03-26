@@ -6,8 +6,8 @@
 #' is done as in \code{arima}.
 #'
 #' @export
-#' @param param Parameters to be transformed
-#' @return transformed parameters satisfying the stationary constrains.
+#' @param param Real valued parameters for the transformation.
+#' @return transformed The parameters satisfying the stationary constrains.
 artransform<-function(param){
   param<-tanh(param)
   p<-length(param)

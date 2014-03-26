@@ -35,6 +35,7 @@ aplus1,c,tol,info,antithetics,w,sim,nd,ndl,simwhat,simdim)
     double precision, dimension(n,p) :: ytilde
     double precision, dimension(n,p) :: dn
     double precision, dimension(n) :: tmp
+    double precision, dimension(3 * nsim * antithetics + nsim) :: ps
     double precision, dimension(3 * nsim * antithetics + nsim) :: w
     double precision, external :: ddot
 
@@ -62,7 +63,7 @@ aplus1,c,tol,info,antithetics,w,sim,nd,ndl,simwhat,simdim)
                     tmp = exp(theta(:,j))
                     do t=1,n
                         if(ymiss(t,j) .EQ. 0) then
-                      
+
                             w = w*exp(yt(t,j)*(sim(j,t,:)-theta(t,j))-&
                             u(t,j)*(exp(sim(j,t,:))-tmp(t)))/&
                             exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-sim(j,t,:))**2 - dn(t,j)))
@@ -90,11 +91,20 @@ aplus1,c,tol,info,antithetics,w,sim,nd,ndl,simwhat,simdim)
                     end do
                 case(5) !negbin
                     tmp = exp(theta(:,j))
+                    !tmp = u(t,j)/(u(t,j)+exp(theta(:,j)))
                     do t=1,n
                         if(ymiss(t,j) .EQ. 0) then
                             w = w*exp(yt(t,j)*(sim(j,t,:)-theta(t,j)) +&
                             (yt(t,j)+u(t,j))*log((u(t,j)+tmp(t))/(u(t,j)+exp(sim(j,t,:)))))/&
                             exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-sim(j,t,:))**2 -dn(t,j)))
+                            !w = w*((u(t,j)+exp(sim(j,t,:)))/(u(t,j)+tmp(t)))**u(t,j)*&
+                            !(exp(sim(j,t,:))/(exp(sim(j,t,:))+u(t,j)))**yt(t,j)&
+                            !*(tmp/(tmp+u(t,j)))**(-yt(t,j))/&
+                            !w = w*(exp(sim(j,t,:)-theta(:,j)))**yt(t,j)*&
+                            !      ((tmp+u(t,j))/(exp(sim(j,t,:))+u(t,j)))**(u(t,j)+yt(t,j))/&
+                            !ps = u(t,j)/(u(t,j)+exp(sim(j,t,:)))
+                            !w= w*(ps/tmp)**u(t,j)*((1.0d0-ps)/(1.0d0-tmp))**yt(t,j)/&
+
                         end if
                     end do
             end select
@@ -150,6 +160,9 @@ aplus1,c,tol,info,antithetics,w,sim,nd,ndl,simwhat,simdim)
                             w = w*exp(yt(t,j)*(tsim(j,:)-theta(t,j)) +&
                             (yt(t,j)+u(t,j))*log((u(t,j)+tmp(t))/(u(t,j)+exp(tsim(j,:)))))/&
                             exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,:))**2 -dn(t,j)))
+                            !w = w*((u(t,j)+exp(tsim(j,:)))/(u(t,j)+tmp(t)))**u(t,j)*&
+                            !(exp(tsim(j,:))/(exp(tsim(j,:))+u(t,j)))**yt(t,j)&
+                            !*(tmp/(tmp+u(t,j)))**(-yt(t,j))/&
                         end if
                     end do
             end select

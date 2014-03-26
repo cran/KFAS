@@ -2,9 +2,9 @@
 \alias{importanceSSM}
 \title{Importance Sampling of Exponential Family State Space Model}
 \usage{
-  importanceSSM(model, type = c("states", "signals"),
-    filtered = FALSE, nsim = 1000, save.model = FALSE,
-    theta, antithetics = FALSE, maxiter = 25)
+importanceSSM(model, type = c("states", "signals"), filtered = FALSE,
+  nsim = 1000, save.model = FALSE, theta, antithetics = FALSE,
+  maxiter = 25)
 }
 \arguments{
   \item{model}{Exponential family state space model of
@@ -33,24 +33,24 @@
   linearisation. Default is 25.}
 }
 \value{
-  A list containing elements \code{samples}, \code{weights}
-  and \code{model} (if \code{save.model==TRUE}).
+A list containing elements \code{samples}, \code{weights}
+and \code{model} (if \code{save.model==TRUE}).
 }
 \description{
-  Importance Sampling of Exponential Family State Space
-  Model.
+Importance Sampling of Exponential Family State Space
+Model.
 }
 \details{
-  Function \code{importanceSSM} simulates states or signals
-  of the exponential family state space model conditioned
-  with the observations, returning the simulated samples of
-  the states/signals with the corresponding importance
-  weights.
+Function \code{importanceSSM} simulates states or signals
+of the exponential family state space model conditioned
+with the observations, returning the simulated samples of
+the states/signals with the corresponding importance
+weights.
 
-  Function can use two antithetic variables, one for
-  location and other for scale, so output contains four
-  blocks of simulated values which correlate which each
-  other (ith block correlates negatively with (i+1)th
-  block, and positively with (i+2)th block etc.).
+Function can use two antithetic variables, one for location
+and other for scale, so output contains four blocks of
+simulated values which correlate which each other (ith
+block correlates negatively with (i+1)th block, and
+positively with (i+2)th block etc.).
 }
 

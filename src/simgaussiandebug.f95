@@ -1,4 +1,4 @@
-subroutine simgaussian(ymiss,timevar, yt, zt, ht, tt, rtv, qt, a1, p1, &
+subroutine simgaussiandebug(ymiss,timevar, yt, zt, ht, tt, rtv, qt, a1, p1, &
 p1inf, nnd,nsim, epsplus, etaplus, aplus1, p, n, m, r, info,rankp,&
 tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
 
@@ -37,7 +37,7 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
     double precision, dimension(m) :: rt0,rt1
     double precision, dimension(m,r) :: mr
     double precision, dimension(m,m,(n-1)*max(timevar(4),timevar(5))+1) :: rqr
-    double precision, dimension(r,n) :: etahat,etahat1,etahat2
+    double precision, dimension(r,n) :: etahat
     double precision, dimension(p,n) :: epshat
     double precision, dimension(r,n) :: etaplushat
     double precision, dimension(p,n) :: epsplushat
@@ -132,7 +132,8 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
             call dgemv('n',m,r,1.0d0,rtv(:,:,(t-1)*timevar(4)+1),m,etaplus(:,t,i),1,1.0d0,aplus(:,t+1),1)
         end do
     
-           call smoothsimfast(yplus, ymiss, timevar, zt, ht,tt, rtv,qt,a1, ft,kt,&
+
+        call smoothsimfast(yplus, ymiss, timevar, zt, ht,tt, rtv,qt,a1, ft,kt,&
         finf, kinf, d, j, p, m, n,r,tol,epsplushat,etaplushat,rt0,rt1,needeps)
 
         !simwhat = 1: epsilon, 2: eta, 3: both, 4: state, 5: signal, 6: observations
@@ -275,6 +276,6 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
                 end do
         end select
     end do
-
-end subroutine simgaussian
+    
+end subroutine simgaussiandebug
 

@@ -55,8 +55,6 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl)
     do j=1,p
         if(dist(j) > 1) then
             do t=1,n
-        
-           
                 if(ymiss(t,j) .EQ. 0) then
                     lik= lik + con + 0.5d0*log(ht(j,j,t)) + 0.5d0*dn(t,j)/ht(j,j,t)
                 end if
@@ -68,10 +66,10 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl)
 
     if(sim .EQ. 1) then
         rankp2 = rankp
-         ! simulate signals
-    call simgaussian(ymiss,timevar, ytilde, zt, ht, tt, rtv, qt, a1, p1, &
-                     p1inf, nnd,nsim, epsplus, etaplus, aplus1, p, n, m, r, info,rankp,&
-                     tol,nd,ndl,tsim,c,5,p,antit)
+             ! simulate signals
+        call simgaussian(ymiss,timevar, ytilde, zt, ht, tt, rtv, qt, a1, p1, &
+        p1inf, nnd,nsim, epsplus, etaplus, aplus1, p, n, m, r, info,rankp,&
+        tol,nd,ndl,tsim,c,5,p,antit)
 
 
         ! Compute weights
@@ -109,10 +107,13 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl)
                     tmp = exp(theta(:,j))
                     do t=1,n
                         if(ymiss(t,j) .EQ. 0) then
-                            w = w*((u(t,j)+exp(tsim(j,t,:)))/(u(t,j)+tmp(t)))**u(t,j)*&
-                            (exp(tsim(j,t,:))/(exp(tsim(j,t,:))+u(t,j)))**yt(t,j)&
-                            *(tmp/(tmp+u(t,j)))**(-yt(t,j))/&
+                          w = w*exp(yt(t,j)*(tsim(j,t,:)-theta(t,j)) +&
+                            (yt(t,j)+u(t,j))*log((u(t,j)+tmp(t))/(u(t,j)+exp(tsim(j,t,:)))))/&
                             exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 -dn(t,j)))
+                            !w = w*((u(t,j)+exp(tsim(j,t,:)))/(u(t,j)+tmp(t)))**u(t,j)*&
+                            !(exp(tsim(j,t,:))/(exp(tsim(j,t,:))+u(t,j)))**yt(t,j)&
+                            !*(tmp/(tmp+u(t,j)))**(-yt(t,j))/&
+                            !exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 -dn(t,j)))
                         end if
                     end do
             end select

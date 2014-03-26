@@ -27,7 +27,7 @@ finf, kinf, dt, jt, p, m, n,r,tol,epshat,etahat,rt0,rt1,needeps)
     double precision :: meps
     double precision, external :: ddot
 
- meps = epsilon(meps)
+ meps = tiny(meps)
 
     j=0
     d=0
@@ -89,8 +89,6 @@ finf, kinf, dt, jt, p, m, n,r,tol,epshat,etahat,rt0,rt1,needeps)
     if(dt.LT.n) then
 
         !Non-diffuse filtering continues from t=d+1, i=1
-
-
         if(dt.EQ.0) then
             arec = a1
         end if
@@ -125,16 +123,10 @@ finf, kinf, dt, jt, p, m, n,r,tol,epshat,etahat,rt0,rt1,needeps)
     !rt(:,n+1) = 0.0d0
 
     do t = n, dt+1, -1 !do until diffuse tts
-
-
         call dgemv('t',m,r,1.0d0,rtv(:,:,(t-1)*timevar(4)+1),m,rrec,1,0.0d0,help,1)
         call dsymv('l',r,1.0d0,qt(:,:,(t-1)*timevar(5)+1),r,help,1,0.0d0,etahat(:,t),1)
-
-
         call dgemv('t',m,m,1.0d0,tt(:,:,(t-1)*timevar(3)+1),m,rrec,1,0.0d0,rhelp,1) !r_t,p=t_t-1'*r_t+1
         rrec = rhelp
-
-
         do i = p, 1 , -1
             if(ymiss(t,i).EQ.0) then
                 if(ft(i,t) .GT. meps) then
@@ -148,12 +140,10 @@ finf, kinf, dt, jt, p, m, n,r,tol,epshat,etahat,rt0,rt1,needeps)
                 end if
             end if
         end do
-
     end do
 
     if(dt.GT.0) then
         t=dt
-
         call dgemv('t',m,r,1.0d0,rtv(:,:,(t-1)*timevar(4)+1),m,rrec,1,0.0d0,help,1)
         call dsymv('l',r,1.0d0,qt(:,:,(t-1)*timevar(5)+1),r,help,1,0.0d0,etahat(:,t),1)
    
@@ -177,11 +167,9 @@ finf, kinf, dt, jt, p, m, n,r,tol,epshat,etahat,rt0,rt1,needeps)
         end do
 
         rrec1 = 0.0d0
-
-
         do i = jt, 1, -1
             if(ymiss(t,i).EQ.0) then
-                if(finf(i,t).GT.meps) then
+                if(finf(i,t).GT.tol) then
                     if(needeps) then
                         epshat(i,t) = -ht(i,i,(t-1)*timevar(2)+1)*ddot(m,kinf(:,i,t),1,rrec,1)/finf(i,t)
                     end if
@@ -205,33 +193,25 @@ finf, kinf, dt, jt, p, m, n,r,tol,epshat,etahat,rt0,rt1,needeps)
                         if(needeps) then
                             epshat(i,t) = ht(i,i,(t-1)*timevar(2)+1)*(vt(i,t)-ddot(m,kt(:,i,t),1,rrec,1))/ft(i,t)
                         end if
+                        lt= im
                         call dger(m,m,-1.0d0/ft(i,t),kt(:,i,t),1,zt(i,:,(t-1)*timevar(1)+1),1,lt,m) !lt = I -Kt*Z/Ft
                         call dgemv('t',m,m,1.0d0,lt,m,rrec,1,0.0d0,rhelp,1)
                         rrec = rhelp
                         call daxpy(m,vt(i,t)/ft(i,t),zt(i,:,(t-1)*timevar(1)+1),1,rrec,1) !r0 = Z'vt/Ft - Lt'r0
                         call dgemv('t',m,m,1.0d0,lt,m,rrec1,1,0.0d0,rhelp,1)
                         rrec1=rhelp
-
-
                     end if
                 end if
             end if
         end do
-       
-
 
         do t=(dt-1), 1, -1
-
-
             call dgemv('t',m,r,1.0d0,rtv(:,:,(t-1)*timevar(4)+1),m,rrec,1,0.0d0,help,1)
             call dsymv('l',r,1.0d0,qt(:,:,(t-1)*timevar(5)+1),r,help,1,0.0d0,etahat(:,t),1)
-         
             call dgemv('t',m,m,1.0d0,tt(:,:,(t-1)*timevar(3)+1),m,rrec,1,0.0d0,rhelp,1,1)
             rrec = rhelp
             call dgemv('t',m,m,1.0d0,tt(:,:,(t-1)*timevar(3)+1),m,rrec1,1,0.0d0,rhelp,1,1)
             rrec1 = rhelp
-
-          
 
             do i = p, 1, -1
                 if(ymiss(t,i).EQ.0) then
@@ -259,7 +239,7 @@ finf, kinf, dt, jt, p, m, n,r,tol,epshat,etahat,rt0,rt1,needeps)
                                 epshat(i,t) = ht(i,i,(t-1)*timevar(2)+1)*(vt(i,t)-ddot(m,kt(:,i,t),1,rrec,1))/ft(i,t)
                             end if
                             lt= im
-                            call dger(m,m,(-1.0d0)/ft(i,t),kt(:,i,t),1,zt(i,:,(t-1)*timevar(1)+1),1,lt,m) !lt = I -Kt*Z/Ft
+                            call dger(m,m,-1.0d0/ft(i,t),kt(:,i,t),1,zt(i,:,(t-1)*timevar(1)+1),1,lt,m) !lt = I -Kt*Z/Ft
                             call dgemv('t',m,m,1.0d0,lt,m,rrec,1,0.0d0,rhelp,1) !oli beta 1.0d0!!!!... JA miinusmerkki
                             rrec = rhelp
                             call daxpy(m,vt(i,t)/ft(i,t),zt(i,:,(t-1)*timevar(1)+1),1,rrec,1) !r0 = Z'vt/Ft - Lt'r0

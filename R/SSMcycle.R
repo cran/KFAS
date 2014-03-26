@@ -23,12 +23,20 @@ SSMcycle <- function(period, type, Q, index, a1, P1, P1inf, n, ynames) {
     m <- 2 * ((p - 1) * (type == 1) + 1)
     Z <- matrix(0, p, m)
     T <- matrix(0, m, m)
-    if (type == 2) {
-        Z[, 1] <- 1
-        p <- 1       
+#     if (type == 2) {
+#         Z[, 1] <- 1
+#         p <- 1       
+#     } else {
+#         #Z[cbind(1:3, seq(1, m, by = p - 1))] <- 1
+#       Z[cbind(1:3, seq(1, m, by = p))] <- 1
+#     }
+    Z_univariate <- matrix(c(1,0), 1, 2)
+    if (type != 2) {
+      for (i in 1:p) {
+        Z[i, ((i - 1) * 2 + 1):(i * 2)] <- Z_univariate
+      }
     } else {
-        Z[cbind(1:3, seq(1, m, by = p - 1))] <- 1
-        
+      Z <- matrix(Z_univariate, nrow = p, ncol = m, byrow = TRUE)
     }
     state_names <- paste0(c("cycle", "cycle*"), rep(ynames, each = 2))
     lambda <- 2 * pi/period

@@ -30,9 +30,11 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
     double precision, dimension(m,m) :: im,linf,l0,lt
     double precision, intent(inout), dimension(r,n) :: etahat
     double precision, intent(inout), dimension(p,n) :: epshat
-    double precision, external :: ddot
     double precision, intent(inout), dimension(m) :: rt0,rt1
+    double precision :: meps
+    double precision, external :: ddot
 
+ meps = tiny(meps)
     tv = max(timevar(4),timevar(5))
     pinf = p1inf
     im = 0.0d0
@@ -77,7 +79,7 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
                         end do
                     else
                         finf(j,d) = 0.0d0
-                        if(ft(j,d) .GT.  tol) then
+                        if(ft(j,d) .GT.  meps) then
                             call daxpy(m,vt(j,d)/ft(j,d),kt(:,j,d),1,arec,1) !a_rec = a_rec + kt(:,i,t)*vt(:,t)/ft(i,t)
                             call dsyr('u',m,(-1.0d0)/ft(j,d),kt(:,j,d),1,prec,m) !prec = prec -kt*kt'/ft
                         else
@@ -113,7 +115,7 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
                     vt(i,d) = yt(d,i) - ddot(m,zt(i,:,(d-1)*timevar(1)+1),1,arec,1) !vt
                     call dsymv('u',m,1.0d0,prec,m,zt(i,:,(d-1)*timevar(1)+1),1,0.0d0,kt(:,i,d),1) ! p symmetric!
                     ft(i,d) = ddot(m,zt(i,:,(d-1)*timevar(1)+1),1,kt(:,i,d),1)  +  ht(i,i,(d-1)*timevar(2)+1)
-                    if (ft(i,d) .GT.  tol) then
+                    if (ft(i,d) .GT.  meps) then
                         call daxpy(m,vt(i,d)/ft(i,d),kt(:,i,d),1,arec,1) !a_rec = a_rec + kt(:,i,t)*vt(:,t)
                         call dsyr('u',m,-1.0d0/ft(i,d),kt(:,i,d),1,prec,m) !p_rec = p_rec - kt*kt'*ft(i,t)
                     else
@@ -154,7 +156,7 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
                 vt(i,t) = yt(t,i) - ddot(m,zt(i,:,(t-1)*timevar(1)+1),1,arec,1)
                 call dsymv('u',m,1.0d0,prec,m,zt(i,:,(t-1)*timevar(1)+1),1,0.0d0,kt(:,i,t),1)
                 ft(i,t) = ddot(m,zt(i,:,(t-1)*timevar(1)+1),1,kt(:,i,t),1) +  ht(i,i,(t-1)*timevar(2)+1)
-                if (ft(i,t) .GT.  0.0d0) then
+                if (ft(i,t) .GT.  meps) then
                     call daxpy(m,vt(i,t)/ft(i,t),kt(:,i,t),1,arec,1) !a_rec = a_rec + kt(:,i,t)*vt(:,t)
                     call dsyr('u',m,-1.0d0/ft(i,t),kt(:,i,t),1,prec,m) !p_rec = p_rec - kt*kt'*ft(i,i,t)
                 else
@@ -182,9 +184,6 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
     end do
 
     rrec = 0.0d0
-
-
-
     do t = n, d+1, -1
         call dgemv('t',m,r,1.0d0,rtv(:,:,(t-1)*timevar(4)+1),m,rrec,1,0.0d0,help,1)
         call dsymv('l',r,1.0d0,qt(:,:,(t-1)*timevar(5)+1),r,help,1,0.0d0,etahat(:,t),1)
@@ -207,7 +206,6 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
 
     if(d.GT.0) then
         t=d
-
         call dgemv('t',m,r,1.0d0,rtv(:,:,(t-1)*timevar(4)+1),m,rrec,1,0.0d0,help,1)
         call dsymv('l',r,1.0d0,qt(:,:,(t-1)*timevar(5)+1),r,help,1,0.0d0,etahat(:,t),1)
 
@@ -217,7 +215,7 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
         do i = p, (j+1) , -1
 
             if(ymiss(t,i).EQ.0) then
-                if(ft(i,t) .GT.  0.0d0) then
+                if(ft(i,t) .GT.  meps) then
                     if(needeps) then
                         epshat(i,t) = ht(i,i,(t-1)*timevar(2)+1)/ft(i,t)*(vt(i,t)-ddot(m,kt(:,i,t),1,rrec,1))
                     end if
@@ -233,7 +231,7 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
         rrec1 = 0.0d0
         do i = j, 1, -1
             if(ymiss(t,i).EQ.0) then
-                if(finf(i,t).GT.0.0d0) then
+                if(finf(i,t).GT. tol) then
                     if(needeps) then
                         epshat(i,t) = -ht(i,i,(t-1)*timevar(2)+1)*ddot(m,kinf(:,i,t),1,rrec,1)/finf(i,t)
                     end if
@@ -249,11 +247,9 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
                     call daxpy(m,(vt(i,t)/finf(i,t)),zt(i,:,(t-1)*timevar(1)+1),1,rrec1,1)
                     call dgemv('t',m,m,1.0d0,linf,m,rrec,1,0.0d0,rhelp,1) !rt0
                     rrec = rhelp
-
-
                 else
 
-                    if(ft(i,t).GT.0.0d0) then
+                    if(ft(i,t).GT. meps) then
                         if(needeps) then
                             epshat(i,t) = ht(i,i,(t-1)*timevar(2)+1)*(vt(i,t)-ddot(m,kt(:,i,t),1,rrec,1))/ft(i,t)
                         end if
@@ -264,31 +260,18 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
                         call daxpy(m,vt(i,t)/ft(i,t),zt(i,:,(t-1)*timevar(1)+1),1,rrec,1) !r0 = Z'vt/Ft - Lt'r0
                         call dgemv('t',m,m,1.0d0,lt,m,rrec1,1,0.0d0,rhelp,1)
                         rrec1=rhelp
-
-
                     end if
                 end if
             end if
         end do
 
-
-
-
-
-
-
         do t=(d-1), 1, -1
-
-
             call dgemv('t',m,r,1.0d0,rtv(:,:,(t-1)*timevar(4)+1),m,rrec,1,0.0d0,help,1)
             call dsymv('l',r,1.0d0,qt(:,:,(t-1)*timevar(5)+1),r,help,1,0.0d0,etahat(:,t),1)
-
             call dgemv('t',m,m,1.0d0,tt(:,:,(t-1)*timevar(3)+1),m,rrec,1,0.0d0,rhelp,1,1)
             rrec = rhelp
             call dgemv('t',m,m,1.0d0,tt(:,:,(t-1)*timevar(3)+1),m,rrec1,1,0.0d0,rhelp,1,1)
             rrec1 = rhelp
-
-
 
             do i = p, 1, -1
                 if(ymiss(t,i).EQ.0) then
@@ -311,12 +294,12 @@ d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
                         rrec = rhelp
 
                     else
-                        if(ft(i,t).GT.  tol) then
+                        if(ft(i,t).GT.  meps) then
                             if(needeps) then
                                 epshat(i,t) = ht(i,i,(t-1)*timevar(2)+1)*(vt(i,t)-ddot(m,kt(:,i,t),1,rrec,1))/ft(i,t)
                             end if
                             lt= im
-                            call dger(m,m,(-1.0d0)/ft(i,t),kt(:,i,t),1,zt(i,:,(t-1)*timevar(1)+1),1,lt,m) !lt = I -Kt*Z/Ft
+                            call dger(m,m,-1.0d0/ft(i,t),kt(:,i,t),1,zt(i,:,(t-1)*timevar(1)+1),1,lt,m) !lt = I -Kt*Z/Ft
                             call dgemv('t',m,m,1.0d0,lt,m,rrec,1,0.0d0,rhelp,1)
                             rrec = rhelp
                             call daxpy(m,vt(i,t)/ft(i,t),zt(i,:,(t-1)*timevar(1)+1),1,rrec,1) !r0 = Z'vt/Ft - Lt'r0

@@ -55,8 +55,8 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
             case(2)
                 do i=1,n
                     if(ymiss(i,j).EQ.0) then
-                            ht(j,j,i) =  1.0d0/(exp(theta(i,j))*u(i,j))
-                            ytilde(i,j) =  yt(i,j)*ht(j,j,i) + theta(i,j) - 1.0d0
+                        ht(j,j,i) =  1.0d0/(exp(theta(i,j))*u(i,j))
+                        ytilde(i,j) =  yt(i,j)*ht(j,j,i) + theta(i,j) - 1.0d0
                     end if
                 end do
             case(3)
@@ -68,16 +68,21 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
                 end do
             case(4)
                 do i=1,n
-                    if(ymiss(i,1).EQ.0) then
-                        ht(j,j,i) = exp(theta(i,j))/(u(i,j)*yt(i,j))
-                        ytilde(i,j) = theta(i,j)+1.0d0-exp(theta(i,j))/yt(i,j)
+                    if(ymiss(i,j).EQ.0) then
+                        !ht(j,j,i) = exp(theta(i,j))/(u(i,j)*yt(i,j))
+                        !ytilde(i,j) = theta(i,j)+1.0d0-exp(theta(i,j))/yt(i,j)
+                        ht(j,j,i) =1.0d0/u(i,j) !1.0d0
+                        ytilde(i,j) = theta(i,j)+yt(i,j)/exp(theta(i,j))-1.0d0
                     end if
                 end do
             case(5)
                 do i=1,n
                     if(ymiss(i,j).EQ.0) then
-                        ht(j,j,i) = (exp(theta(i,j))+u(i,j))**2/(u(i,j)*exp(theta(i,j))*(yt(i,j)+u(i,j)))
-                        ytilde(i,j) = theta(i,j) + ht(j,j,i)*u(i,j)*(yt(i,j)-exp(theta(i,j)))/(u(i,j)+exp(theta(i,j)))
+                        !ht(j,j,i) = (exp(theta(i,j))+u(i,j))**2/(u(i,j)*exp(theta(i,j))*(yt(i,j)+u(i,j)))
+                        !ytilde(i,j) = theta(i,j) + ht(j,j,i)*u(i,j)*(yt(i,j)-exp(theta(i,j)))/(u(i,j)+exp(theta(i,j)))
+                        !ht(j,j,i) = u(i,j)*exp(theta(i,j))/(u(i,j)+exp(theta(i,j)))
+                        ht(j,j,i) = (1.0d0/u(i,j)+1.0d0/exp(theta(i,j)))
+                        ytilde(i,j) = theta(i,j)+yt(i,j)/exp(theta(i,j))-1.0d0
                     end if
                 end do
         end select
@@ -99,6 +104,7 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
                 case(2)
                     do i=1,n
                         if(ymiss(i,j).EQ.0) then
+
                             ht(j,j,i) =  1.0d0/(exp(theta(i,j))*u(i,j))
                             ytilde(i,j) =  yt(i,j)*ht(j,j,i) + theta(i,j) - 1.0d0
                         end if
@@ -112,23 +118,28 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
                     end do
                 case(4)
                     do i=1,n
-                        if(ymiss(i,1).EQ.0) then
-                            ht(j,j,i) = exp(theta(i,j))/(u(i,j)*yt(i,j))
-                            ytilde(i,j) = theta(i,j)+1.0d0-exp(theta(i,j))/yt(i,j)
+                        if(ymiss(i,j).EQ.0) then
+                               ! ht(j,j,i) = exp(theta(i,j))/(u(i,j)*yt(i,j))
+                               ! ytilde(i,j) = theta(i,j)+1.0d0-exp(theta(i,j))/yt(i,j)
+                               !ht(j,j,i) = 1.0d0
+                            ytilde(i,j) = theta(i,j)+yt(i,j)/exp(theta(i,j))-1.0d0
                         end if
                     end do
                 case(5)
                     do i=1,n
                         if(ymiss(i,j).EQ.0) then
-                            ht(j,j,i) = (exp(theta(i,j))+u(i,j))**2/(u(i,j)*exp(theta(i,j))*(yt(i,j)+u(i,j)))
-                            ytilde(i,j) = theta(i,j) + ht(j,j,i)*u(i,j)*(yt(i,j)-exp(theta(i,j)))/(u(i,j)+exp(theta(i,j)))
+                                !ht(j,j,i) = (exp(theta(i,j))+u(i,j))**2/(u(i,j)*exp(theta(i,j))*(yt(i,j)+u(i,j)))
+                                !ytilde(i,j) = theta(i,j) + ht(j,j,i)*u(i,j)*(yt(i,j)-exp(theta(i,j)))/(u(i,j)+exp(theta(i,j)))
+                            !ht(j,j,i) = u(i,j)*exp(theta(i,j))/(u(i,j)+exp(theta(i,j)))
+                            ht(j,j,i) = (1.0d0/u(i,j)+1.0d0/exp(theta(i,j)))
+                            ytilde(i,j) = theta(i,j)+yt(i,j)/exp(theta(i,j))-1.0d0
                         end if
                     end do
             end select
         end do
 
 
-        err = sum(abs(theta-theta0)/(abs(theta0)+0.1d0))/(n*p)
+        err = sum(abs(theta-theta0)/(abs(theta0)+0.1d0),MASK=(ymiss .EQ. 0))/(n*p-sum(ymiss))
         theta0=theta
     end do
     maxiter=k

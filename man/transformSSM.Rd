@@ -2,7 +2,7 @@
 \alias{transformSSM}
 \title{Transform the SSModel object with multivariate observations}
 \usage{
-  transformSSM(object, type = c("ldl", "augment"))
+transformSSM(object, type = c("ldl", "augment"))
 }
 \arguments{
   \item{object}{State space model object from function
@@ -19,25 +19,25 @@
   \eqn{H_t}{H[t]}.}
 }
 \value{
-  \item{model}{Transformed model.}
+\item{model}{Transformed model.}
 }
 \description{
-  Function transform.SSModel transforms original model by
-  LDL decomposition or state vector augmentation,
+Function transform.SSModel transforms original model by LDL
+decomposition or state vector augmentation,
 }
 \details{
-  As all the functions in KFAS use univariate approach,
-  \eqn{H_t}{H[t]}, a covariance matrix of an observation
-  equation needs to be either diagonal or zero matrix.
-  Function transformSSM performs either the LDL
-  decomposition of the covariance matrix of the observation
-  equation, or augments the state vector with the
-  disturbances of the observation equation.
+As all the functions in KFAS use univariate approach,
+\eqn{H_t}{H[t]}, a covariance matrix of an observation
+equation needs to be either diagonal or zero matrix.
+Function transformSSM performs either the LDL decomposition
+of the covariance matrix of the observation equation, or
+augments the state vector with the disturbances of the
+observation equation.
 
-  In case of a LDL decomposition, the new \eqn{H_t}{H[t]}
-  contains the diagonal part of the decomposition, whereas
-  observations \eqn{y_t}{Z[t]} and system matrices
-  \eqn{Z_t}{Z[t]} are multiplied with the inverse of
-  \eqn{L_t}{L[t]}.
+In case of a LDL decomposition, the new \eqn{H_t}{H[t]}
+contains the diagonal part of the decomposition, whereas
+observations \eqn{y_t}{Z[t]} and system matrices
+\eqn{Z_t}{Z[t]} are multiplied with the inverse of
+\eqn{L_t}{L[t]}.
 }
 

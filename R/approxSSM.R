@@ -6,21 +6,24 @@
 #' The linear Gaussian approximating model is defined by
 #' \deqn{\tilde y_t = Z_t \alpha_t + \epsilon_t, \quad \epsilon_t \sim N(0,\tilde H_t),}{ytilde[t] = Z[t]\alpha[t] + \epsilon[t], \epsilon[t] ~ N(0,Htilde[t]),}
 #' \deqn{\alpha_{t+1} = T_t \alpha_t + R_t \eta_t, \quad \eta_t \sim N(0,Q_t),}{\alpha[t+1] = T[t]\alpha[t] + R[t]\eta[t], \eta[t] ~ N(0,Q[t]),}
-#' and \eqn{\alpha_1 \sim N(a_1,P_1)}{\alpha[1] ~ N(a[1],P[1])}, where \eqn{\tilde y}{ytilde} and \eqn{\tilde H}{Htilde} are chosen in a way that the linear
-#' Gaussian approximating model has the same conditional mode of \eqn{\theta=Z\alpha} given the observations \eqn{y}
-#' as the original non-gaussian model. Models also have a same curvature at the mode.
+#' and \eqn{\alpha_1 \sim N(a_1,P_1)}{\alpha[1] ~ N(a[1],P[1])}, 
+#' where \eqn{\tilde y}{ytilde} and \eqn{\tilde H}{Htilde} are chosen in a way that the linear
+#' Gaussian approximating model has the same conditional mode of \eqn{\theta=Z\alpha} 
+#' given the observations \eqn{y} as the original non-gaussian model. 
+#' Models also have a same curvature at the mode.
 #'
-#' The linearization of the exponential family state space model is based on matching the first two derivatives of the observational logdensity.
+#' The linearization of the exponential family state space model is based on iterative  weighted 
+#' least squares method, see McCullagh and Nelder (1983) p.31 and Durbin Koopman (2012) p. 243.
 #'  
 #' @seealso Importance sampling of non-gaussian state space models \code{\link{importanceSSM}}, construct a \code{SSModel} object \code{\link{SSModel}}.
 #' @export
-#' @param model Non-gaussian state space model object of class \code{SSModel}.
+#' @param model A non-Gaussian state space model object of class \code{SSModel}.
 #' @param theta Initial values for conditional mode theta.
-#' @param maxiter Maximum number of iterations used in linearisation. Default is 25.
+#' @param maxiter The maximum number of iterations used in linearisation. Default is 25.
 #' @param tol Tolerance parameter for convergence checks. Iterations are continued until \eqn{tol>sum(abs(theta_{new}-theta_{old})/(abs(theta_{old})+0.1))/(n*p)}.
 #' @return An object which contains the approximating Gaussian state space model with following additional components:
-#' \item{thetahat}{Mode of \eqn{p(\theta|y)}.}
-#' \item{iterations}{Number of iterations used.}
+#' \item{thetahat}{mode of \eqn{p(\theta|y)}.}
+#' \item{iterations}{number of iterations used.}
 approxSSM <- function(model, theta, maxiter = 25, tol = 1e-08) {
   
   # Check that the model object is of proper form
@@ -41,9 +44,10 @@ approxSSM <- function(model, theta, maxiter = 25, tol = 1e-08) {
   
   ymiss <- is.na(model$y)
   storage.mode(ymiss) <- "integer"
+  if(is.null(maxiter)) maxiter<-25
   
   # initial values for linear predictor theta
-  if (missing(theta)) {
+  if (missing(theta) || is.null(theta)) {
     theta <- sapply(1:p, function(i) 
       switch(model$distribution[i], 
              gaussian = model$y[, i], 

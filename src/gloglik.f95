@@ -30,7 +30,7 @@ p, m, r, n, lik, tol,rankp)
     double precision, external :: ddot
     double precision :: meps
 
-    meps = epsilon(meps)
+    meps = tiny(meps)
     c = 0.5d0*log(8.0d0*atan(1.0d0))
     at=0.0d0
     pt=0.0d0
@@ -56,7 +56,7 @@ p, m, r, n, lik, tol,rankp)
         pt = p1
         prec = pt
         pirec = pinf
-        at(:) = a1
+        at = a1
         arec = a1
         diffuse: do while(d .LT. n)
             d = d+1

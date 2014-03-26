@@ -2,7 +2,7 @@
 \alias{fitSSM}
 \title{Maximum Likelihood Estimation of a State Space Model}
 \usage{
-  fitSSM(model, inits, updatefn, checkfn, ...)
+fitSSM(model, inits, updatefn, checkfn, ...)
 }
 \arguments{
   \item{inits}{Initial values for \code{optim}}
@@ -29,18 +29,17 @@
   \code{method='BFGS'}.}
 }
 \value{
-  A list with elements \item{optim.out}{Output from
-  function \code{optim}. } \item{model}{Model with
-  estimated parameters. }
+A list with elements \item{optim.out}{Output from function
+\code{optim}. } \item{model}{Model with estimated
+parameters. }
 }
 \description{
-  Function \code{fitSSM} finds the maximum likelihood
-  estimates for unknown parameters of an arbitary state
-  space model, given the user-defined model updating
-  function.
+Function \code{fitSSM} finds the maximum likelihood
+estimates for unknown parameters of an arbitary state space
+model, given the user-defined model updating function.
 }
 \examples{
-# Example function for updating covariance matrices H and Q 
+# Example function for updating covariance matrices H and Q
 # (also used as a default function in fitSSM)
 
 updatefn <- function(pars,model,...){

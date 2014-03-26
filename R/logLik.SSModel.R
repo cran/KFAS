@@ -7,26 +7,26 @@
 #' @S3method logLik SSModel
 #' @method logLik SSModel
 #' @aliases logLik logLik.SSModel
-#' @param object state space model of class \code{SSModel}.
-#' @param nsim number of independent samples used in estimating the
+#' @param object State space model of class \code{SSModel}.
+#' @param nsim Number of independent samples used in estimating the
 #' log-likelihood of the non-Gaussian state space model. Default is 0, which
 #' gives good starting value for optimization. Only used for non-Gaussian model.
-#' @param antithetics logical. If TRUE, two antithetic variables are used in
+#' @param antithetics Logical. If TRUE, two antithetic variables are used in
 #' simulations, one for location and another for scale. Default is TRUE. Only used for non-Gaussian model.
-#' @param theta initial values for conditional mode theta. Only used for non-Gaussian model.
-#' @param check.model logical. If TRUE, function \code{is.SSModel} is called before computing the likelihood. Default is FALSE.
-#' @param transform how to transform the model in case of non-diagonal
+#' @param theta Initial values for conditional mode theta. Only used for non-Gaussian model.
+#' @param check.model Logical. If TRUE, function \code{is.SSModel} is called before computing the likelihood. Default is FALSE.
+#' @param transform How to transform the model in case of non-diagonal
 #' covariance matrix \eqn{H}. Defaults to \code{'ldl'}. See function \code{\link{transformSSM}} for
 #' details. 
-#' @param maxiter maximum number of iterations used in linearisation. Default is 25. Only used for non-Gaussian model.
-#' @param seed the value is used as a seed via set.seed function. Only used for non-Gaussian model.
+#' @param maxiter The maximum number of iterations used in linearisation. Default is 25. Only used for non-Gaussian model.
+#' @param seed The value is used as a seed via set.seed function. Only used for non-Gaussian model.
 #' @param ... Ignored.
 #' @return \item{}{log-likelihood of the state space model.}
 logLik.SSModel <- function(object, nsim = 0, antithetics = TRUE, theta, check.model = FALSE, transform = c("ldl","augment"), maxiter = 25, 
     seed, ...) {
     if (check.model) {
         if (!is.SSModel(object, na.check = TRUE)) {
-            warning("Not a valid SSModel object.")
+            warning("Not a valid SSModel object. Returning -Inf")
             return(-Inf)
         }
     }
@@ -67,10 +67,13 @@ logLik.SSModel <- function(object, nsim = 0, antithetics = TRUE, theta, check.mo
     } else {
         
         if (missing(theta)) {
-            theta <- sapply(1:p, function(i) switch(object$distribution[i], gaussian = object$y[, i], poisson = log(pmax(object$y[, 
-                i]/object$u[, i], 0.1, na.rm = TRUE)), binomial = qlogis((ifelse(is.na(object$y[, i]), 0.5, object$y[, i]) + 0.5)/(object$u[, 
-                i] + 1)), gamma = log(pmax(object$y[, i], 1, na.rm = TRUE)), `negative binomial` = log(pmax(object$y[, i], 1/6, 
-                na.rm = TRUE))))
+            theta <- sapply(1:p, function(i)
+              switch(object$distribution[i], 
+                     gaussian = object$y[, i], 
+                     poisson = log(pmax(object$y[,i]/object$u[, i], 0.1, na.rm = TRUE)), 
+                     binomial = qlogis((ifelse(is.na(object$y[, i]), 0.5, object$y[, i]) + 0.5)/(object$u[, i] + 1)), 
+                     gamma = log(pmax(object$y[, i], 1, na.rm = TRUE)), 
+                `negative binomial` = log(pmax(object$y[, i], 1/6, na.rm = TRUE))))
         } else theta <- array(theta, dim = c(n, p))
         
         if (nsim == 0) {
@@ -126,15 +129,20 @@ logLik.SSModel <- function(object, nsim = 0, antithetics = TRUE, theta, check.mo
         
         out <- .Fortran(fngloglik, NAOK = TRUE, object$y, ymiss, as.integer(tv), object$Z, object$T, object$R, object$Q, object$a1, 
             object$P1, object$P1inf, as.integer(p), as.integer(m), as.integer(k),as.integer(n), lik = double(1), theta = theta, object$u, pmatch(x = object$distribution, table = c("gaussian", 
-                "poisson", "binomial", "gamma", "negative binomial"), duplicates.ok = TRUE), as.integer(maxiter), as.integer(sum(object$P1inf)), 
+                "poisson", "binomial", "gamma", "negative binomial"), duplicates.ok = TRUE), maxiter=as.integer(maxiter), as.integer(sum(object$P1inf)), 
             1e-08, as.integer(nnd), as.integer(nsim), epsplus, etaplus, aplus1, c2, object$tol, info = integer(1), as.integer(antithetics), 
             as.integer(sim), nsim2, as.integer(nd), as.integer(length(nd)))
-        
+        if (maxiter == out$maxiter){
+          warning("Maximum number of iterations reached, the linearization did not converge. Returning -Inf.")
+          return(-Inf)
+        }
         # add the scaling factor from approximating model
         logLik <- out$lik + sum(sapply(1:p, function(i) switch(object$distribution[i], gaussian = 0, poisson = sum(dpois(x = object$y[, 
-            i], lambda = object$u[, i] * exp(out$theta[, i]), log = TRUE), na.rm = TRUE), binomial = sum(dbinom(x = object$y[, 
-            i], size = object$u[, i], prob = (exp(out$theta[, i])/(1 + exp(out$theta[, i]))), log = TRUE), na.rm = TRUE), gamma = sum(dgamma(x = object$y[, 
-            i], shape = object$u[, i], scale = exp(out$theta[, i])/object$u[, i], log = TRUE), na.rm = TRUE), `negative binomial` = sum(dnbinom(x = object$y[, 
+            i], lambda = exp(out$theta[, i])*object$u[,i], log = TRUE), na.rm = TRUE), binomial = sum(dbinom(x = object$y[, 
+            i], size = object$u[, i], prob = (exp(out$theta[, i])/(1 + exp(out$theta[, i]))), log = TRUE), na.rm = TRUE), 
+            gamma = sum(dgamma(x = object$y[,i], shape = object$u[, i], 
+                               scale = exp(out$theta[, i])/object$u[, i], log = TRUE), na.rm = TRUE), 
+            `negative binomial` = sum(dnbinom(x = object$y[, 
             i], size = object$u[, i], mu = exp(out$theta[, i]), log = TRUE), na.rm = TRUE))))
         
     }

@@ -8,31 +8,33 @@
 \alias{SSMtrend}
 \title{Create a State Space Model Object of Class SSModel}
 \usage{
-  SSMarima(ar = NULL, ma = NULL, d = 0, Q,
-    stationary = TRUE, index, n, ynames)
+SSMarima(ar = NULL, ma = NULL, d = 0, Q, stationary = TRUE, index, n,
+  ynames)
 
-  SSMcustom(Z, T, R, Q, a1, P1, P1inf, index, n)
+SSMcustom(Z, T, R, Q, a1, P1, P1inf, index, n)
 
-  SSMcycle(period, type, Q, index, a1, P1, P1inf, n,
-    ynames)
+SSMcycle(period, type, Q, index, a1, P1, P1inf, n, ynames)
 
-  SSModel(formula, data, H, u, distribution,
-    tol = .Machine$double.eps^0.5)
+SSModel(formula, data, H, u, distribution, tol = .Machine$double.eps^0.5)
 
-  SSMregression(rformula, data, type, Q, index, R, a1, P1,
-    P1inf, n, ynames)
+SSMregression(rformula, data, type, Q, index, R, a1, P1, P1inf, n, ynames)
 
-  SSMseasonal(period,
-    sea.type = c("dummy", "trigonometric"), type, Q, index,
-    a1, P1, P1inf, n, ynames)
+SSMseasonal(period, sea.type = c("dummy", "trigonometric"), type, Q, index,
+  a1, P1, P1inf, n, ynames)
 
-  SSMtrend(degree = 1, type, Q, index, a1, P1, P1inf, n,
-    ynames)
+SSMtrend(degree = 1, type, Q, index, a1, P1, P1inf, n, ynames)
 }
 \arguments{
   \item{formula}{an object of class \code{\link{formula}}
-  containing the symbolic description of the model. See
-  details and examples for special functions used in model
+  containing the symbolic description of the model. The
+  intercept term can be removed with \code{-1} as in
+  \code{lm}. In case of trend or differenced arima
+  component intercept is removed automatically. Note that
+  in order to be compatible with nonstationary elements,
+  first level of each factor is always added to intercept,
+  so if intercept is removed via \code{-1}, one level will
+  be missing. See details and examples in
+  \code{\link{KFAS}} for special functions used in model
   construction.}
 
   \item{data}{an optional data frame, list or environment
@@ -129,47 +131,45 @@
   internally.}
 }
 \value{
-  object of class \code{SSModel}, which is a list with the
-  following components: \item{y}{A n x p matrix containing
-  the observations. } \item{Z}{A p x m x 1 or p x m x n
-  array corresponding to the system matrix of observation
-  equation. } \item{H}{A p x p x 1 or p x p x n array
-  corresponding to the covariance matrix of observational
-  disturbances epsilon. } \item{T}{A m x m x 1 or m x m x n
-  array corresponding to the first system matrix of state
-  equation. } \item{R}{A m x k x 1 or m x k x n array
-  corresponding to the second system matrix of state
-  equation. } \item{Q}{A k x k x 1 or k x k x n array
-  corresponding to the covariance matrix of state
-  disturbances eta } \item{a1}{A m x 1 matrix containing
-  the expected values of the initial states. } \item{P1}{A
-  m x m matrix containing the covariance matrix of the
-  nondiffuse part of the initial state vector. }
-  \item{P1inf}{A m x m matrix containing the covariance
-  matrix of the diffuse part of the initial state vector. }
-  \item{u}{A n x p matrix of an additional parameters in
-  case of non-Gaussian model.} \item{distribution}{A vector
-  of length p giving the distributions of the observations.
-  } \item{tol}{A tolerance parameter for the diffuse phase.
-  } \item{call}{Original call to the function. } In
-  addition, object of class \code{SSModel} contains
-  following attributes: \item{names}{Names of the list
-  components. } \item{p, m, k, n}{Integer valued scalars
-  defining the dimensions of the model components. }
-  \item{state_types}{Types of the states in the model. }
+object of class \code{SSModel}, which is a list with the
+following components: \item{y}{A n x p matrix containing
+the observations. } \item{Z}{A p x m x 1 or p x m x n array
+corresponding to the system matrix of observation equation.
+} \item{H}{A p x p x 1 or p x p x n array corresponding to
+the covariance matrix of observational disturbances
+epsilon. } \item{T}{A m x m x 1 or m x m x n array
+corresponding to the first system matrix of state equation.
+} \item{R}{A m x k x 1 or m x k x n array corresponding to
+the second system matrix of state equation. } \item{Q}{A k
+x k x 1 or k x k x n array corresponding to the covariance
+matrix of state disturbances eta } \item{a1}{A m x 1 matrix
+containing the expected values of the initial states. }
+\item{P1}{A m x m matrix containing the covariance matrix
+of the nondiffuse part of the initial state vector. }
+\item{P1inf}{A m x m matrix containing the covariance
+matrix of the diffuse part of the initial state vector. }
+\item{u}{A n x p matrix of an additional parameters in case
+of non-Gaussian model.} \item{distribution}{A vector of
+length p giving the distributions of the observations. }
+\item{tol}{A tolerance parameter for the diffuse phase. }
+\item{call}{Original call to the function. } In addition,
+object of class \code{SSModel} contains following
+attributes: \item{names}{Names of the list components. }
+\item{p, m, k, n}{Integer valued scalars defining the
+dimensions of the model components. }
+\item{state_types}{Types of the states in the model. }
 }
 \description{
-  Function \code{SSModel} creates a state space object
-  object of class \code{SSModel} which can be used as an
-  input object for various functions of \code{KFAS}
-  package.
+Function \code{SSModel} creates a state space object object
+of class \code{SSModel} which can be used as an input
+object for various functions of \code{KFAS} package.
 }
 \details{
-  Formula of the model can contain the usual regression
-  part and additional functions defining different types of
-  components of the model, named as \code{SSMarima},
-  \code{SSMcustom}, \code{SSMcycle}, \code{SSMregression},
-  \code{SSMseasonal} and \code{SSMtrend}. See examples.
+Formula of the model can contain the usual regression part
+and additional functions defining different types of
+components of the model, named as \code{SSMarima},
+\code{SSMcustom}, \code{SSMcycle}, \code{SSMregression},
+\code{SSMseasonal} and \code{SSMtrend}.
 }
 \examples{
 \dontrun{
@@ -182,6 +182,6 @@ examplemodel<-SSModel(cbind(y1,y2,y3)  ~ x1+x2
 }
 }
 \seealso{
-  \code{\link{KFAS}} for examples.
+\code{\link{KFAS}} for examples.
 }
 

@@ -4,134 +4,129 @@
 \alias{KFAS-package}
 \title{KFAS: Functions for Gaussian and Non-Gaussian State Space Models}
 \description{
-  Package KFAS contains functions for Kalman filtering,
-  smoothing and simulation of linear state space models
-  with exact diffuse initialization.
+Package KFAS contains functions for Kalman filtering,
+smoothing and simulation of linear state space models with
+exact diffuse initialization.
 }
 \details{
-  The linear gaussian state space model is given by
+The linear gaussian state space model is given by
 
-  \deqn{y_t = Z_t \alpha_t + \epsilon_t,}{y[t] =
-  Z[t]\alpha[t] + \epsilon[t], (observation equation)}
+\deqn{y_t = Z_t \alpha_t + \epsilon_t,}{y[t] =
+Z[t]\alpha[t] + \epsilon[t], (observation equation)}
 
-  \deqn{\alpha_{t+1} = T_t \alpha_t + R_t
-  \eta_t,}{\alpha[t+1] = T[t]\alpha[t] + R[t]\eta[t],
-  (transition equation)}
+\deqn{\alpha_{t+1} = T_t \alpha_t + R_t
+\eta_t,}{\alpha[t+1] = T[t]\alpha[t] + R[t]\eta[t],
+(transition equation)}
 
-  where \eqn{\epsilon_t \sim N(0,H_t)}{\epsilon[t] ~
-  N(0,H[t])}, \eqn{\eta_t \sim N(0,Q_t)}{\eta[t] ~
-  N(0,Q[t])} and \eqn{\alpha_1 \sim N(a_1,P_1)}{\alpha[1] ~
-  N(a[1],P[1])} independently of each other.
+where \eqn{\epsilon_t \sim N(0,H_t)}{\epsilon[t] ~
+N(0,H[t])}, \eqn{\eta_t \sim N(0,Q_t)}{\eta[t] ~ N(0,Q[t])}
+and \eqn{\alpha_1 \sim N(a_1,P_1)}{\alpha[1] ~
+N(a[1],P[1])} independently of each other.
 
-  All system and covariance matrices Z, H, T, R and Q can
-  be time-varying, and partially or totally missing
-  observations \eqn{y_t}{y[t]} are allowed.
+All system and covariance matrices Z, H, T, R and Q can be
+time-varying, and partially or totally missing observations
+\eqn{y_t}{y[t]} are allowed.
 
-  Covariance matrices H and Q has to be positive
-  semidefinite (although this is not checked).
+Covariance matrices H and Q has to be positive semidefinite
+(although this is not checked).
 
-  Dimensions of system matrices are
+Dimensions of system matrices are
 
-  \tabular{rl}{ Z \tab \eqn{p \times m \times 1}{p*m*1} or
-  \eqn{p \times m \times n}{p*m*n} in time varying case \cr
-  H \tab \eqn{p \times p \times 1}{p*p*1} or \eqn{p \times
-  p \times n}{p*p*n} in time varying case (Omitted in
-  non-gaussian models) \cr T \tab \eqn{m \times m \times
-  1}{m*m*1} or \eqn{m \times m \times n}{m*m*n} in time
-  varying case \cr R \tab \eqn{m \times k \times 1}{m*k*1}
-  or \eqn{m \times k \times n}{m*k*n} in time varying case
-  \cr Q \tab \eqn{k \times k \times 1}{k*k*1} or \eqn{k
-  \times k \times n}{k*k*n} in time varying case \cr u \tab
-  \eqn{n \times p}{p*n} (Omitted in gaussian models) \cr }
+\tabular{rl}{ Z \tab \eqn{p \times m \times 1}{p*m*1} or
+\eqn{p \times m \times n}{p*m*n} in time varying case \cr H
+\tab \eqn{p \times p \times 1}{p*p*1} or \eqn{p \times p
+\times n}{p*p*n} in time varying case (Omitted in
+non-gaussian models) \cr T \tab \eqn{m \times m \times
+1}{m*m*1} or \eqn{m \times m \times n}{m*m*n} in time
+varying case \cr R \tab \eqn{m \times k \times 1}{m*k*1} or
+\eqn{m \times k \times n}{m*k*n} in time varying case \cr Q
+\tab \eqn{k \times k \times 1}{k*k*1} or \eqn{k \times k
+\times n}{k*k*n} in time varying case \cr u \tab \eqn{n
+\times p}{p*n} (Omitted in gaussian models) \cr }
 
-  In case of any of the series in model is defined as
-  non-gaussian, the observation equation is of form
-  \deqn{\prod_i^p p_i(y_{i,t}|\theta_t)}{\prod_i^p
-  p(y[i,t]|\theta[t]),} with
-  \eqn{\theta_{i,t}=Z_{i,t}\alpha_t}{\theta[i,t]=Z[i,t]\alpha[t]}
-  being one of the following:
+In case of any of the series in model is defined as
+non-gaussian, the observation equation is of form
+\deqn{\prod_i^p p_i(y_{i,t}|\theta_t)}{\prod_i^p
+p(y[i,t]|\theta[t]),} with
+\eqn{\theta_{i,t}=Z_{i,t}\alpha_t}{\theta[i,t]=Z[i,t]\alpha[t]}
+being one of the following:
 
-  If observations \eqn{y_{i,1},\ldots,y_{i,n}} are
-  distributed as \eqn{N(\mu_t,u_t)}, then
-  \eqn{\theta_t=\mu_t}. Note that now variances are defined
-  using \code{u}, not \code{H}. If correlation between
-  gaussian observation equations is needed, one can use
-  \eqn{u_t=0} and add correlating disturbances into state
-  equation (although care is needed when making inferences
-  as then \eqn{y_t=\theta_t})
+If observations \eqn{y_{i,1},\ldots,y_{i,n}} are
+distributed as \eqn{N(\mu_t,u_t)}, then
+\eqn{\theta_t=\mu_t}. Note that now variances are defined
+using \code{u}, not \code{H}. If correlation between
+gaussian observation equations is needed, one can use
+\eqn{u_t=0} and add correlating disturbances into state
+equation (although care is needed when making inferences as
+then \eqn{y_t=\theta_t})
 
-  If observations are distributed as
-  \eqn{Poisson(u_t\lambda_t)}, where \eqn{u_t}{u[t]} is
-  offset term, then \eqn{\theta_t =
-  log(\lambda_t)}{\theta[t]=log(\lambda[t])}.
+If observations are distributed as
+\eqn{Poisson(u_t\lambda_t)}, where \eqn{u_t}{u[t]} is
+offset term, then \eqn{\theta_t =
+log(u_t\lambda_t)}{\theta[t]=log(u[t]\lambda[t])}.
 
-  If observations are distributed as
-  \eqn{binomial(u_t,\pi_t)}, then \eqn{\theta_t =
-  log[\pi_t/(1-\pi_t)]}{\theta[t] =
-  log(\pi[t]/(1-\pi[t]))}, where \eqn{\pi_t}{\pi[t]} is the
-  probability of success at time \eqn{t}.
+If observations are distributed as
+\eqn{binomial(u_t,\pi_t)}, then \eqn{\theta_t =
+log[\pi_t/(1-\pi_t)]}{\theta[t] = log(\pi[t]/(1-\pi[t]))},
+where \eqn{\pi_t}{\pi[t]} is the probability of success at
+time \eqn{t}.
 
-  If observations are distributed as
-  \eqn{gamma(u_t,\mu_t)}, then \eqn{\theta_t =
-  log(\mu_t)}{[\theta[t] = log(\mu[t])]}, where
-  \eqn{\mu[t]} is the mean parameter and \eqn{u} is the
-  shape parameter.
+If observations are distributed as \eqn{gamma(u_t,\mu_t)},
+then \eqn{\theta_t = log(\mu_t)}{[\theta[t] =
+log(\mu[t])]}, where \eqn{\mu[t]} is the mean parameter and
+\eqn{u} is the shape parameter.
 
-  If observations are distributed as \eqn{negative
-  binomial(u_t,\mu_t)} (with expected value \eqn{\mu_t} and
-  variance \eqn{\mu_t+ \mu_t^2/u_t}, see
-  \code{\link{dbinom}}), then \eqn{\theta_t =
-  log[\mu_t]}{\theta[t] = log(\mu[t])}.
+If observations are distributed as \eqn{negative
+binomial(u_t,\mu_t)} (with expected value \eqn{\mu_t} and
+variance \eqn{\mu_t+ \mu_t^2/u_t}, see
+\code{\link{dbinom}}), then \eqn{\theta_t =
+log[\mu_t]}{\theta[t] = log(\mu[t])}.
 
-  For exponential family models \eqn{u_t=1}{u[t]=1} as a
-  default. For completely gaussian models, parameter is
-  omitted.
+For exponential family models \eqn{u_t=1}{u[t]=1} as a
+default. For completely gaussian models, parameter is
+omitted.
 
-  For the unknown elements of initial state vector
-  \eqn{a_1}{a[1]}, KFS uses exact diffuse initialization by
-  Koopman and Durbin (2000, 2001, 2003), where the unknown
-  initial states are set to have a zero mean and infinite
-  variance, so \deqn{P_1 = P_{\ast,1} + \kappa
-  P_{\infty,1},}{P[1] = P[*,1] + \kappaP[inf,1],} with
-  \eqn{\kappa} going to infinity and
-  \eqn{P_{\infty,1}}{P[inf,1]} being diagonal matrix with
-  ones on diagonal elements corresponding to unknown
-  initial states.
+For the unknown elements of initial state vector
+\eqn{a_1}{a[1]}, KFS uses exact diffuse initialization by
+Koopman and Durbin (2000, 2001, 2003), where the unknown
+initial states are set to have a zero mean and infinite
+variance, so \deqn{P_1 = P_{\ast,1} + \kappa
+P_{\infty,1},}{P[1] = P[*,1] + \kappaP[inf,1],} with
+\eqn{\kappa} going to infinity and
+\eqn{P_{\infty,1}}{P[inf,1]} being diagonal matrix with
+ones on diagonal elements corresponding to unknown initial
+states.
 
-  Diffuse phase is continued until rank of
-  \eqn{P_{\infty,t}}{P[inf,t]} becomes zero. Rank of
-  \eqn{P_{\infty}}{P[inf]} decreases by 1, if
-  \eqn{F_\infty>tol>0}{F[inf]>tol>0}. Usually the number of
-  diffuse time points equals the number unknown elements of
-  initial state vector, but missing observations or
-  time-varying Z can affect this. See Koopman and Durbin
-  (2000, 2001, 2003) for details for exact diffuse and
-  non-diffuse filtering.
+Diffuse phase is continued until rank of
+\eqn{P_{\infty,t}}{P[inf,t]} becomes zero. Rank of
+\eqn{P_{\infty}}{P[inf]} decreases by 1, if
+\eqn{F_\infty>tol>0}{F[inf]>tol>0}. Usually the number of
+diffuse time points equals the number unknown elements of
+initial state vector, but missing observations or
+time-varying Z can affect this. See Koopman and Durbin
+(2000, 2001, 2003) for details for exact diffuse and
+non-diffuse filtering.
 
-  To lessen the notation and storage space, KFAS uses
-  letters P, F and K for non-diffuse part of the
-  corresponding matrices, omitting the asterisk in diffuse
-  phase.
+To lessen the notation and storage space, KFAS uses letters
+P, F and K for non-diffuse part of the corresponding
+matrices, omitting the asterisk in diffuse phase.
 
-  All functions of KFAS use the univariate approach (also
-  known as sequential processing, see Anderson and Moore
-  (1979)) which is from Koopman and Durbin (2000, 2001). In
-  univariate approach the observations are introduced one
-  element at the time. Therefore the prediction error
-  variance matrices F and Finf does not need to be
-  non-singular, as there is no matrix inversions in
-  univariate approach algorithm.  This provides more stable
-  and possibly more faster filtering and smoothing than
-  normal multivariate Kalman filter algorithm. If
-  covariance matrix H is not diagonal, it is possible to
-  transform the model by either using LDL decomposition on
-  H, or augmenting the state vector with \eqn{\epsilon}
-  disturbances. See \code{\link{transformSSM}} for more
-  details.
+All functions of KFAS use the univariate approach (also
+known as sequential processing, see Anderson and Moore
+(1979)) which is from Koopman and Durbin (2000, 2001). In
+univariate approach the observations are introduced one
+element at the time. Therefore the prediction error
+variance matrices F and Finf does not need to be
+non-singular, as there is no matrix inversions in
+univariate approach algorithm.  This provides more stable
+and possibly more faster filtering and smoothing than
+normal multivariate Kalman filter algorithm. If covariance
+matrix H is not diagonal, it is possible to transform the
+model by either using LDL decomposition on H, or augmenting
+the state vector with \eqn{\epsilon} disturbances. See
+\code{\link{transformSSM}} for more details.
 }
 \examples{
-library(KFAS)
-
 # Example of local level model for Nile series
 
 modelNile<-SSModel(Nile~SSMtrend(1,Q=list(matrix(NA))),H=matrix(NA))
@@ -139,7 +134,7 @@ modelNile
 modelNile<-fitSSM(inits=c(log(var(Nile)),log(var(Nile))),model=modelNile,
                   method='BFGS',control=list(REPORT=1,trace=1))$model
 # Filtering and state smoothing
-out<-KFS(modelNile,smoothing='state')
+out<-KFS(modelNile,filtering='state',smoothing='state')
 out
 
 # Confidence and prediction intervals for the expected value and the observations.
@@ -157,10 +152,10 @@ y<-Nile
 y[c(21:40,61:80)]<-NA
 modelNile<-SSModel(y~SSMtrend(1,Q=list(modelNile$Q)),H=modelNile$H)
 
-out<-KFS(modelNile,smoothing='state')
+out<-KFS(modelNile,filtering='mean',smoothing='mean')
 
 # Filtered and smoothed states
-plot.ts(cbind(y,c(NA,out$a[-c(1,101),]),out$alphahat), plot.type='single',
+plot.ts(cbind(y,fitted(out,filtered=TRUE),fitted(out)), plot.type='single',
         col=1:3, ylab='Predicted Annual flow', main='River Nile')
 
 
@@ -179,7 +174,7 @@ fit<-fitSSM(inits=c(0.5*log(.1),inits),model=model,method='BFGS')
 
 out<-KFS(fit$model)
 
-ts.plot(cbind(model$y,out$alphahat),col=1:3)
+ts.plot(cbind(model$y,coef(out)),col=1:3)
 legend('bottomright',legend=c(colnames(GlobalTemp), 'Smoothed signal'), col=1:3, lty=1)
 
 
@@ -205,11 +200,11 @@ ownupdatefn<-function(pars,model,...){
 fit<-fitSSM(inits=log(c(var(log(Seatbelts[,'drivers'])),0.001,0.0001)),
             model=model,updatefn=ownupdatefn,method='BFGS')
 
-out<-KFS(fit$model,smoothing=c('state','signal'))
+out<-KFS(fit$model,smoothing=c('state','mean'))
 out
-ts.plot(cbind(out$model$y,out$thetahat),lty=1:2,col=1:2,
+ts.plot(cbind(out$model$y,fitted(out)),lty=1:2,col=1:2,
 main='Observations and smoothed signal with and without seasonal component')
-lines(signal(out,states=1:3)$thetahat,col=4,lty=1)
+lines(signal(out,states=c("regression","trend"))$signal,col=4,lty=1)
 legend('bottomleft',
 legend=c('Observations', 'Smoothed signal','Smoothed level'),
 col=c(1,2,4), lty=c(1,2,1))
@@ -243,7 +238,7 @@ model$H
 
 out<-KFS(model)
 out
-ts.plot(cbind(signal(out,states=c('custom','regression'))$thetahat,model$y),col=1:4)
+ts.plot(cbind(signal(out,states=c('custom','regression'))$signal,model$y),col=1:4)
 
 # For confidence or prediction intervals, use predict on the original model
 pred <- predict(model,states=c('custom','regression'),interval='prediction')
@@ -262,9 +257,9 @@ fit<-fitSSM(inits=c(-4,-7,2), model=model,method='BFGS')
 model<-fit$model
 
 # use approximating model, gives posterior mode of the signal and the linear predictor
-out_nosim<-KFS(model,smoothing=c('signal','invlink'),nsim=0)
+out_nosim<-KFS(model,smoothing=c('signal','mean'),nsim=0)
 # State smoothing via importance sampling
-out_sim<-KFS(model,smoothing=c('signal','invlink'),nsim=1000)
+out_sim<-KFS(model,smoothing=c('signal','mean'),nsim=1000)
 
 out_nosim
 out_sim
@@ -284,34 +279,34 @@ model<-SSModel(counts ~ outcome + treatment, data=d.AD,
                distribution = 'poisson')
 
 out<-KFS(model)
-out$alphahat[9,]
-glm.D93$coef
+coef(out,start=1,end=1)
+coef(glm.D93)
 
-summary(glm.D93)$cov.u
-out$V[,,9]
+summary(glm.D93)$cov.s
+out$V[,,1]
 
-outnosim<-KFS(model,smoothing=c('state','signal','invlink'))
+outnosim<-KFS(model,smoothing=c('state','signal','mean'))
 set.seed(1)
-outsim<-KFS(model,smoothing=c('state','signal','invlink'),nsim=100)
+outsim<-KFS(model,smoothing=c('state','signal','mean'),nsim=1000)
 
 
 ## linear
 # GLM
-as.numeric(predict(glm.D93,type='link'))
+glm.D93$linear.predictor
 # approximate model, this is the posterior mode of p(theta|y)
-c(outnosim$theta)
+c(outnosim$thetahat)
 # importance sampling on theta,  gives E(theta|y)
-c(outsim$theta)
+c(outsim$thetahat)
 
 
 
 ## predictions on response scale
 # GLM
-as.numeric(predict(glm.D93,type='response'))
+fitted(glm.D93)
 # approximate model with backtransform, equals GLM
-c(exp(outnosim$theta))
+c(fitted(outnosim))
 # importance sampling on exp(theta)
-c(outsim$mu)
+fitted(outsim)
 
 # prediction variances on link scale
 # GLM
@@ -368,7 +363,7 @@ ts.plot(cbind(sexratio.smooth,sexratio.ci,sexratio.smooth2,sexratio.ci2),
 }
 # Example of Cubic spline smoothing
 \dontrun{
-library(MASS)
+require(MASS)
 data(mcycle)
 
 model<-SSModel(accel~-1+SSMcustom(Z=matrix(c(1,0),1,2),
@@ -398,19 +393,18 @@ lines(x=mcycle$times,y=pred[,3],lty=2)
 }
 }
 \references{
-  Koopman, S.J. and Durbin J. (2000).  Fast filtering and
-  smoothing for non-stationary time series models, Journal
-  of American Statistical Assosiation, 92, 1630-38.
+Koopman, S.J. and Durbin J. (2000).  Fast filtering and
+smoothing for non-stationary time series models, Journal of
+American Statistical Assosiation, 92, 1630-38.
 
-  Koopman, S.J. and Durbin J. (2001).  Time Series Analysis
-  by State Space Methods. Oxford: Oxford University Press.
+Koopman, S.J. and Durbin J. (2001).  Time Series Analysis
+by State Space Methods. Oxford: Oxford University Press.
 
-  Koopman, S.J. and Durbin J. (2003).  Filtering and
-  smoothing of state vector for diffuse state space models,
-  Journal of Time Series Analysis, Vol. 24, No. 1.
+Koopman, S.J. and Durbin J. (2003).  Filtering and
+smoothing of state vector for diffuse state space models,
+Journal of Time Series Analysis, Vol. 24, No. 1.
 
-  #' Shumway, Robert H. and Stoffer, David S. (2006).  Time
-  Series Analysis and Its Applications: With R examples.
-  \cr
+#' Shumway, Robert H. and Stoffer, David S. (2006).  Time
+Series Analysis and Its Applications: With R examples.  \cr
 }
 

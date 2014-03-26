@@ -2,8 +2,9 @@
 #'
 #' Importance Sampling of Exponential Family State Space Model.
 #'
-#' Function \code{importanceSSM} simulates states or signals of the exponential family state space model conditioned with the observations,
-#' returning the simulated samples of the states/signals with the corresponding importance weights.
+#' Function \code{importanceSSM} simulates states or signals of the exponential family state space 
+#' model conditioned with the observations, returning the simulated samples of the states/signals 
+#' with the corresponding importance weights.
 #'
 #' Function can use two antithetic variables, one for location and other for
 #' scale, so output contains four blocks of simulated values which correlate

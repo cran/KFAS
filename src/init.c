@@ -9,7 +9,6 @@ static R_FortranMethodDef FortEntries[] = {
     {"fldl", (DL_FUNC) &F77_SUB(ldl), 4},
     {"fldlssm", (DL_FUNC) &F77_SUB(ldlssm), 15},
     {"fsignaltheta", (DL_FUNC) &F77_SUB(signaltheta), 12},
-    {"fsimgaussian", (DL_FUNC) &F77_SUB(simgaussian), 30},
     {"fapprox", (DL_FUNC) &F77_SUB(approx), 23},
     {"fgsmoothall", (DL_FUNC) &F77_SUB(gsmoothall), 44},
     {"fngsmooth", (DL_FUNC) &F77_SUB(ngsmooth), 39},
@@ -23,6 +22,7 @@ static R_FortranMethodDef FortEntries[] = {
     {"fsimfilter", (DL_FUNC) &F77_SUB(simfilter), 30},
     {"fngfilter", (DL_FUNC) &F77_SUB(ngfilter), 39},
     {"fisamplefilter", (DL_FUNC) &F77_SUB(isamplefilter), 35},
+    {"fsimgaussian", (DL_FUNC) &F77_SUB(simgaussian), 30},
     {NULL, NULL, 0}
 };
 

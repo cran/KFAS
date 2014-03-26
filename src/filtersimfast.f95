@@ -20,7 +20,7 @@ a1, ft,kt,finf, kinf, dt, jt, p, m, n,tol,at)
     double precision :: meps
     double precision, external :: ddot
 
- meps = epsilon(meps)
+ meps = tiny(meps)
 
     j=0
     d=0
