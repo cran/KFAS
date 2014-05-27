@@ -1,5 +1,6 @@
 context("KFAS and glm comparison")
 
+require(MASS)
 # Test for Gaussian
 ctl <- c(4.17,5.58,5.18,6.11,4.50,4.61,5.17,4.53,5.33,5.14)
 trt <- c(4.81,4.17,4.41,3.59,5.87,3.83,6.03,4.89,4.32,4.69)
@@ -8,7 +9,8 @@ weight <- c(ctl, trt)
 glm.gaussian <- glm(weight ~ group)
 model.gaussian <- SSModel(weight~group)
 tmp<-KFS(model.gaussian,filtering="state",smoothing="none")
-model.gaussian <- SSModel(weight~group,H=mean(c(tmp$v[1:11][tmp$Finf==0]^2/tmp$F[1:11][tmp$Finf==0],tmp$v[12:20]^2/tmp$F[12:20])))
+model.gaussian <- SSModel(weight~group,H=mean(c(tmp$v[1:tmp$d][tmp$Finf==0]^2/tmp$F[1:tmp$d][tmp$Finf==0],
+                                                tmp$v[-(1:tmp$d)]^2/tmp$F[-(1:tmp$d)])))
 kfas.gaussian <-KFS(model.gaussian,smoothing=c('state','signal','mean'))
 
 # Test for Poisson GLM
@@ -45,9 +47,22 @@ kfas.gamma2<-KFS(model.gamma2,smoothing=c('state','signal','mean'))
 ## Test for NB GLM
 ## From MASS library, ?glm.nb
 glm.NB <- glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine,control=glm.control(epsilon=1e-12))
-#u from theta
-model.NB<-SSModel(Days ~ Sex/(Age + Eth*Lrn), u=glm.NB$theta, data = quine, distribution = 'negative binomial')
-kfas.NB<-KFS(model.NB,smoothing=c('state','signal','mean'))
+
+# estimate theta
+theta0<-1
+model.NB<-SSModel(Days ~ Sex/(Age + Eth*Lrn), u=theta0, data = quine, distribution = 'negative binomial')
+kfas.NB<-KFS(model.NB,smoothing='mean')
+theta<-theta.ml(y=quine$Days,mu=c(fitted(kfas.NB)))
+maxit<-10
+i<-0
+while(abs(theta-theta0)/theta0>1e-7 && i<maxit){
+  model.NB$u[]<-theta0<-theta
+  kfas.NB<-KFS(model.NB,smoothing='mean')
+  theta<-theta.ml(y=quine$Days,mu=c(fitted(kfas.NB)))
+  i<-i+1
+}
+model.NB$u[]<-theta
+kfas.NB<-KFS(model.NB,smoothing=c('state','signal','mean'),convtol=1e-15)
 
 test_that("Gaussian GLM fitting works properly",{
   for(i in 1:length(model.gaussian$y))
@@ -142,6 +157,8 @@ test_that("negative binomial GLM fitting works properly",{
   # prediction variances on response scale
   expect_equivalent(c(kfas.NB$V_mu),predict(glm.NB,type='response',se.fit=TRUE,)$se.fit^2)
   
+  expect_equivalent(model.NB$u[1],glm.NB$theta)
+  
   likfn<-function(pars,model,estimate=TRUE){ 
     model$u[]<-exp(pars[1])
     model$P1inf[]<-0
@@ -151,7 +168,7 @@ test_that("negative binomial GLM fitting works properly",{
     model
   }
   
-  fit<-optim(f=likfn,p=c(log(glm.NB$theta),glm.NB$coef),model=model.NB,method="BFGS")
+  fit<-optim(f=likfn,p=c(log(glm.NB$theta),glm.NB$coef),model=model.NB)
   expect_equal(c(exp(fit$p[1]),fit$p[-1]),c(glm.NB$theta,glm.NB$coef))
   expect_equal(deviance(kfas.NB),deviance(glm.NB))
 })

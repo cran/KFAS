@@ -2,7 +2,7 @@
 # Used by predict.SSModel method
 
 interval <- function(model, interval = c("confidence", "prediction"), level, type = c("response", "link"), 
-                     states=NULL,nsim, se.fit = TRUE, timespan, prob = TRUE) {
+                     states=NULL,nsim, se.fit = TRUE, timespan, prob = TRUE,maxiter=50) {
   
   interval <- match.arg(interval)
   type <- match.arg(type)
@@ -14,7 +14,8 @@ interval <- function(model, interval = c("confidence", "prediction"), level, typ
   p <- attr(model, "p")
   n2 <- as.integer(length(timespan))
   # Generate sample via importance sampling
-  imp <- importanceSSM(model, ifelse(identical(states, as.integer(1:m)), "signal", "states"), nsim = nsim, antithetics = TRUE)
+  imp <- importanceSSM(model, ifelse(identical(states, as.integer(1:m)), "signal", "states"), 
+                       nsim = nsim, antithetics = TRUE,maxiter=maxiter)
   nsim <- as.integer(4 * nsim)
   w <- imp$weights/sum(imp$weights)
   if (!identical(states, 1:attr(model, "m"))) # use only selected states
@@ -73,7 +74,7 @@ interval <- function(model, interval = c("confidence", "prediction"), level, typ
     pred <- lapply(1:p, function(j) cbind(fit = cbind(varmean$mean[, j], lwr = int[[j]][1, ], upr = int[[j]][2, ]), se.fit = sqrt(varmean$var[, 
                                                                                                                                               j])))
   } else {
-    pred <- lapply(1:p, function(j) cbind(varmean$mean[, j], lwr = int[[j]][1, ], upr = int[[j]][2, ]))
+    pred <- lapply(1:p, function(j) cbind(fit = varmean$mean[, j], lwr = int[[j]][1, ], upr = int[[j]][2, ]))
   }
   pred
 } 

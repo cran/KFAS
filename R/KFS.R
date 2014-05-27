@@ -39,8 +39,11 @@
 #' performs the usual Gaussian smoothing so that the smoothed state estimates equals to the 
 #' conditional mode of \eqn{p(\alpha_t|y)}{p(\alpha[t]|y)}.
 #' @param theta Initial values for conditional mode theta. Only used for non-Gaussian model.
-#' @param maxiter The maximum number of iterations used in linearisation. Default is 25. 
+#' @param maxiter The maximum number of iterations used in approximation Default is 50. 
 #' Only used for non-Gaussian model.
+#' @param convtol Tolerance parameter for convergence checks for Gaussian approximation.
+#'  Iterations are continued until 
+#'  \eqn{tol>abs(dev_{old}-dev_{new})/(abs(dev_{new})+0.1))}.
 #'
 #' @return What \code{KFS} returns depends on the arguments \code{filtering}, \code{smoothed} and 
 #' \code{simplify}, and whether the model is Gaussian or not:
@@ -101,13 +104,13 @@
 #'
 
 KFS <- function(model, filtering, smoothing, simplify = TRUE, transform = c("ldl","augment"), 
-                nsim = 0, theta, maxiter = 25) {
+                nsim = 0, theta, maxiter = 50,convtol=1e-15) {
   
   is.SSModel(model, na.check = TRUE, return.logical = FALSE)
   
   if(missing(filtering)){
     if(all(model$distribution == "gaussian")){
-    filtering <- "state"
+      filtering <- "state"
     } else filtering <- "none"
   } else{
     filtering <- match.arg(arg = filtering, 
@@ -217,7 +220,7 @@ KFS <- function(model, filtering, smoothing, simplify = TRUE, transform = c("ldl
                               as.integer(m), as.integer(k), as.integer(sum(model$P1inf)), 
                               as.integer(nondiffuse_elements_length), as.integer(nsim), epsplus, 
                               etaplus, aplus1, c2, model$tol, info = integer(1),
-                              maxiter = as.integer(maxiter), convtol = 1e-08, as.integer(nd), 
+                              maxiter = as.integer(maxiter), convtol =convtol, as.integer(nd), 
                               as.integer(length(nd)), 
                               a = array(0, ("state" %in% filtering) * c(m - 1, n - 1) + 1), 
                               P = array(0, ("state" %in% filtering) * c(m - 1, m - 1, n - 1) + 1), 
@@ -255,7 +258,7 @@ KFS <- function(model, filtering, smoothing, simplify = TRUE, transform = c("ldl
                               as.integer(m),as.integer(k), as.integer(sum(model$P1inf)), 
                               as.integer(nondiffuse_elements_length), as.integer(nsim), epsplus, 
                               etaplus, aplus1, c2, model$tol, info = integer(1), 
-                              maxiter = as.integer(maxiter), convtol = 1e-08, as.integer(nd), 
+                              maxiter = as.integer(maxiter), convtol = convtol, as.integer(nd), 
                               as.integer(length(nd)), 
                               alphahat = array(0, ("state" %in% smoothing) * c(m - 1, n - 1) + 1), 
                               V = array(0, ("state" %in% smoothing) * c(m - 1, m - 1, n - 1) + 1), 
@@ -299,10 +302,15 @@ KFS <- function(model, filtering, smoothing, simplify = TRUE, transform = c("ldl
                       pmatch(x = model$distribution, 
                              table = c("gaussian", "poisson", "binomial", "gamma", "negative binomial"), 
                              duplicates.ok = TRUE), maxiter = as.integer(maxiter), model$tol, 
-                      as.integer(sum(model$P1inf)), as.double(1e-08))
+                      as.integer(sum(model$P1inf)), convtol,diff=double(1))
       
-      if (maxiter == app$maxiter) 
-        warning("Maximum number of iterations reached, the linearization did not converge.")
+      if (!is.finite(app$diff)){
+        stop("Non-finite difference in approximation algoritm.")
+      }
+      if(app$maxiter==maxiter){
+        warning(paste("Maximum number of iterations reached, 
+                  the approximation algorithm did not converge. Latest difference was",app$diff))
+      }
       
       tsp(app$ytilde)<-tsp(model$y)
       model$y <- app$ytilde
@@ -328,6 +336,7 @@ KFS <- function(model, filtering, smoothing, simplify = TRUE, transform = c("ldl
   } else KFS_transform <- "none"
   filtersignal<-("signal"%in%filtering) || ("mean"%in%filtering)
   storage.mode(ymiss) <- "integer"
+
   filterout <- .Fortran(fkfilter, NAOK = TRUE, model$y, ymiss, as.integer(tv), model$Z, model$H, model$T, 
                         model$R, model$Q, model$a1, P1 = model$P1, model$P1inf, as.integer(p), 
                         as.integer(n), as.integer(m),as.integer(k), d = integer(1), j = integer(1), 
@@ -342,7 +351,7 @@ KFS <- function(model, filtering, smoothing, simplify = TRUE, transform = c("ldl
   
   if (filterout$d == n & filterout$j == p) 
     warning("Model is degenerate, diffuse phase did not end.")
-  if (filterout$d > 0 & m > 1 & !isTRUE(all.equal(min(apply(filterout$Pinf, 3, diag)), 0))) 
+  if (filterout$d > 0 & m > 1 & min(apply(filterout$Pinf, 3, diag))<0) 
     warning("Possible error in diffuse filtering: Negative variances in Pinf, 
             try changing the tolerance parameter tol of the model.")
   if (sum(filterout$Finf > 0) != sum(diag(model$P1inf))) 
@@ -420,12 +429,13 @@ KFS <- function(model, filtering, smoothing, simplify = TRUE, transform = c("ldl
           
         }
         
-        out <- c(out, list(mu = mu, P_mu = P_mu))
+        out <- c(out, list(m = mu, P_mu = P_mu))
       }  
     }
   }
   
   if (!("none"%in%smoothing)) {
+    
     smoothout <- .Fortran(fgsmoothall, NAOK = TRUE, ymiss, as.integer(tv), model$Z, model$H, 
                           model$T, model$R, model$Q, as.integer(p), as.integer(n), as.integer(m), 
                           as.integer(k), filterout$d, filterout$j, filterout$a, filterout$P, 
@@ -441,13 +451,14 @@ KFS <- function(model, filtering, smoothing, simplify = TRUE, transform = c("ldl
                           epshat = array(0, dim = c(p, n)), V_eps = array(0, dim = c(p, n)), 
                           etahat = array(0, dim = c(k, n)), V_eta = array(0, dim = c(k, k, n)), 
                           thetahat = array(0, dim = c(p, n)), V_theta = array(0, dim = c(p, p, n)), 
-                          as.integer(KFS_transform=="ldl" && ("signal" %in% smoothing || "mean" %in% smoothing)), 
-{if (KFS_transform=="ldl" && ("signal" %in% smoothing || "mean" %in% smoothing)) out$model$Z else double(1)}, 
+                          as.integer(KFS_transform=="ldl" && ("signal" %in% smoothing || "mean" %in% smoothing)), {if (KFS_transform=="ldl" && ("signal" %in% smoothing || "mean" %in% smoothing)) out$model$Z else double(1)}, 
                           as.integer(dim(out$model$Z)[3]>1), as.integer(KFS_transform != "augment"), 
                           as.integer("state" %in% smoothing), as.integer("disturbance" %in% smoothing), 
                           as.integer(("signal" %in% smoothing || "mean" %in% smoothing)))
     
-    
+    if (m > 1 & min(apply(smoothout$V, 3, diag))<0) 
+      warning("Possible error in smoothing: Negative variances in V, 
+            try changing the tolerance parameter tol of the model.")
     
     if ("state" %in% smoothing) {
       out$alphahat <- ts(t(smoothout$alphahat),start=start(model$y),frequency=frequency(model$y))

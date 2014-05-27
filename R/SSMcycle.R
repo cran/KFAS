@@ -15,39 +15,26 @@ SSMcycle <- function(period, type, Q, index, a1, P1, P1inf, n, ynames) {
             stop("type must be 'distinct' or 'common'.")
     }
     
-    if (!(length(period) == 1 & period > 1 & abs(period - round(period)) == 0)) 
-        stop("period of the cycle component must be integer larger than 1. ")
+    if (!(length(period) == 1 & period > 0)) 
+        stop("Period of the cycle component must be larger than 0. ")
     
     
-    
+    lambda <- 2 * pi/period
     m <- 2 * ((p - 1) * (type == 1) + 1)
     Z <- matrix(0, p, m)
     T <- matrix(0, m, m)
-#     if (type == 2) {
-#         Z[, 1] <- 1
-#         p <- 1       
-#     } else {
-#         #Z[cbind(1:3, seq(1, m, by = p - 1))] <- 1
-#       Z[cbind(1:3, seq(1, m, by = p))] <- 1
-#     }
     Z_univariate <- matrix(c(1,0), 1, 2)
+    T_univariate <- matrix(c(cos(lambda), -sin(lambda), sin(lambda), cos(lambda)), 2, 2)
     if (type != 2) {
       for (i in 1:p) {
         Z[i, ((i - 1) * 2 + 1):(i * 2)] <- Z_univariate
+        T[((i - 1) * 2 + 1):(i * 2), ((i - 1) * 2 + 1):(i * 2)] <- T_univariate
       }
     } else {
       Z <- matrix(Z_univariate, nrow = p, ncol = m, byrow = TRUE)
+      T <- T_univariate
     }
     state_names <- paste0(c("cycle", "cycle*"), rep(ynames, each = 2))
-    lambda <- 2 * pi/period
-    
-    ### diag(T) <- cos(lambda) dxp <- 1 + 0:(p - 1) * (p+ 1) T[1:p, p + 1:p][dxp] <- sin(lambda) T[p + 1:p, 1:p][dxp] <- -sin(lambda)
-    T_univariate <- matrix(c(cos(lambda), sin(lambda), -sin(lambda), cos(lambda)), 2, 2)
-    
-    T <- matrix(0, m, m)
-    for (i in 1:p) {
-        T[((i - 1) * 2 + 1):(i * 2), ((i - 1) * 2 + 1):(i * 2)] <- T_univariate
-    }
     
     if (missing(a1)) {
         a1 <- matrix(0, m, 1)
@@ -86,16 +73,21 @@ SSMcycle <- function(period, type, Q, index, a1, P1, P1inf, n, ynames) {
             tvq <- max(dim(Q)[3] == n, 0, na.rm = TRUE)
             
             Qm <- array(0, c(m, m, tvq * (n - 1) + 1))
-            if (tvq == 1) {
+            if (tvq) {
                 for (i in 1:(tvq * (n - 1) + 1)) Qm[cbind(rep(1:(p * 2), p), rep(1:2, p^2) + rep(0:(p - 1) * 2, each = p * 2), 
                   i)] <- rep(Q[, , i], each = 2)
             } else Qm[cbind(rep(1:(p * 2), p), rep(1:2, p^2) + rep(0:(p - 1) * 2, each = p * 2), 1)] <- rep(Q, each = 2)
         } else {
-            if (length(Q) != 1 && (!identical(dim(Q)[1], dim(Q)[2]) || dim(Q)[1] != 1 || !(max(dim(Q)[3], 1, na.rm = TRUE) %in% 
+            if (length(Q) != 1 && (!identical(dim(Q)[1], dim(Q)[2]) || isTRUE(dim(Q)[1] != 1) || !(max(dim(Q)[3], 1, na.rm = TRUE) %in% 
                 c(1, n)))) 
                 stop("Misspecified Q, argument Q must be a scalar, (1 x 1) matrix, or (1 x 1 x 1)/(1 x 1 x n) array.")
-            Qm <- array(Q, c(m, m, tvq * (n - 1) + 1))
-            
+            tvq <- max(dim(Q)[3] == n, 0, na.rm = TRUE)
+            Qm <- array(0, c(m, m, tvq * (n - 1) + 1))
+            if (tvq) {
+              for (i in 1:(tvq * (n - 1) + 1)) 
+                Qm[cbind(1:2, 1:2, i)] <- rep(Q[1, 1, i], 2)
+            } else Qm[cbind(1:2, 1:2, 1)] <- rep(Q, 2)
+                        
         }
         
         

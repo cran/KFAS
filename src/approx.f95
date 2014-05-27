@@ -1,7 +1,7 @@
 ! Subroutine for computation of the approximating gaussian model for non-gaussian models
 
 subroutine approx(yt, ymiss, timevar, zt, tt, rtv, ht, qt, a1, p1,p1inf, p,n,m,r,&
-theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
+theta, u, ytilde, dist,maxiter,tol,rankp,convtol,diff)
 
     implicit none
 
@@ -23,23 +23,23 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
     double precision, intent(inout), dimension(n,p) :: theta
     double precision, intent(inout), dimension(n,p) :: ytilde
     double precision, intent(inout), dimension(p,p,n) :: ht
-    double precision  :: err
-    double precision, dimension(n,p) :: theta0
+    double precision, intent(inout) :: diff
     double precision, dimension(m,r) :: mr
     double precision, dimension(m,m,(n-1)*max(timevar(4),timevar(5))+1) :: rqr
-
+    double precision dev, devold
+    double precision, dimension(n,p) :: muhat
     double precision, external :: ddot
+
 
     !compute rqr
     tv = max(timevar(4),timevar(5))
     do i=1, (n-1)*tv+1
-        call dsymm('r','u',m,r,1.0d0,qt(:,:,(i-1)*timevar(5)+1),r,rtv(:,:,(i-1)*timevar(4)+1),m,0.0d0,mr,m)
+        call dgemm('n','n',m,r,r,1.0d0,rtv(:,:,(i-1)*timevar(4)+1),m,&
+        qt(:,:,(i-1)*timevar(5)+1),r,0.0d0,mr,m)
         call dgemm('n','t',m,m,r,1.0d0,mr,m,rtv(:,:,(i-1)*timevar(4)+1),m,0.0d0,rqr(:,:,i),m)
     end do
 
-    err = 1000.0d0
-    theta0=theta
-
+    diff = 1000.0d0
     k=0
 
 
@@ -69,18 +69,13 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
             case(4)
                 do i=1,n
                     if(ymiss(i,j).EQ.0) then
-                        !ht(j,j,i) = exp(theta(i,j))/(u(i,j)*yt(i,j))
-                        !ytilde(i,j) = theta(i,j)+1.0d0-exp(theta(i,j))/yt(i,j)
-                        ht(j,j,i) =1.0d0/u(i,j) !1.0d0
+                        ht(j,j,i) =1.0d0/u(i,j)
                         ytilde(i,j) = theta(i,j)+yt(i,j)/exp(theta(i,j))-1.0d0
                     end if
                 end do
             case(5)
                 do i=1,n
                     if(ymiss(i,j).EQ.0) then
-                        !ht(j,j,i) = (exp(theta(i,j))+u(i,j))**2/(u(i,j)*exp(theta(i,j))*(yt(i,j)+u(i,j)))
-                        !ytilde(i,j) = theta(i,j) + ht(j,j,i)*u(i,j)*(yt(i,j)-exp(theta(i,j)))/(u(i,j)+exp(theta(i,j)))
-                        !ht(j,j,i) = u(i,j)*exp(theta(i,j))/(u(i,j)+exp(theta(i,j)))
                         ht(j,j,i) = (1.0d0/u(i,j)+1.0d0/exp(theta(i,j)))
                         ytilde(i,j) = theta(i,j)+yt(i,j)/exp(theta(i,j))-1.0d0
                     end if
@@ -89,13 +84,15 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
     end do
 
 
-    do while(err .GT. convtol .AND. k .LT. maxiter)
+    muhat = theta
+    call mu(dist,u,n,p,muhat)
+    call deviance(yt,muhat,u,ymiss,n,p,dist,devold)
+
+    do while(diff > convtol .AND. k < maxiter)
 
         k=k+1
-
         rankp2 = rankp
 
-        ! Compute theta based on the approximating gausian model
         call kfstheta(ytilde, ymiss, timevar, zt, ht,tt, rtv,qt,rqr, a1, p1, p1inf, &
         p, n, m, r,tol,rankp2,theta)
 
@@ -104,7 +101,6 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
                 case(2)
                     do i=1,n
                         if(ymiss(i,j).EQ.0) then
-
                             ht(j,j,i) =  1.0d0/(exp(theta(i,j))*u(i,j))
                             ytilde(i,j) =  yt(i,j)*ht(j,j,i) + theta(i,j) - 1.0d0
                         end if
@@ -119,30 +115,24 @@ theta, u, ytilde, dist,maxiter,tol,rankp,convtol)
                 case(4)
                     do i=1,n
                         if(ymiss(i,j).EQ.0) then
-                               ! ht(j,j,i) = exp(theta(i,j))/(u(i,j)*yt(i,j))
-                               ! ytilde(i,j) = theta(i,j)+1.0d0-exp(theta(i,j))/yt(i,j)
-                               !ht(j,j,i) = 1.0d0
                             ytilde(i,j) = theta(i,j)+yt(i,j)/exp(theta(i,j))-1.0d0
                         end if
                     end do
                 case(5)
                     do i=1,n
                         if(ymiss(i,j).EQ.0) then
-                                !ht(j,j,i) = (exp(theta(i,j))+u(i,j))**2/(u(i,j)*exp(theta(i,j))*(yt(i,j)+u(i,j)))
-                                !ytilde(i,j) = theta(i,j) + ht(j,j,i)*u(i,j)*(yt(i,j)-exp(theta(i,j)))/(u(i,j)+exp(theta(i,j)))
-                            !ht(j,j,i) = u(i,j)*exp(theta(i,j))/(u(i,j)+exp(theta(i,j)))
                             ht(j,j,i) = (1.0d0/u(i,j)+1.0d0/exp(theta(i,j)))
                             ytilde(i,j) = theta(i,j)+yt(i,j)/exp(theta(i,j))-1.0d0
                         end if
                     end do
             end select
         end do
-
-
-        err = sum(abs(theta-theta0)/(abs(theta0)+0.1d0),MASK=(ymiss .EQ. 0))/(n*p-sum(ymiss))
-        theta0=theta
+        muhat = theta
+        call mu(dist,u,n,p,muhat)
+        call deviance(yt,muhat,u,ymiss,n,p,dist,dev)
+        diff = abs(dev - devold)/(0.1d0 + abs(dev))
+        devold=dev
     end do
     maxiter=k
-
 
 end subroutine approx

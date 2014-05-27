@@ -1,7 +1,7 @@
 #' @method subset<- SSModel
 #' @S3method subset<- SSModel
 #' @rdname Extract.SSModel
-`subset<-.SSModel` <- function(x, element, states, etas, series, times, value) {
+`subset<-.SSModel` <- function(x, element, states, etas, series, times, ..., value) {
     
     # is.SSModel(x,return.logical=FALSE)
     element <- match.arg(arg = element, choices = c("y", "Z", "H", "T", "R", "Q", "a1", "P1", "P1inf", "u"))
@@ -63,7 +63,8 @@
     x
 }
 #' @rdname Extract.SSModel
-`subset<-` <- function(x, value) UseMethod("subset<-")
+#' @export
+`subset<-` <- function(x, ..., value) UseMethod("subset<-")
 
 #' @method subset SSModel
 #' @S3method subset SSModel
