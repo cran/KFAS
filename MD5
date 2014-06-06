@@ -1,5 +1,5 @@
-6e040c657d1bd3aaaa0b61c11989991e *ChangeLog
-855431a423bd28ce607d92b0ca53e3cf *DESCRIPTION
+cf03ec5e2f09e39266daaf09dae78c96 *ChangeLog
+2802baf5149e5a9e502b3729e017acae *DESCRIPTION
 8d227f331472f1b80e12c5212fbc386e *NAMESPACE
 84f4e176a760eb02fccc2a38b85149bb *R/KFAS-package.R
 7a99820ec7a7401fcf865cc11b25f896 *R/KFS.R
@@ -31,8 +31,7 @@ a0b7c3f26b1a2df8ae2de5613c2cb877 *R/rstandard.KFS.R
 feef168d7cb90ee137eba730f7f7123a *R/simulateSSM.R
 19535b8cbc7b66d3968b1ce50b195fc6 *R/subset.SSModel.R
 17f408856125c7e270ebe1380ba0ba48 *R/transformSSM.R
-3dfc86e48c8664b360f4fa64808a3c83 *README.md
-bc00be7a44a875197d1b70b505f81811 *TODO
+41808b6fb5597b9e331efeb146b1a428 *README.md
 85993fe9d3165948f23ee4d023dd8e78 *data/GlobalTemp.rda
 30f3f80fe83502869ff93a6662c56c5e *data/boat.rda
 cae765cd5662c7c2ed49ce79fc54114c *data/sexratio.rda
@@ -88,7 +87,7 @@ f0968eda670f7a75427d79cfb21e62be *src/predict.f95
 61e625d5a1e835b20bd1f681eb50038b *src/smoothsim.f95
 6d00a9c67c54a4aacfeef3fcefb98242 *src/smoothsimfast.f95
 cfa0086dd519fd2054a93f7259fe4885 *tests/test-all.R
-9b90f56d3a3c6519f4197fdc8e3bb059 *tests/testthat/testBasics.R
-02377bf1c432b1c63d7e0d6d3cb1ac18 *tests/testthat/testGLM.R
-e47e3198ad36daff347fffd91506bc6a *tests/testthat/testSSMarima.R
-42daf478006acd3e0e62d2ba509b7e1f *tests/testthat/testStruct.R
+064bac99060c9c6876c0ea055ab7f6e3 *tests/testthat/testBasics.R
+135e2470d9aa866429019b2194629df4 *tests/testthat/testGLM.R
+44eb03a352ddb2893713f1d6b4a1e4ff *tests/testthat/testSSMarima.R
+9c4d44e390c1599865fb914792736f46 *tests/testthat/testStruct.R
