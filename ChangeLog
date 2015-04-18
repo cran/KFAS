@@ -1,9 +1,51 @@
-Changes from Version 1.0.4 to 1.0.4-1:
+Changes from version 1.0.4-1 to 1.1.0:
+ * Added state types level and slope for easier extraction of states in multiple functions.
+ * coef.KFS: Added argument states for partial state vector extraction.
+ * simulateSSM: Corrected a bug which gave wrong variances for epsilon disturbances.
+ * simulateSSM: Corrected a bug which gave wrong variances for the initial states.
+ * rstandard.KFS: Added argument standardization_type which defines whether cholesky or marginal standardization is used.
+ * is.SSModel: Tweaked checks for faster performance for time varying models, added check for P1inf.
+ * fitSSM: Function now allows fixed time varying covariance matrices. 
+ * fitSSM: check.model is set to FALSE when calling logLik.SSModel in all cases. see ?fitSSM for details.
+ * predict.SSModel: Corrected bug which caused partial signal prediction to fail.
+ * predict.SSModel: Corrected bug which caused prediction of non-Gaussian models with time varying u to fail. 
+ * predict.SSModel: Method now correctly uses original times of the model object for the start and 
+   end times of the predictions. 
+ * approxSSM and related functions: Changed the converge criterion for approximating algorithm. 
+   Previous criterion was missing one term which caused poor (or non-) converge in some cases with non-diffuse states.    
+ * approxSSM and related functions: Added a line search as part of approximating algorithm.
+   This improves the converge of the algorithm especially in case of poor initial values.
+ * logLik.SSModel: Changed constant on Gaussian log-likelihood computation so now adding meaningless predictor 
+   improves diffuse likelihood like it should. In simple regression setting the change is from 
+   n*log(2*pi) to (n-k)*log(2*pi) where k is the number of regression coefficients. See testLM.R in 
+   inst/tests for illustration.
+ * logLik.SSModel: Added argument 'marginal' for logLik method. If TRUE, additional, 
+   often constant term suggested by Francke et al. (2010) is added to the diffuse log-likelihood. 
+   See ?logLik.SSModel for details.
+ * logLik.SSModel: Changed default value for check.model to TRUE. For large models this adds small 
+   overhead but prevents R from crashing with improperly (manually) modified model objects. 
+ * SSModel: Added terms component for update method.
+ * SSModel: Corrected a bug relating to the environments which caused error in SSModel when 
+   calling it inside a function with index argument defined in nonstandard way. 
+ * SSModel: When using SSMregression without data argument, if variables are not found in the environment 
+   of the formula, it now searches them from the data argument of SSModel and from the 
+   environment of main formula. See examples in ?SSModel.
+ * Deprecated subset and 'subset<-' methods for SSModel as these were not in 
+   line with the base R's generic function. Use '[.SSModel' instead. Generic 
+   replacement via subset with 'subset<-' was also deprecated as it was only 
+   used for SSModel object.
+ * rtandard.KFS and residuals.KFS: Deprecated deviance residuals.
+ * rtandard.KFS and residuals.KFS: Added support for recursive residuals for non-Gaussian models.
+ * rtandard.KFS: Corrected Pearson residual formulas for non-Gaussian models.
+ * is.SSModel: With na.check=TRUE, function now also checks for extreme values in H and Q (larger than 1e7).
+ * Signal filtering now return object t and not theta like it should (see Changes from Version 1.0.2 to 1.0.3).
+
+Changes from version 1.0.4 to 1.0.4-1:
  * Corrected R dependency from 3.0.0 to 3.1.0, which is needed for some package tests.
  * Adjusted tolerance parameters in tests for better portability (test should now only fail in case 
    of clearly bogus answers).
 
-Changes from Version 1.0.3 to 1.0.4:
+Changes from version 1.0.3 to 1.0.4:
  * Tweaked the underlying algorithms for increased numerical stability of filtering and smoothing 
    in KFS. Note that it is still possible that exact diffuse initialization fails due to to numerical
    issues whereas traditional 'big value' approach works and vice versa.
@@ -31,7 +73,7 @@ Changes from Version 1.0.3 to 1.0.4:
    deviance based.
  * Properly exported assigment using subset method. See ?subset.SSModel for details.
 
-Changes from Version 1.0.2 to 1.0.3:
+Changes from version 1.0.2 to 1.0.3:
  * Changed default filtering option for Gaussian models back to "state" (was previously "none").
  * Argument "invlink" in KFS is obsolete, proper argument is now "mean". For backwards compatibility,
   "invlink" still works.
@@ -63,7 +105,7 @@ Changes from Version 1.0.2 to 1.0.3:
  * Fixed a bug regarding simulateSSM with missing observations in diffuse phase, which caused 
    variances of simulated values to be much larger than expected.
 
-Changes from Version 1.0.0 to 1.0.2:
+Changes from version 1.0.0 to 1.0.2:
  * Fixed a bug in SSMarima which caused function to fail if there was 
    no ar part and stationarity option was TRUE.
  * Fixed a bug regarding the deviance residuals for Gaussian model.

@@ -1,4 +1,4 @@
-    ! Subroutine for Kalman filtering of linear gaussian state space model
+  ! Subroutine for Kalman filtering of linear gaussian state space model
 
 subroutine kfilter(yt, ymiss, timevar, zt, ht,tt, rt, qt, a1, p1, p1inf, p,n,m,r,d,j,&
 at, pt, vt, ft,kt, pinf, finf, kinf, lik, tol,rankp,theta,thetavar,filtersignal)
@@ -7,7 +7,7 @@ at, pt, vt, ft,kt, pinf, finf, kinf, lik, tol,rankp,theta,thetavar,filtersignal)
 
     integer, intent(in) :: p, m, r, n,filtersignal
     integer, intent(inout) :: d, j, rankp
-    integer :: t, i
+    integer :: t,tv
     integer, intent(in), dimension(n,p) :: ymiss
     integer, intent(in), dimension(5) :: timevar
     double precision, intent(in), dimension(n,p) :: yt
@@ -26,211 +26,69 @@ at, pt, vt, ft,kt, pinf, finf, kinf, lik, tol,rankp,theta,thetavar,filtersignal)
     double precision, intent(inout) :: lik
     double precision, intent(inout), dimension(p,p,n) :: thetavar
     double precision, intent(inout), dimension(n,p) :: theta
-    double precision, dimension(m) :: arec
-    double precision, dimension(m,m) ::pirec,im,mm,prec
     double precision, dimension(m,r) :: mr
     double precision, dimension(p,m) :: pm
-    double precision :: c
+    double precision :: c,meps
     double precision, external :: ddot
-    double precision :: meps,finv
+    double precision, dimension(m,m,(n-1)*max(timevar(4),timevar(5))+1) :: rqr
+    external dgemm, dsymm, dgemv, dsymv, dsyr, dsyr2
 
-    meps = tiny(meps) !was epsilon!
-
+    meps = epsilon(meps)
     c = 0.5d0*log(8.0d0*atan(1.0d0))
 
     lik = 0.0d0
-
-    im = 0.0d0
-    do i = 1, m
-        im(i,i) = 1.0d0
+    tv= max(timevar(4),timevar(5))
+    do t=1, (n-1)*tv+1
+        call dsymm('r','l',m,r,1.0d0,qt(:,:,(t-1)*timevar(5)+1),r,rt(:,:,(t-1)*timevar(4)+1),m,0.0d0,mr,m)
+        call dgemm('n','t',m,m,r,1.0d0,mr,m,rt(:,:,(t-1)*timevar(4)+1),m,0.0d0,rqr(:,:,t),m)
     end do
+
     j=0
     d=0
     pinf(:,:,1)=p1inf
-
+    pt(:,:,1) = p1
+    at(:,1) = a1
     ! diffuse initialization
-
-    if(rankp > 0) then
-
-        pt(:,:,1) = p1
-        prec = pt(:,:,1)
-        pirec = pinf(:,:,1)
-        at(:,1) = a1
-        arec = a1
-        diffuse: do while(d < n .AND. rankp > 0)
+    if(rankp .GT. 0) then
+        diffuse: do while(d .LT. n .AND. rankp .GT. 0)
             d = d+1
-            do j=1, p
-                call dsymv('u',m,1.0d0,prec,m,zt(j,:,(d-1)*timevar(1)+1),1,0.0d0,kt(:,j,d),1)
-                ft(j,d) = ddot(m,zt(j,:,(d-1)*timevar(1)+1),1,kt(:,j,d),1) + ht(j,j,(d-1)*timevar(2)+1)
-                if(ymiss(d,j) .EQ. 0) then
-                    call dsymv('u',m,1.0d0,pirec,m,zt(j,:,(d-1)*timevar(1)+1),1,0.0d0,kinf(:,j,d),1) ! kinf_t,i = pinf_t,i*t(z_t,i)
-                    finf(j,d) = ddot(m,zt(j,:,(d-1)*timevar(1)+1),1,kinf(:,j,d),1)
-
-                    vt(j,d) = yt(d,j) - ddot(m,zt(j,:,(d-1)*timevar(1)+1),1,arec,1)
-                    if (finf(j,d) .GT. tol) then
-                        finv = 1.0d0/finf(j,d)
-                        arec = arec + kinf(:,j,d)*finv*vt(j,d)
-                        call dsyr('u',m,ft(j,d)*finv**2,kinf(:,j,d),1,prec,m) !prec = prec + kinf*kinf'*ft/finf^2
-                        call dsyr2('u',m,-finv,kt(:,j,d),1,kinf(:,j,d),1,prec,m) !prec = prec -(kt*kinf'+kinf*kt')/finf
-                        call dsyr('u',m,-finv,kinf(:,j,d),1,pirec,m) !pirec = pirec -kinf*kinf'/finf
-
-                        lik = lik - 0.5d0*log(finf(j,d))
-                        rankp = rankp -1
-
-                        do i = 1, m
-                            if(pirec(i,i) < tol) then
-                                pirec(i,:) = 0.0d0
-                                pirec(:,i) = 0.0d0
-                            end if
-                        end do
-                    else
-                        finf(j,d) = 0.0d0
-                        if(ft(j,d) > meps) then
-                            finv = 1.0d0/ft(j,d)
-                            call daxpy(m,vt(j,d)*finv,kt(:,j,d),1,arec,1) !a_rec = a_rec + kt(:,i,t)*vt(:,t)/ft(i,t)
-                            call dsyr('u',m,-finv,kt(:,j,d),1,prec,m) !prec = prec -kt*kt'/ft
-                            lik = lik - 0.5d0*(log(ft(j,d)) + vt(j,d)**2*finv)
-
-                        end if
-                    end if
-                    if (ft(j,d) > meps) then
-                        lik = lik -c
-                    else
-                        ft(j,d)=0.0d0
-                    end if
-                    if(rankp .EQ. 0) then
-                        exit diffuse
-                    end if
-                end if
-            end do
-
-            call dgemv('n',m,m,1.0d0,tt(:,:,(d-1)*timevar(3)+1),m,arec,1,0.0d0,at(:,d+1),1)
-            arec = at(:,d+1)
-            call dsymm('r','u',m,m,1.0d0,prec,m,tt(:,:,(d-1)*timevar(3)+1),m,0.0d0,mm,m)
-            call dgemm('n','t',m,m,m,1.0d0,mm,m,tt(:,:,(d-1)*timevar(3)+1),m,0.0d0,pt(:,:,d+1),m)
-
-            if(r.GT.1) then
-                call dsymm('r','u',m,r,1.0d0,qt(:,:,(d-1)*timevar(5)+1),r,rt(:,:,(d-1)*timevar(4)+1),m,0.0d0,mr,m)
-                call dgemm('n','t',m,m,r,1.0d0,mr,m,rt(:,:,(d-1)*timevar(4)+1),m,1.0d0,pt(:,:,d+1),m)
-            else
-                call dsyr('u',m,qt(1,1,(d-1)*timevar(5)+1),rt(:,1,(d-1)*timevar(4)+1),1,pt(:,:,d+1),m)
-            end if
-            prec = pt(:,:,d+1)
-            call dsymm('r','u',m,m,1.0d0,pirec,m,tt(:,:,(d-1)*timevar(3)+1),m,0.0d0,mm,m)
-            call dgemm('n','t',m,m,m,1.0d0,mm,m,tt(:,:,(d-1)*timevar(3)+1),m,0.0d0,pinf(:,:,d+1),m)
-            pirec = pinf(:,:,d+1)
-
+            at(:,d+1) = at(:,d)
+            pt(:,:,d+1) = pt(:,:,d)
+            pinf(:,:,d+1) = pinf(:,:,d)
+            call dfilter1step(ymiss(d,:),yt(d,:),transpose(zt(:,:,(d-1)*timevar(1)+1)),ht(:,:,(d-1)*timevar(2)+1),&
+            tt(:,:,(d-1)*timevar(3)+1),rqr(:,:,(d-1)*tv+1),&
+            at(:,d+1),pt(:,:,d+1),vt(:,d),ft(:,d),kt(:,:,d),pinf(:,:,d+1),finf(:,d),kinf(:,:,d),rankp,lik,tol,meps,c,p,m,j)
         end do diffuse
 
 
-        if(rankp .EQ. 0) then
+        if(rankp .EQ. 0 .AND. j .LT. p) then
                 !non-diffuse filtering begins
-            do i = j+1, p
-                call dsymv('u',m,1.0d0,prec,m,zt(i,:,(d-1)*timevar(1)+1),1,0.0d0,kt(:,i,d),1)
-                ft(i,d) = ddot(m,zt(i,:,(d-1)*timevar(1)+1),1,kt(:,i,d),1) + ht(i,i,(d-1)*timevar(2)+1)
-                if(ymiss(d,i).EQ.0) then
-                    vt(i,d) = yt(d,i) - ddot(m,zt(i,:,(d-1)*timevar(1)+1),1,arec,1) !vt
-                    if (ft(i,d) .GT. meps) then
-                        arec = arec + kt(:,i,d)*vt(i,d)/ft(i,d)
-                        call dsyr('u',m,-1.0d0/ft(i,d),kt(:,i,d),1,prec,m) !p_rec = p_rec - kt*kt'*ft(i,t)
-                        lik = lik - 0.5d0*(log(ft(i,d)) + vt(i,d)**2/ft(i,d))-c
-                    else
-                        ft(i,d)=0.0d0
-                    end if
-                end if
-            end do
 
-            call dgemv('n',m,m,1.0d0,tt(:,:,(d-1)*timevar(3)+1),m,arec,1,0.0d0,at(:,d+1),1)
-            call dsymm('r','u',m,m,1.0d0,prec,m,tt(:,:,(d-1)*timevar(3)+1),m,0.0d0,mm,m)
-            call dgemm('n','t',m,m,m,1.0d0,mm,m,tt(:,:,(d-1)*timevar(3)+1),m,0.0d0,pt(:,:,d+1),m)
+            call filter1step(ymiss(d,:),yt(d,:),transpose(zt(:,:,(d-1)*timevar(1)+1)),ht(:,:,(d-1)*timevar(2)+1),&
+            tt(:,:,(d-1)*timevar(3)+1),rqr(:,:,(d-1)*tv+1),&
+            at(:,d+1),pt(:,:,d+1),vt(:,d),ft(:,d),kt(:,:,d),lik,tol,c,p,m,j)
 
-            if(r.GT.1) then
-                call dsymm('r','u',m,r,1.0d0,qt(:,:,(d-1)*timevar(5)+1),r,rt(:,:,(d-1)*timevar(4)+1),m,0.0d0,mr,m)
-                call dgemm('n','t',m,m,r,1.0d0,mr,m,rt(:,:,(d-1)*timevar(4)+1),m,1.0d0,pt(:,:,d+1),m)
-            else
-                call dsyr('u',m,qt(1,1,(d-1)*timevar(5)+1),rt(:,1,(d-1)*timevar(4)+1),1,pt(:,:,d+1),m)
-
-               ! call dger(m,m,qt(1,1,(d-1)*timevar(5)+1),rt(:,1,(d-1)*timevar(4)+1),1,rt(:,1,(d-1)*timevar(4)+1),1,&
-               ! pt(:,:,d+1),m)
-            end if
-
-            arec = at(:,d+1)
-            prec = pt(:,:,d+1)
+        else
+            j = p
         end if
     end if
 
     !Non-diffuse filtering continues from t=d+1, i=1
 
 
-    if(d.EQ.0) then
-        prec = p1
-        arec = a1
-        at(:,1) = a1
-        pt(:,:,1) = p1
-    else
-        if(d .EQ. n .AND. j .EQ. p+1) then
-            j = p
-        end if
-    end if
     do t = d+1, n
-        do i = 1, p
-            call dsymv('u',m,1.0d0,prec,m,zt(i,:,(t-1)*timevar(1)+1),1,0.0d0,kt(:,i,t),1)
-
-            ft(i,t) = ddot(m,zt(i,:,(t-1)*timevar(1)+1),1,kt(:,i,t),1) + ht(i,i,(t-1)*timevar(2)+1)
-            if(ymiss(t,i).EQ.0) then
-                vt(i,t) = yt(t,i) - ddot(m,zt(i,:,(t-1)*timevar(1)+1),1,arec,1)
-                if (ft(i,t) .GT. meps) then
-                    arec = arec + kt(:,i,t)/ft(i,t)*vt(i,t)
-                    call dsyr('u',m,-1.0d0/ft(i,t),kt(:,i,t),1,prec,m) !p_rec = p_rec - kt*kt'*ft(i,i,t)
-                    lik = lik - 0.5d0*(log(ft(i,t)) + vt(i,t)**2/ft(i,t))-c
-                else
-                    ft(i,t)=0.0d0
-                end if
-            end if
-        end do
-
-        call dgemv('n',m,m,1.0d0,tt(:,:,(t-1)*timevar(3)+1),m,arec,1,0.0d0,at(:,t+1),1)
-
-        call dsymm('r','u',m,m,1.0d0,prec,m,tt(:,:,(t-1)*timevar(3)+1),m,0.0d0,mm,m)
-        call dgemm('n','t',m,m,m,1.0d0,mm,m,tt(:,:,(t-1)*timevar(3)+1),m,0.0d0,pt(:,:,t+1),m)
-        !call dgemm('n','n',m,m,m,1.0d0,tt(:,:,(t-1)*timevar(3)+1),m,prec,m,0.0d0,mm,m)
-        !call dgemm('n','t',m,m,m,1.0d0,mm,m,tt(:,:,(t-1)*timevar(3)+1),m,0.0d0,pt(:,:,t+1),m)
-
-        if(r.GT.1) then
-            call dsymm('r','u',m,r,1.0d0,qt(:,:,(t-1)*timevar(5)+1),r,rt(:,:,(t-1)*timevar(4)+1),m,0.0d0,mr,m)
-            call dgemm('n','t',m,m,r,1.0d0,mr,m,rt(:,:,(t-1)*timevar(4)+1),m,1.0d0,pt(:,:,t+1),m)
-        else
-            !   call dger(m,m,qt(1,1,(t-1)*timevar(5)+1),rt(:,1,(t-1)*timevar(4)+1),1,rt(:,1,(t-1)*timevar(4)+1),&
-            !   1,pt(:,:,t+1),m)
-            call dsyr('u',m,qt(1,1,(t-1)*timevar(5)+1),rt(:,1,(t-1)*timevar(4)+1),1,pt(:,:,t+1),m)
-        end if
-
-        arec = at(:,t+1)
-        prec = pt(:,:,t+1)
+        at(:,t+1) = at(:,t)
+        pt(:,:,t+1) = pt(:,:,t)
+        call filter1step(ymiss(t,:),yt(t,:),transpose(zt(:,:,(t-1)*timevar(1)+1)),ht(:,:,(t-1)*timevar(2)+1),&
+        tt(:,:,(t-1)*timevar(3)+1),rqr(:,:,(t-1)*tv+1),&
+        at(:,t+1),pt(:,:,t+1),vt(:,t),ft(:,t),kt(:,:,t),lik,tol,c,p,m,0)
     end do
 
-    if(filtersignal==1) then
+    if(filtersignal.EQ.1) then
         do t = 1, n
             call dgemv('n',p,m,1.0d0,zt(:,:,(t-1)*timevar(1)+1),p,at(:,t),1,0.0d0,theta(t,:),1)
             call dsymm('r','u',p,m,1.0d0,pt(:,:,t),m,zt(:,:,(t-1)*timevar(1)+1),p,0.0d0,pm,p)
             call dgemm('n','t',p,p,m,1.0d0,pm,p,zt(:,:,(t-1)*timevar(1)+1),p,0.0d0,thetavar(:,:,t),p)
         end do
-    end if
-
-    if(m > 1) then
-        do t=1, n
-            do i=1,m-1
-                pt((i+1):m,i,t) =pt(i,(i+1):m,t)
-            end do
-            ! pt(:,:,t) =(pt(:,:,t)+transpose(pt(:,:,t)))/2.0d0
-        end do
-        if(d>0) then
-            do t=1, d
-                do i=1,m-1
-                    pinf((i+1):m,i,t) =pinf(i,(i+1):m,t)
-                end do
-            !pinf(:,:,t) =(pinf(:,:,t)+transpose(pinf(:,:,t)))/2.0d0
-            end do
-        end if
     end if
 end subroutine kfilter

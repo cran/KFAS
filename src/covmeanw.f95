@@ -1,5 +1,5 @@
-! Subroutines for mean, covariance and variance computation from weighted sample
-
+! Subroutines for computation of mean, covariance and variance from weighted sample
+! All subroutines assume that the weights are normalized i.e. sum(w)=1
 subroutine covmeanw(x,w,m,n,k,meanx,covx)
 
     implicit none
@@ -10,6 +10,7 @@ subroutine covmeanw(x,w,m,n,k,meanx,covx)
     double precision, intent(inout), dimension(m,n) :: meanx
     double precision, intent(inout), dimension(m,m,n) :: covx
 
+    external dgemm
 
     do i = 1, k
         meanx = meanx + x(:,:,i)*w(i)
@@ -29,19 +30,20 @@ subroutine covmeanwprotect(x,w,m,n,k,meanx,covx)
     implicit none
     integer, intent(in) :: m, n, k
     integer :: t,i
-    double precision, intent(inout), dimension(m,n,k) :: x
+    double precision, intent(in), dimension(m,n,k) :: x
     double precision, intent(in), dimension(k) :: w
     double precision, intent(inout), dimension(m,n) :: meanx
     double precision, intent(inout), dimension(m,m,n) :: covx
-
     double precision, dimension(m,n,k) :: x2
 
-    x2 = x
+    external dgemm
+
+
     do i = 1, k
-        meanx = meanx + x2(:,:,i)*w(i)
+        meanx = meanx + x(:,:,i)*w(i)
     end do
     do i = 1, k
-        x2(:,:,i) = sqrt(w(i))*(x2(:,:,i) - meanx)
+        x2(:,:,i) = sqrt(w(i))*(x(:,:,i) - meanx)
     end do
 
     do t = 1, n
@@ -64,11 +66,11 @@ subroutine varmeanw(x,w,m,n,k,meanx,varx,var)
     do i = 1, k
         meanx = meanx + x(:,:,i)*w(i)
     end do
-    if(var==1) then
-    do i = 1, m
-        do t = 1, n
-            varx(t,i) = sum(w*x(t,i,:)**2)-meanx(t,i)**2
+    if(var.EQ.1) then
+        do i = 1, m
+            do t = 1, n
+                varx(t,i) = sum(w*x(t,i,:)**2)-meanx(t,i)**2
+            end do
         end do
-    end do
-end if
+    end if
 end subroutine varmeanw

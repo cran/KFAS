@@ -1,15 +1,16 @@
+!simulate gaussian state space model
 subroutine simgaussian(ymiss,timevar, yt, zt, ht, tt, rtv, qt, a1, p1, &
 p1inf, nnd,nsim, epsplus, etaplus, aplus1, p, n, m, r, info,rankp,&
 tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
 
     implicit none
-    !!! transpoosi simille!!!
-    integer, intent(in) :: p, m, r, n, nsim,nnd,ndl,simdim,simwhat,antithetics
+
+    integer, intent(in) :: p, m, r, n, nsim,nnd,ndl,simdim,simwhat,antithetics,rankp
     integer, intent(in), dimension(n,p) :: ymiss
     integer, intent(in), dimension(5) :: timevar
     integer, intent(in), dimension(ndl) :: nd
-    integer, intent(inout) :: info,rankp
-    integer ::  t, i, d, j,k,tv,l
+    integer, intent(inout) :: info
+    integer ::  t, i, d, j,k,tv,l,rankp2
     double precision, intent(in) :: tol
     double precision, intent(in), dimension(n,p) :: yt
     double precision, intent(in), dimension(p,m,(n-1)*timevar(1)+1) :: zt
@@ -46,7 +47,9 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
     double precision, external :: ddot
     logical needeps
 
-    needeps = simwhat==1 .or. simwhat==3
+    external dsymm, dgemm, smoothsim, dsymv, ldl, dtrmv,smoothsimfast, dgemv
+
+    needeps = simwhat.EQ.1 .or. simwhat.EQ.3
     !compute rqr
     tv= max(timevar(4),timevar(5))
     do t=1, (n-1)*tv+1
@@ -54,16 +57,16 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
         call dgemm('n','t',m,m,r,1.0d0,mr,m,rtv(:,:,(t-1)*timevar(4)+1),m,0.0d0,rqr(:,:,t),m)
     end do
 
-    aplus=0.0d0
 
 
+    rankp2 = rankp
     call smoothsim(yt, ymiss, timevar, zt, ht,tt, rtv,qt,rqr, a1, p1, p1inf, &
-    d, j, p, m, n, r,tol,rankp,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
+    d, j, p, m, n, r,tol,rankp2,ft,finf,kt,kinf,epshat,etahat,rt0,rt1,needeps)
         !simwhat = 1: epsilon, 2: eta, 3: both, 4: state, 5: signal, 6: observations
-    if(simwhat > 3) then
+    if(simwhat .GT. 3) then
         ahat = a1
         call dsymv('l',m,1.0d0,p1,m,rt0,1,1.0d0,ahat,1)
-        if(d > 0) then
+        if(d .GT. 0) then
             call dsymv('l',m,1.0d0,p1inf,m,rt1,1,1.0d0,ahat,1)
         end if
     end if
@@ -75,10 +78,9 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
             cholqt(1,1,t)=sqrt(qt(1,1,t))
         else
             rcholtmp = qt(:,:,t)
-            !call dgesdd('o',r,r,rcholtmp,r,sigma,u,r,ut,r,work,lwork,iwork,info)
             call ldl(rcholtmp,r,tol,info)
             if(info .NE. 0) then
-                info=2
+                info = -2
                 return
             end if
             do i=1,r
@@ -98,7 +100,7 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
             cholp1 = p1
             call ldl(cholp1,m,tol,info)
             if(info .NE. 0) then
-                info=3
+                info=-3
                 return
             end if
             do i=1,m
@@ -111,7 +113,7 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
     end if
   
     do i = 1, nsim
-
+        aplus = 0.0d0
         if(ndl.GT.0) then
             aplus(nd,1) = a1(nd)
         end if
@@ -122,9 +124,9 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
 
         do t = 1, n
             do k = 1, p
+                epsplus(k,t,i) = epsplus(k,t,i)*sqrt(ht(k,k,(t-1)*timevar(2)+1))
                 if(ymiss(t,k).EQ.0) then
-                    yplus(t,k) = epsplus(k,t,i)*sqrt(ht(k,k,(t-1)*timevar(2)+1)) + &
-                    ddot(m,zt(k,:,(t-1)*timevar(1)+1),1,aplus(:,t),1)
+                    yplus(t,k) = epsplus(k,t,i) + ddot(m,zt(k,:,(t-1)*timevar(1)+1),1,aplus(:,t),1)
                 end if
             end do
             call dtrmv('l','n','n',r,cholqt(:,:,(t-1)*timevar(5)+1),r,etaplus(:,t,i),1)
@@ -132,21 +134,21 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
             call dgemv('n',m,r,1.0d0,rtv(:,:,(t-1)*timevar(4)+1),m,etaplus(:,t,i),1,1.0d0,aplus(:,t+1),1)
         end do
     
-           call smoothsimfast(yplus, ymiss, timevar, zt, ht,tt, rtv,qt,a1, ft,kt,&
-        finf, kinf, d, j, p, m, n,r,tol,epsplushat,etaplushat,rt0,rt1,needeps)
+        call smoothsimfast(yplus, ymiss, timevar, zt, ht,tt, rtv,qt,a1, ft,kt,&
+        finf, kinf, d, j, p, m, n,r,epsplushat,etaplushat,rt0,rt1,needeps)
 
         !simwhat = 1: epsilon, 2: eta, 3: both, 4: state, 5: signal, 6: observations
         select case(simwhat)
             case(1)
                 sim(:,:,i) = epshat - epsplushat + epsplus(:,:,i)
-                if(antithetics == 1) then
+                if(antithetics .EQ. 1) then
                     sim(:,:,i+nsim) = epshat + epsplushat - epsplus(:,:,i)
                     sim(:,:,i+2*nsim) = epshat + c(i)*(sim(:,:,i)-epshat)
                     sim(:,:,i+3*nsim) = epshat + c(i)*(sim(:,:,i+nsim)-epshat)
                 end if
             case(2)
                 sim(:,:,i) = etahat - etaplushat + etaplus(:,:,i)
-                if(antithetics == 1) then
+                if(antithetics .EQ. 1) then
                     sim(:,:,i+nsim) = etahat + etaplushat - etaplus(:,:,i)
                     sim(:,:,i+2*nsim) = etahat + c(i)*(sim(:,:,i)-etahat)
                     sim(:,:,i+3*nsim) = etahat + c(i)*(sim(:,:,i+nsim)-etahat)
@@ -154,7 +156,7 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
             case(3)
                 sim(1:p,:,i) = epshat - epsplushat + epsplus(:,:,i)
                 sim((p+1):,:,i) = etahat - etaplushat + etaplus(:,:,i)
-                if(antithetics == 1) then
+                if(antithetics .EQ. 1) then
                     sim(1:p,:,i+nsim) = epshat + epsplushat - epsplus(:,:,i)
                     sim(1:p,:,i+2*nsim) = epshat + c(i)*(sim(1:p,:,i)-epshat)
                     sim(1:p,:,i+3*nsim) = epshat + c(i)*(sim(1:p,:,i+nsim)-epshat)
@@ -172,7 +174,7 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
 
                 sim(:,1,i) = ahat - aplushat + aplus(:,1)
                 etatmp(:,:,1) = etahat(:,1:(n-1)) - etaplushat(:,1:(n-1)) + etaplus(:,1:(n-1),i)
-                if(antithetics == 1) then
+                if(antithetics .EQ. 1) then
                     sim(:,1,i+nsim) = ahat + aplushat - aplus(:,1)
                     sim(:,1,i+2*nsim) = ahat+ c(i)*(sim(:,1,i)-ahat)
                     sim(:,1,i+3*nsim) = ahat+ c(i)*(sim(:,1,i+nsim)-ahat)
@@ -201,7 +203,7 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
                 etatmp(:,:,1) = etahat(:,1:(n-1)) - etaplushat(:,1:(n-1)) + etaplus(:,1:(n-1),i)
                 call dgemv('n',p,m,1.0d0,zt(:,:,1),p,alphatmp(:,1,1),1,0.0d0,sim(:,1,i),1)
 
-                if(antithetics == 1) then
+                if(antithetics .EQ. 1) then
                     alphatmp(:,1,2) = ahat + aplushat - aplus(:,1)
                     alphatmp(:,1,3) = ahat + c(i)*(alphatmp(:,1,1)-ahat)
                     alphatmp(:,1,4) = ahat + c(i)*(alphatmp(:,1,2)-ahat)
@@ -234,15 +236,11 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
 
                 alphatmp(:,1,1) = ahat - aplushat + aplus(:,1)
                 etatmp(:,:,1) = etahat(:,1:(n-1)) - etaplushat(:,1:(n-1)) + etaplus(:,1:(n-1),i)
-                !call dgemv('n',p,m,1.0d0,zt(:,:,1),p,alphatmp(:,1,1),1,0.0d0,sim(:,1,i),1)
 
-                if(antithetics == 1) then
+                if(antithetics .EQ. 1) then
                     alphatmp(:,1,2) = ahat + aplushat - aplus(:,1)
                     alphatmp(:,1,3) = ahat+ c(i)*(alphatmp(:,1,1)-ahat)
                     alphatmp(:,1,4) = ahat+ c(i)*(alphatmp(:,1,2)-ahat)
-                    !call dgemv('n',p,m,1.0d0,zt(:,:,1),p,alphatmp(:,1,2),1,0.0d0,sim(:,1,i+nsim),1)
-                    !call dgemv('n',p,m,1.0d0,zt(:,:,1),p,alphatmp(:,1,3),1,0.0d0,sim(:,1,i+2*nsim),1)
-                    !call dgemv('n',p,m,1.0d0,zt(:,:,1),p,alphatmp(:,1,4),1,0.0d0,sim(:,1,i+3*nsim),1)
 
                     etatmp(:,:,2) = etahat(:,1:(n-1)) + etaplushat(:,1:(n-1)) - etaplus(:,1:(n-1),i)
                     etatmp(:,:,3) = etahat(:,1:(n-1)) + c(i)*(etatmp(:,:,1)-etahat(:,1:(n-1)))
@@ -253,8 +251,6 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
                     do l = 1, p
                         if(ymiss(1,l).GT.0) then
                             sim(l,1,i+(k-1)*nsim) = ddot(m,zt(l,:,1),1,alphatmp(:,1,k),1)
-                        !else
-                        !    sim(l,t,i+(k-1)*nsim) = yt(t,l)
                         end if
                     end do
                     do t = 2, n
@@ -265,12 +261,8 @@ tol,nd,ndl,sim,c,simwhat,simdim,antithetics)
                         do l = 1, p
                             if(ymiss(t,l).GT.0) then
                                 sim(l,t,i+(k-1)*nsim) = ddot(m,zt(l,:,(t-1)*timevar(1)+1),1,alphatmp(:,t,k),1)
-                            !else
-                            !    sim(l,t,i+(k-1)*nsim) = yt(t,l)
                             end if
                         end do
-
-                        !call dgemv('n',p,m,1.0d0,zt(:,:,(t-1)*timevar(1)+1),p,alphatmp(t,:,k),1,0.0d0,sim(t,:,i+(k-1)*nsim),1)
                     end do
                 end do
         end select

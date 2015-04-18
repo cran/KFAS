@@ -20,11 +20,11 @@ subroutine ldlssm(yt, ydimt, yobs, timevar, zt, p, m, n, ichols,nh,hchol,dim,inf
     double precision, dimension(p,p) :: cholhelp
     double precision, dimension(p) :: yhelp
     double precision, dimension(p,m) :: zhelp
-
     double precision, external :: ddot
 
-    hdiagtest = 0
+    external dtrmv, dtrmm, dtrtri, ldl
 
+    hdiagtest = 0
     info=0
 
     if(p.GT.1) then !testing diagonality

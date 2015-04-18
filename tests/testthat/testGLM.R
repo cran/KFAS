@@ -1,6 +1,12 @@
 context("KFAS and glm comparison")
 
-tol<-1e-3
+# Poor starting values
+y <- rep(0:1,c(15,10))
+model<-SSModel(y~1,dist="binomial")
+expect_equivalent(coef(KFS(model,theta=7.1)),coef(KFS(model)))
+expect_equivalent(coef(KFS(model,theta=-4.6)),coef(KFS(model)))
+
+tol<-1e-4
 require(MASS)
 # Test for Gaussian
 ctl <- c(4.17,5.58,5.18,6.11,4.50,4.61,5.17,4.53,5.33,5.14)
@@ -29,7 +35,8 @@ sex <- factor(rep(c("M", "F"), c(6, 6)))
 SF <- cbind(numdead, numalive = 20-numdead)
 glm.binomial <- glm(SF ~ sex*ldose, family = binomial,control=list(epsilon=1e-15))
 model.binomial<-SSModel(numdead ~ sex*ldose, u=20,distribution = 'binomial')
-kfas.binomial<-KFS(model.binomial,smoothing=c('state','signal','mean'))
+kfas.binomial<-KFS(model.binomial,smoothing=c('state','signal','mean'),maxiter=1000,convtol=1e-15)
+kfas.binomial2<-KFS(model.binomial,smoothing=c('state','signal','mean'),maxiter=1000)
 
 ## Test for Gamma GLM
 # A Gamma example from McCullagh & Nelder (1989, pp. 300-2)
@@ -37,13 +44,13 @@ clotting <- data.frame(
   u = c(5,10,15,20,30,40,60,80,100),
   lot1 = c(118,58,42,35,27,25,21,19,18),
   lot2 = c(69,35,26,21,18,16,13,12,12))
-glm.gamma<-glm(lot1 ~ log(u), data = clotting, family = Gamma("log"),control=list(epsilon=1e-15))
+glm.gamma<-glm(lot1 ~ log(u), data = clotting, family = Gamma("log"),control=list(epsilon=1e-8))
 #dispersion=1
 model.gamma1<-SSModel(lot1 ~ log(u), data = clotting, distribution = 'gamma')
 kfas.gamma1<-KFS(model.gamma1,smoothing=c('state','signal','mean'))
 #dispersion from gamma.glm
 model.gamma2<-SSModel(lot1 ~ log(u), u = 1/summary(glm.gamma)$dispersion, data = clotting, distribution = 'gamma')
-kfas.gamma2<-KFS(model.gamma2,smoothing=c('state','signal','mean'))  
+kfas.gamma2<-KFS(model.gamma2,smoothing=c('state','signal','mean'),maxiter=1000,convtol=1e-8)  
 
 ## Test for NB GLM
 ## From MASS library, ?glm.nb
@@ -75,7 +82,6 @@ test_that("Gaussian GLM fitting works properly",{
   expect_equal(c(fitted(kfas.gaussian)),fitted(glm.gaussian),tolerance=tol, check.attributes=FALSE)
   expect_equal(c(kfas.gaussian$V_mu),predict(glm.gaussian,type='response',se.fit=TRUE)$se.fit^2
                ,tolerance=tol, check.attributes=FALSE)
-  expect_equal(deviance(kfas.gaussian),deviance(glm.gaussian),tolerance=tol, check.attributes=FALSE)
 })
 
 test_that("Poisson GLM fitting works properly",{
@@ -95,7 +101,6 @@ test_that("Poisson GLM fitting works properly",{
   # prediction variances on response scale
   expect_equal(c(kfas.poisson$V_mu),predict(glm.poisson,type='response',se.fit=TRUE)$se.fit^2
                ,tolerance=tol, check.attributes=FALSE)
-  expect_equal(deviance(kfas.poisson),deviance(glm.poisson),tolerance=tol, check.attributes=FALSE)
 })
 
 
@@ -116,7 +121,6 @@ test_that("binomial GLM fitting works properly",{
   # prediction variances on response scale
   expect_equal(c(kfas.binomial$V_mu),
                predict(glm.binomial,type='response',se.fit=TRUE)$se.fit^2,tolerance=tol, check.attributes=FALSE)
-  expect_equal(deviance(kfas.binomial),deviance(glm.binomial),tolerance=tol, check.attributes=FALSE)
 })
 
 
@@ -126,18 +130,18 @@ test_that("gamma GLM fitting works properly",{
                  info=paste("Error in time step",i, ", dispersion=1"),tolerance=tol, check.attributes=FALSE)
   for(i in 1:length(model.gamma1$y))
     expect_equal(kfas.gamma1$V[,,i],summary(glm.gamma,dispersion=1)$cov.s,
-                      info=paste("Error in time step",i, ", dispersion=1"),tolerance=tol, check.attributes=FALSE)  
+                 info=paste("Error in time step",i, ", dispersion=1"),tolerance=tol, check.attributes=FALSE)  
   expect_equal(c(kfas.gamma1$thetahat),glm.gamma$linear.predictor,
-                    info=paste("dispersion=1"),tolerance=tol, check.attributes=FALSE)
+               info=paste("dispersion=1"),tolerance=tol, check.attributes=FALSE)
   ## predictions on response scale
   expect_equal(c(fitted(kfas.gamma1)),fitted(glm.gamma),info=paste("dispersion=1"),tolerance=tol, check.attributes=FALSE)
   # prediction variances on link scale
   expect_equal(c(kfas.gamma1$V_theta),
-                    predict(glm.gamma,type='link',se.fit=TRUE,dispersion=1)$se.fit^2,
-                    info=paste("dispersion=1"),tolerance=tol, check.attributes=FALSE)
+               predict(glm.gamma,type='link',se.fit=TRUE,dispersion=1)$se.fit^2,
+               info=paste("dispersion=1"),tolerance=tol, check.attributes=FALSE)
   # prediction variances on response scale
   expect_equal(c(kfas.gamma1$V_mu),predict(glm.gamma,type='response',se.fit=TRUE,dispersion=1)$se.fit^2,
-                    info=paste("dispersion=1"),tolerance=tol, check.attributes=FALSE)
+               info=paste("dispersion=1"),tolerance=tol, check.attributes=FALSE)
   for(i in 1:length(model.gamma2$y))
     expect_equal(coef(kfas.gamma2,start=i,end=i),coef(glm.gamma),
                  info=paste("Error in time step",i),tolerance=tol, check.attributes=FALSE)
@@ -154,7 +158,6 @@ test_that("gamma GLM fitting works properly",{
   # prediction variances on response scale
   expect_equal(c(kfas.gamma2$V_mu),
                predict(glm.gamma,type='response',se.fit=TRUE)$se.fit^2,tolerance=tol, check.attributes=FALSE)
-  expect_equal(deviance(kfas.gamma2),deviance(glm.gamma),tolerance=tol, check.attributes=FALSE)
 })
 
 test_that("negative binomial GLM fitting works properly",{
@@ -163,14 +166,14 @@ test_that("negative binomial GLM fitting works properly",{
     expect_equal(coef(kfas.NB,start=i,end=i),coef(glm.NB),info=paste("Error in time step",i),tolerance=tol, check.attributes=FALSE)
   for(i in 1:length(model.NB$y))
     expect_equal(kfas.NB$V[,,i],summary(glm.NB)$cov.s,
-                      info=paste("Error in time step",i),tolerance=tol, check.attributes=FALSE)
+                 info=paste("Error in time step",i),tolerance=tol, check.attributes=FALSE)
   
   expect_equal(c(kfas.NB$thetahat),glm.NB$linear.predictor,tolerance=tol, check.attributes=FALSE)
   ## predictions on response scale
   expect_equal(c(fitted(kfas.NB)),fitted(glm.NB),tolerance=tol, check.attributes=FALSE)
   # prediction variances on link scale
   expect_equal(c(kfas.NB$V_theta),
-                    predict(glm.NB,type='link',se.fit=TRUE,dispersion=1)$se.fit^2,tolerance=tol, check.attributes=FALSE)
+               predict(glm.NB,type='link',se.fit=TRUE,dispersion=1)$se.fit^2,tolerance=tol, check.attributes=FALSE)
   # prediction variances on response scale
   expect_equal(c(kfas.NB$V_mu),predict(glm.NB,type='response',se.fit=TRUE,)$se.fit^2,tolerance=tol, check.attributes=FALSE)
   
@@ -187,82 +190,61 @@ test_that("negative binomial GLM fitting works properly",{
   
   fit<-optim(f=likfn,p=c(log(glm.NB$theta),glm.NB$coef),model=model.NB)
   expect_equal(c(exp(fit$p[1]),fit$p[-1]),c(glm.NB$theta,glm.NB$coef),tolerance=tol, check.attributes=FALSE)
-  expect_equal(deviance(kfas.NB),deviance(glm.NB),tolerance=tol, check.attributes=FALSE)
 })
 
 
 test_that("Residuals for Gaussian GLM works properly",{
-  expect_equal(as.numeric(residuals(kfas.gaussian,type="deviance")),
-                    residuals(glm.gaussian,type="deviance"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.gaussian,type="pearson")),
-                    residuals(glm.gaussian,type="pearson"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.gaussian,type="pearson"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.gaussian,type="response")),
-                    residuals(glm.gaussian,type="response"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.gaussian,type="response"),tolerance=tol, check.attributes=FALSE)
   
   expect_equal(as.numeric(rstandard(kfas.gaussian,type="pearson")),
-                    rstandard(glm.gaussian,type="pearson"),tolerance=tol, check.attributes=FALSE)
-  expect_equal(as.numeric(rstandard(kfas.gaussian,type="deviance")),
-                    rstandard(glm.gaussian,type="deviance"),tolerance=tol, check.attributes=FALSE)
+               rstandard(glm.gaussian,type="pearson"),tolerance=tol, check.attributes=FALSE)
 })
 
 
 test_that("Residuals for Poisson GLM works properly",{
-  expect_equal(as.numeric(residuals(kfas.poisson,type="deviance")),
-                    residuals(glm.poisson,type="deviance"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.poisson,type="pearson")),
-                    residuals(glm.poisson,type="pearson"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.poisson,type="pearson"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.poisson,type="response")),
-                    residuals(glm.poisson,type="response"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.poisson,type="response"),tolerance=tol, check.attributes=FALSE)
   
   expect_equal(as.numeric(rstandard(kfas.poisson,type="pearson")),
-                    rstandard(glm.poisson,type="pearson"),tolerance=tol, check.attributes=FALSE)
-  expect_equal(as.numeric(rstandard(kfas.poisson,type="deviance")),
-                    rstandard(glm.poisson,type="deviance"),tolerance=tol, check.attributes=FALSE)
+               rstandard(glm.poisson,type="pearson"),tolerance=tol, check.attributes=FALSE)
 })
 
 
 test_that("Residuals for Binomial GLM works properly",{
-  expect_equal(as.numeric(residuals(kfas.binomial,type="deviance")),
-                    residuals(glm.binomial,type="deviance"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.binomial,type="pearson")),
-                    residuals(glm.binomial,type="pearson"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.binomial,type="pearson"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.binomial,type="response")),
-                    residuals(glm.binomial,type="response"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.binomial,type="response"),tolerance=tol, check.attributes=FALSE)
   
   expect_equal(as.numeric(rstandard(kfas.binomial,type="pearson")),
-                    rstandard(glm.binomial,type="pearson"),tolerance=tol, check.attributes=FALSE)
-  expect_equal(as.numeric(rstandard(kfas.binomial,type="deviance")),
-                    rstandard(glm.binomial,type="deviance"),tolerance=tol, check.attributes=FALSE)
+               rstandard(glm.binomial,type="pearson"),tolerance=tol, check.attributes=FALSE)
 })
 
 
 test_that("Residuals for Gamma GLM works properly",{
-  expect_equal(as.numeric(residuals(kfas.gamma2,type="deviance")),
-                    residuals(glm.gamma,type="deviance"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.gamma2,type="pearson")),
-                    residuals(glm.gamma,type="pearson"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.gamma,type="pearson"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.gamma2,type="response")),
-                    residuals(glm.gamma,type="response"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.gamma,type="response"),tolerance=tol, check.attributes=FALSE)
   
   expect_equal(as.numeric(rstandard(kfas.gamma2,type="pearson")),
-                    rstandard(glm.gamma,type="pearson"),tolerance=tol, check.attributes=FALSE)
-  expect_equal(as.numeric(rstandard(kfas.gamma2,type="deviance")),
-                    rstandard(glm.gamma,type="deviance"),tolerance=tol, check.attributes=FALSE)
+               rstandard(glm.gamma,type="pearson"),tolerance=tol, check.attributes=FALSE)
 })
 
 
 test_that("Residuals for negative binomial GLM works properly",{
-  expect_equal(as.numeric(residuals(kfas.NB,type="deviance")),
-                    residuals(glm.NB,type="deviance"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.NB,type="pearson")),
-                    residuals(glm.NB,type="pearson"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.NB,type="pearson"),tolerance=tol, check.attributes=FALSE)
   expect_equal(as.numeric(residuals(kfas.NB,type="response")),
-                    residuals(glm.NB,type="response"),tolerance=tol, check.attributes=FALSE)
+               residuals(glm.NB,type="response"),tolerance=tol, check.attributes=FALSE)
   
   expect_equal(as.numeric(rstandard(kfas.NB,type="pearson")),
-                    rstandard(glm.NB,type="pearson"),tolerance=tol, check.attributes=FALSE)
-  expect_equal(as.numeric(rstandard(kfas.NB,type="deviance")),
-                    rstandard(glm.NB,type="deviance"),tolerance=tol, check.attributes=FALSE)
+               rstandard(glm.NB,type="pearson"),tolerance=tol, check.attributes=FALSE)
 })
 
 
@@ -337,32 +319,3 @@ test_that("Predictions for GLM works properly",{
   expect_equal(unclass(pred.kfas.NB.link[,c("lwr","upr")]),glm.NB.CI,tolerance=tol, check.attributes=FALSE)
   expect_equal(unclass(pred.kfas.NB.response[,c("lwr","upr")]),glm.NB$family$linkinv(glm.NB.CI),tolerance=tol, check.attributes=FALSE)
 })
-##
-
-# #Estimate dispersion:
-# 
-# x<-rnorm(10000)
-# beta<-2
-# dispersion<-1
-# y<-rgamma(n=length(x),shape=1/dispersion,scale=exp(beta*x)*dispersion)
-# 
-# glmfit<-glm(y~x,family=Gamma("log"),control=list(epsilon=1e-15,maxit=10000))
-# 
-# model<-SSModel(y~x,distribution="gamma")
-# likfn_u<-function(pars,model,estimate=TRUE){ 
-#   model$u[]<-exp(pars)
-#   if(estimate)
-#     return(-logLik(model,check=TRUE))
-#   model
-# }
-# fit_u<-nlm(f=likfn_u,p=log(dispersion),model=model)
-# sort(abs(c(glm=summary(glmfit)$disp,MASS=1/gamma.shape(glmfit,it.lim=1000,eps=1e-15)$alpha,
-#            KFAS=exp(fit_u$e))-dispersion))
-
-#imp<-importanceSSM(model.gamma2,nsim=10000,antit=T,type="signal")
-##imp$s<-exp(imp$s)
-#weighted.hist(imp$s[1,1,],imp$w)
-
-# imp<-importanceSSM(model.binomial,nsim=10000,antit=TRUE,type="signal")
-# imp$s<-exp(imp$s)/(1 + exp(imp$s))
-# weighted.hist(imp$s[10,1,],imp$w)

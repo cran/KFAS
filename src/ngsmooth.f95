@@ -6,15 +6,16 @@ convtol,nd,ndl,alphahat,alphavar,thetahat,thetavar,yhat,yvar,smootha,smooths,smo
 
     implicit none
 
-    integer, intent(in) ::  p,m, r, n,nnd,info,nsim,maxiter,ndl,smootha,smooths,smoothy
+    integer, intent(in) ::  p,m, r, n,nnd,nsim,ndl,smootha,smooths,smoothy, rankp
     integer, intent(in), dimension(p) :: dist
     integer, intent(in), dimension(n,p) :: ymiss
     integer, intent(in), dimension(5) :: timevar
     integer, intent(in), dimension(ndl) :: nd
-    integer, intent(inout) :: rankp
+    integer, intent(inout) :: maxiter,info
     integer ::  t, j
     double precision, intent(in) :: tol,convtol
-    double precision, intent(in), dimension(n,p) :: u,theta
+    double precision, intent(inout), dimension(n,p) :: theta
+    double precision, intent(in), dimension(n,p) :: u
     double precision, intent(in), dimension(n,p) :: yt
     double precision, intent(in), dimension(p,m,(n-1)*timevar(1)+1) :: zt
     double precision, intent(in), dimension(m,m,(n-1)*timevar(3)+1) :: tt
@@ -38,17 +39,23 @@ convtol,nd,ndl,alphahat,alphavar,thetahat,thetavar,yhat,yvar,smootha,smooths,smo
     double precision, dimension(p,m) :: pm
     double precision, external :: ddot
 
-    if(smootha==1) then
+external isample, covmeanwprotect, dgemv, dsymm, dgemm, covmeanw
+
+    if(smootha.EQ.1) then
 
         call isample(yt, ymiss, timevar, zt, tt, rtv, qt, a1, p1,p1inf, u, dist, &
         p, n, m, r, theta, maxiter,rankp,convtol, nnd,nsim,epsplus,etaplus,&
         aplus1,c,tol,info,1,w,sim,nd,ndl,4,m)
 
+        if(info /= 0) then
+            return
+        end if
+
         w = w/sum(w)
 
         call covmeanwprotect(sim,w,m,n,4*nsim,alphahat,alphavar)
 
-        if(smooths==1) then
+        if(smooths.EQ.1) then
             do t = 1, n
                 call dgemv('n',p,m,1.0d0,zt(:,:,(t-1)*timevar(1)+1),p,alphahat(:,t),1,0.0d0,thetahat(:,t),1)
                 call dsymm('r','u',p,m,1.0d0,alphavar(:,:,t),m,zt(:,:,(t-1)*timevar(1)+1),p,0.0d0,pm,p)
@@ -56,7 +63,7 @@ convtol,nd,ndl,alphahat,alphavar,thetahat,thetavar,yhat,yvar,smootha,smooths,smo
             end do
         end if
 
-        if(smoothy==1) then
+        if(smoothy.EQ.1) then
             do t = 1, n
                 do j = 1,p
                     call dgemv('t',m,4*nsim,1.0d0,sim(:,t,:),m,zt(j,:,(t-1)*timevar(1)+1),1,0.0d0,osim(j,t,:),1)
@@ -83,13 +90,16 @@ convtol,nd,ndl,alphahat,alphavar,thetahat,thetavar,yhat,yvar,smootha,smooths,smo
         p, n, m, r, theta, maxiter,rankp,convtol, nnd,nsim,epsplus,etaplus,&
         aplus1,c,tol,info,1,w,sim,nd,ndl,5,p)
 
+        if(info /= 0) then
+            return
+        end if
         w = w/sum(w)
 
-        if(smooths==1) then
+        if(smooths.EQ.1) then
             call covmeanwprotect(sim,w,p,n,4*nsim,thetahat,thetavar)
         end if
 
-        if(smoothy==1) then
+        if(smoothy.EQ.1) then
             do j= 1,p
                 select case(dist(j))
                     case(1)

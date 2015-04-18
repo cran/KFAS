@@ -1,17 +1,17 @@
 ! Non-Gaussian log-likelihood computation
 subroutine ngloglik(yt, ymiss, timevar, zt, tt, rtv, qt, a1, p1,p1inf, p,m,&
 r, n, lik, theta, u, dist,maxiter,rankp,convtol, &
-nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl,diff)
+nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl,diff,marginal)
 
     implicit none
 
-    integer, intent(in) ::  p, m, r, n,nnd,info,antit,nsim,sim,nsim2,ndl
+    integer, intent(in) ::  p, m, r, n,nnd,antit,nsim,sim,nsim2,ndl,rankp
     integer, intent(in), dimension(n,p) :: ymiss
     integer, intent(in), dimension(p) :: dist
     integer, intent(in), dimension(ndl) :: nd
     integer, intent(in), dimension(5) :: timevar
-    integer, intent(inout) :: maxiter,rankp
-    integer ::  rankp2, j,t
+    integer, intent(inout) :: maxiter,marginal,info
+    integer ::  j,t,info2
     double precision, intent(in) :: convtol,tol
     double precision, intent(in), dimension(n,p) :: u
     double precision, intent(in), dimension(n,p) :: yt
@@ -21,7 +21,7 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl,diff)
     double precision, intent(in), dimension(r,r,(n-1)*timevar(5)+1) :: qt
     double precision, intent(in), dimension(m) :: a1
     double precision, intent(in), dimension(m,m) ::  p1,p1inf
-    double precision, intent(in), dimension(m,nsim) :: aplus1
+    double precision, intent(inout), dimension(m,nsim) :: aplus1
     double precision, intent(in),dimension(nsim) :: c
     double precision, dimension(p,p,n) :: ht
     double precision, dimension(n,p) :: ytilde
@@ -30,51 +30,76 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl,diff)
     double precision, intent(inout), dimension(r,n,nsim) :: etaplus
     double precision, intent(inout) :: lik
     double precision, dimension(p,n,nsim2) :: tsim
-    double precision, dimension(n,p) :: dn
     double precision, dimension(n) :: tmp
     double precision, dimension(nsim2) :: w
-    double precision :: con
     double precision, intent(inout) :: diff
     double precision, external :: ddot
 
-    con = 0.5d0*log(8.0d0*atan(1.0d0))
-
-    rankp2 = rankp
-
+    external approx, marginalxx, dpoisf, dnormf, dbinomf, dgammaf, dnbinomf, simgaussian
     !approximate
     call approx(yt, ymiss, timevar, zt, tt, rtv, ht, qt, a1, p1,p1inf, p,n,m,r,&
-    theta, u, ytilde, dist,maxiter,tol,rankp2,convtol,diff)
+    theta, u, ytilde, dist,maxiter,tol,rankp,convtol,diff,lik, info)
 
-    if(diff == diff) then
+    if(info .ne. 0 .and. info .ne. 3) then
+        return
+    end if
+        
+    if(marginal.EQ.1) then
+        j = int(sum(p1inf))
+        if(j.GT.0) then
+            call marginalxx(p1inf,zt,tt,m,p,n,j,timevar,lik,marginal)
+        end if
+        if(marginal.EQ.-1) then
+            info = 5
+            return
+        end if
+    end if
 
-        rankp2 = rankp
-        ! gaussian likelihood
-        call gloglik(ytilde, ymiss, timevar, zt, ht, tt, rtv, qt, a1, p1, p1inf,&
-        p, m, r, n, lik, tol,rankp2)
 
-        where(ymiss .EQ. 0) dn=(ytilde-theta)**2
-
-        do j=1,p
-            if(dist(j) > 1) then
+    do j=1,p
+        select case(dist(j))
+            case(2)
                 do t=1,n
-                    if(ymiss(t,j) .EQ. 0) then
-                        lik= lik + con + 0.5d0*log(ht(j,j,t)) + 0.5d0*dn(t,j)/ht(j,j,t)
+                    if(ymiss(t,j).EQ.0) then
+                        call dpoisf(yt(t,j), u(t,j)*exp(theta(t,j)), lik)
+                        call dnormf(ytilde(t,j), theta(t,j),sqrt(ht(j,j,t)), lik)
                     end if
                 end do
-            end if
-        end do
+            case(3)
+                do t=1,n
+                    if(ymiss(t,j).EQ.0) then
+                        call dbinomf(yt(t,j), u(t,j), exp(theta(t,j))/(1.0d0+exp(theta(t,j))), lik)
+                        call dnormf(ytilde(t,j), theta(t,j),sqrt(ht(j,j,t)), lik)
+                    end if
+                end do
+            case(4)
+                do t=1,n
+                    if(ymiss(t,j).EQ.0) then
+                        call dgammaf(yt(t,j), u(t,j), exp(theta(t,j))/u(t,j), lik)
+                        call dnormf(ytilde(t,j), theta(t,j),sqrt(ht(j,j,t)), lik)
+                    end if
+                end do
+            case(5)
+                do t=1,n
+                    if(ymiss(t,j).EQ.0) then
+                        call dnbinomf(yt(t,j), u(t,j), exp(theta(t,j)), lik)
+                        call dnormf(ytilde(t,j), theta(t,j),sqrt(ht(j,j,t)), lik)
+                    end if
+                end do
+        end select
+    end do
+
+    if(sim .EQ. 1) then
 
         w=1.0d0
+        info2 = 0
 
-        if(sim .EQ. 1) then
+        ! simulate signals
+        call simgaussian(ymiss,timevar, ytilde, zt, ht, tt, rtv, qt, a1, p1, &
+        p1inf, nnd,nsim, epsplus, etaplus, aplus1, p, n, m, r, info2,rankp,&
+        tol,nd,ndl,tsim,c,5,p,antit)
 
-            rankp2 = rankp
-                 ! simulate signals
-            call simgaussian(ymiss,timevar, ytilde, zt, ht, tt, rtv, qt, a1, p1, &
-            p1inf, nnd,nsim, epsplus, etaplus, aplus1, p, n, m, r, info,rankp,&
-            tol,nd,ndl,tsim,c,5,p,antit)
-
-
+        if(info2.EQ.0) then
             ! Compute weights
             do j=1,p
                 select case(dist(j))
@@ -85,7 +110,7 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl,diff)
                                 !  do i=1,nsim2
                                 w = w*exp(yt(t,j)*(tsim(j,t,:)-theta(t,j))-&
                                 u(t,j)*(exp(tsim(j,t,:))-tmp(t)))/&
-                                exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 - dn(t,j)))
+                                exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 - (ytilde(t,j)-theta(t,j))**2))
                               !  end do
                             end if
                         end do
@@ -95,7 +120,7 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl,diff)
                             if(ymiss(t,j) .EQ. 0) then
                                 w = w*exp( yt(t,j)*(tsim(j,t,:)-theta(t,j))-&
                                 u(t,j)*(log(1.0d0+exp(tsim(j,t,:)))-tmp(t)))/&
-                                exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 -dn(t,j)))
+                                exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 - (ytilde(t,j)-theta(t,j))**2))
                             end if
                         end do
                     case(4) ! gamma
@@ -103,7 +128,7 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl,diff)
                         do t=1,n
                             if(ymiss(t,j) .EQ. 0) then
                                 w = w*exp( u(t,j)*(yt(t,j)*(tmp(t)-exp(-tsim(j,t,:)))+theta(t,j)-tsim(j,t,:)))/&
-                                exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 -dn(t,j)))
+                                exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 - (ytilde(t,j)-theta(t,j))**2))
                             end if
                         end do
                     case(5)
@@ -112,20 +137,21 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,nd,ndl,diff)
                             if(ymiss(t,j) .EQ. 0) then
                                 w = w*exp(yt(t,j)*(tsim(j,t,:)-theta(t,j)) +&
                                 (yt(t,j)+u(t,j))*log((u(t,j)+tmp(t))/(u(t,j)+exp(tsim(j,t,:)))))/&
-                                exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 -dn(t,j)))
-                                !w = w*((u(t,j)+exp(tsim(j,t,:)))/(u(t,j)+tmp(t)))**u(t,j)*&
-                                !(exp(tsim(j,t,:))/(exp(tsim(j,t,:))+u(t,j)))**yt(t,j)&
-                                !*(tmp/(tmp+u(t,j)))**(-yt(t,j))/&
-                                !exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 -dn(t,j)))
+                                exp(-0.5d0/ht(j,j,t)*( (ytilde(t,j)-tsim(j,t,:))**2 - (ytilde(t,j)-theta(t,j))**2))
                             end if
                         end do
                 end select
             end do
 
 
-            lik= lik+log(sum(w)/nsim2)
+            lik= lik+log(sum(w)/dble(nsim2))
+        else
+            info = info2
+            return
         end if
 
     end if
+
+
 
 end subroutine ngloglik
