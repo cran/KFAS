@@ -3,8 +3,9 @@
 #' Function \code{simulateSMM} simulates states, signals, disturbances or missing observations of 
 #' the Gaussian state space model.
 #' 
-#' 
-#' Simulation smoother algorithm is based to article by J. Durbin and S.J. Koopman (2002).
+#' Simulation smoother algorithm is based on article by J. Durbin and S.J. Koopman (2002).
+#' The simulation filter (\code{fitered = TRUE}) is a straightforward modification 
+#' of the simulations smoother, where only filtering steps are performed.
 #' 
 #' Function can use two antithetic variables, one for location and other for scale, so output
 #' contains four blocks of simulated values which correlate which each other (ith block correlates
@@ -16,14 +17,25 @@
 #' @param filtered Simulate from \eqn{p(\alpha_t|y_{t-1},...,y_1)}{p(\alpha[t]|y[t-1],...,y[1])}
 #'   instead of \eqn{p(\alpha|y)}.
 #' @param nsim Number of independent samples. Default is 1.
-#' @param antithetics Use antithetic variables in simulation. Default is FALSE.
-#' @param conditional Simulations are conditional to data. If FALSE, the initial state
+#' @param antithetics Use antithetic variables in simulation. Default is \code{FALSE}.
+#' @param conditional Simulations are conditional to data. If \code{FALSE}, the initial state
 #'   \eqn{\alpha_1}{\alpha[1]} is set to \code{alphahat[1,]} computed by \code{KFS}, 
-#'   and all the observations are removed from the model. Default is TRUE.
+#'   and all the observations are removed from the model. Default is \code{TRUE}
 #' @return An n x k x nsim array containing the simulated series, where k is number of observations,
 #'   signals, states or disturbances.
 #' @references Durbin J. and Koopman, S.J. (2002). A simple and efficient simulation smoother for
 #'   state space time series analysis, Biometrika, Volume 89, Issue 3
+#' @examples
+#' 
+#' model <- SSModel(matrix(NA, 100, 1) ~ SSMtrend(1, 1), H = 1)
+#' 
+#' set.seed(123)
+#' sim <- simulateSSM(model, "obs", nsim = 2, antithetics = TRUE)
+#' # first time points
+#' sim[1,,]
+#' # correlation structure between simulations with two antithetics
+#' cor(sim[,1,])
+#' 
 simulateSSM <- function(object, 
   type = c("states", "signals", "disturbances", "observations", "epsilon", "eta"), 
   filtered = FALSE, nsim = 1, antithetics = FALSE, conditional = TRUE) {
