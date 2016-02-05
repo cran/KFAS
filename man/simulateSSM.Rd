@@ -20,30 +20,37 @@ instead of \eqn{p(\alpha|y)}.}
 
 \item{antithetics}{Use antithetic variables in simulation. Default is \code{FALSE}.}
 
-\item{conditional}{Simulations are conditional to data. If \code{FALSE}, the initial state
-\eqn{\alpha_1}{\alpha[1]} is set to \code{alphahat[1,]} computed by \code{KFS}, 
-and all the observations are removed from the model. Default is \code{TRUE}}
+\item{conditional}{Simulations are conditional to data. If \code{FALSE}, the
+states having exact diffuse initial distribution (as defined by \code{P1inf}
+are fixed to corresponding values of \code{a1}. See details.}
 }
 \value{
 An n x k x nsim array containing the simulated series, where k is number of observations,
   signals, states or disturbances.
 }
 \description{
-Function \code{simulateSMM} simulates states, signals, disturbances or missing observations of 
-the Gaussian state space model.
+Function \code{simulateSMM} simulates states, signals, disturbances or missing observations of
+the Gaussian state space model either conditional on the data (simulation smoother) or
+unconditionally.
 }
 \details{
 Simulation smoother algorithm is based on article by J. Durbin and S.J. Koopman (2002).
-The simulation filter (\code{fitered = TRUE}) is a straightforward modification 
+The simulation filter (\code{filtered = TRUE}) is a straightforward modification
 of the simulations smoother, where only filtering steps are performed.
 
 Function can use two antithetic variables, one for location and other for scale, so output
 contains four blocks of simulated values which correlate which each other (ith block correlates
 negatively with (i+1)th block, and positively with (i+2)th block etc.).
+
+Note that KFAS versions 1.2.0 and older, for unconditional simulation the initial
+distribution of states was fixed so that \code{a1} was set to the smoothed estimates
+of the first state and the initial variance was set to zero. Now original
+\code{a1} and \code{P1} are used, and \code{P1inf} is ignored (i.e. diffuse states are
+fixed to corresponding elements of \code{a1}).
 }
 \examples{
 
-model <- SSModel(matrix(NA, 100, 1) ~ SSMtrend(1, 1), H = 1)
+model <- SSModel(matrix(NA, 100, 1) ~ SSMtrend(1, 1, P1inf = 0), H = 1)
 
 set.seed(123)
 sim <- simulateSSM(model, "obs", nsim = 2, antithetics = TRUE)
@@ -51,6 +58,34 @@ sim <- simulateSSM(model, "obs", nsim = 2, antithetics = TRUE)
 sim[1,,]
 # correlation structure between simulations with two antithetics
 cor(sim[,1,])
+
+out_NA <- KFS(model, filtering = "none", smoothing = "state")
+model["y"] <- sim[, 1, 1] 
+out_obs <- KFS(model, filtering = "none", smoothing = "state")
+
+set.seed(40216)
+# simulate states from the p(alpha | y)
+sim_conditional <- simulateSSM(model, nsim = 10, antithetics = TRUE)
+
+# mean of the simulated states is exactly correct due to antithetic variables
+mean(sim_conditional[2, 1, ])
+out_obs$alpha[2]
+# for variances more simulations are needed
+var(sim_conditional[2, 1, ])
+out_obs$V[2]
+
+set.seed(40216)
+# no data, simulations from p(alpha)
+sim_unconditional <- simulateSSM(model, nsim = 10, antithetics = TRUE, 
+  conditional = FALSE)
+mean(sim_unconditional[2, 1, ])
+out_NA$alpha[2]
+var(sim_unconditional[2, 1, ])
+out_NA$V[2] 
+
+ts.plot(cbind(sim_conditional[,1,1:5], sim_unconditional[,1,1:5]), 
+  col = rep(c(2,4), each = 5))
+lines(out_obs$alpha, lwd=2)
 
 }
 \references{
