@@ -4,9 +4,14 @@
 #' parameters of an arbitary state space model, given the user-defined model
 #' updating function.
 #'
+#' Note that \code{fitSSM} actually minimizes \code{-logLik(model)}, so for
+#' example the Hessian matrix returned by \code{hessian = TRUE} has an opposite
+#' sign than expected.
+#'
 #' This function is simple wrapper around \code{\link{optim}}. For optimal performance in
 #' complicated problems, it is more efficient to use problem specific codes with
 #' calls to \code{logLik} method directly.
+#'
 #'
 #' In \code{fitSSM}, the objective function for \code{\link{optim}} first
 #' updates the model based on the current values of the parameters under optimization,
@@ -146,7 +151,7 @@ fitSSM <- function(model, inits, updatefn, checkfn, update_args = NULL, ...) {
     }
   }
   # Check that the model object is of proper form
-  is.SSModel(do.call(updatefn, args = c(list(pars = inits, model = model), update_args)),
+  is.SSModel(do.call(updatefn, args = c(list(inits, model), update_args)),
     na.check = TRUE, return.logical = FALSE)
 
   # initial values for theta can be computed beforehand
@@ -176,7 +181,7 @@ fitSSM <- function(model, inits, updatefn, checkfn, update_args = NULL, ...) {
 
   }
   likfn <- function(pars, model, ...) {
-    model <- do.call(updatefn, args = c(list(pars = pars, model = model), update_args))
+    model <- do.call(updatefn, args = c(list(pars, model), update_args))
     if (checkfn(model)) {
       return(-logLik(object = model, check.model = FALSE, theta = theta, ...))
     } else return(.Machine$double.xmax ^ 0.75)
@@ -184,7 +189,7 @@ fitSSM <- function(model, inits, updatefn, checkfn, update_args = NULL, ...) {
 
   out <- NULL
   out$optim.out <- optim(par = inits, fn = likfn, model = model, ...)
-  out$model <- do.call(updatefn, args = c(list(pars = out$optim.out$par, model = model), update_args))
+  out$model <- do.call(updatefn, args = c(list(out$optim.out$par, model), update_args))
   # check that the obtained model is of proper form
   is.SSModel(out$model, na.check = TRUE, return.logical = FALSE)
   out
