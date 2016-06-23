@@ -11,21 +11,23 @@
 \title{Create a State Space Model Object of Class SSModel}
 \usage{
 SSMarima(ar = NULL, ma = NULL, d = 0, Q, stationary = TRUE, index,
-  n = 1, ynames)
+  n = 1, state_names = NULL, ynames)
 
-SSMcustom(Z, T, R, Q, a1, P1, P1inf, index, n = 1)
+SSMcustom(Z, T, R, Q, a1, P1, P1inf, index, n = 1, state_names = NULL)
 
-SSMcycle(period, Q, type, index, a1, P1, P1inf, n = 1, ynames)
+SSMcycle(period, Q, type, index, a1, P1, P1inf, n = 1, state_names = NULL,
+  ynames)
 
 SSModel(formula, data, H, u, distribution, tol = .Machine$double.eps^0.5)
 
-SSMregression(rformula, data, type, Q, index, R, a1, P1, P1inf, n = 1, ynames,
-  remove.intercept = TRUE)
+SSMregression(rformula, data, type, Q, index, R, a1, P1, P1inf, n = 1,
+  remove.intercept = TRUE, state_names = NULL, ynames)
 
 SSMseasonal(period, Q, sea.type = c("dummy", "trigonometric"), type, index,
-  a1, P1, P1inf, n = 1, ynames)
+  a1, P1, P1inf, n = 1, state_names = NULL, ynames)
 
-SSMtrend(degree = 1, Q, type, index, a1, P1, P1inf, n = 1, ynames)
+SSMtrend(degree = 1, Q, type, index, a1, P1, P1inf, n = 1,
+  state_names = NULL, ynames)
 }
 \arguments{
 \item{ar}{For arima component, a numeric vector containing the autoregressive
@@ -52,6 +54,8 @@ components are constructed.}
 
 \item{n}{Length of the series, only used internally for dimensionality check.}
 
+\item{state_names}{A character vector giving the state names.}
+
 \item{ynames}{names of the times series, used internally.}
 
 \item{Z}{For a custom component, system matrix or array of observation
@@ -67,12 +71,13 @@ system matrix or array of transition equation.}
 of the initial state vector \eqn{\alpha_1}{\alpha[1]}.}
 
 \item{P1}{Optional \eqn{m \times m}{m x m} matrix giving the covariance
-matrix of \eqn{\alpha_1}{\alpha[1]}.  In the diffuse case the non-diffuse
+matrix of \eqn{\alpha_1}{\alpha[1]}. In the diffuse case the non-diffuse
 part of \eqn{P_1}{P[1]}.}
 
 \item{P1inf}{Optional \eqn{m \times m}{m x m} matrix giving the diffuse part
 of \eqn{P_1}{P[1]}. Diagonal matrix with ones on diagonal elements which
-correspond to the unknown initial states.}
+correspond to the diffuse initial states. If \code{P1inf[i,i]>0}, corresponding
+row and column of \code{P1} should be zero.}
 
 \item{period}{For a cycle and seasonal components, the length of the
 cycle/seasonal pattern.}
@@ -142,7 +147,7 @@ Object of class \code{SSModel}, which is a list with the following
   containing the covariance matrix of the nondiffuse part of the initial
   state vector. }
   \item{P1inf}{A m x m matrix containing the covariance
-  matrix of the diffuse part of the initial state vector. 
+  matrix of the diffuse part of the initial state vector.
   If \code{P1[i,i]} is non-zero then \code{P1inf[i,i]} is automatically set to zero. }
   \item{u}{A n x p
   matrix of an additional parameters in case of non-Gaussian model.}
@@ -177,6 +182,16 @@ functions defining different types of components of the model, named as
 For more details, see package vignette (the mathematical notation is somewhat non-readable in ASCII).
 }
 \examples{
+# add intercept to state equation by augmenting the state vector:
+# diffuse initialization for the intercept, gets estimated like other states:
+# for known fixed intercept, just set P1 = P1inf = 0 (default in SSMcustom).
+intercept <- 0
+model_int <- SSModel(Nile ~ SSMtrend(1, Q = 1469) +
+SSMcustom(Z = 0, T = 1, Q = 0, a1 = intercept, P1inf = 1), H = 15099)
+
+model_int$T
+model_int$T[1, 2, 1] <- 1 # add the intercept value to level
+out <- KFS(model_int)
 
 # example of using data argument
 y <- x <- rep(1, 3)

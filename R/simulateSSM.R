@@ -34,6 +34,28 @@
 #'   state space time series analysis, Biometrika, Volume 89, Issue 3
 #' @examples
 #'
+#' set.seed(123)
+#' # simulate new observations from the "fitted" model
+#' model <- SSModel(Nile ~ SSMtrend(1, Q = 1469), H = 15099)
+#' # signal conditional on the data i.e. samples from p(theta | y)
+#' # unconditional simulation is not reasonable as the model is nonstationary
+#' signal_sim <- simulateSSM(model, type = "signals", nsim = 10)
+#' # and add unconditional noise term i.e samples from p(epsilon)
+#' epsilon_sim <- simulateSSM(model, type = "epsilon", nsim = 10,
+#'   conditional = FALSE)
+#' observation_sim <- signal_sim + epsilon_sim
+#'
+#' ts.plot(observation_sim[,1,], Nile, col = c(rep(2, 10), 1),
+#'   lty = c(rep(2, 10), 1), lwd = c(rep(1, 10), 2))
+#'
+#' # fully unconditional simulation:
+#' observation_sim2 <- simulateSSM(model, type = "observations", nsim = 10,
+#'   conditional = FALSE)
+#' ts.plot(observation_sim[,1,], observation_sim2[,1,], Nile,
+#' col = c(rep(2:3, each = 10), 1), lty = c(rep(2, 20), 1),
+#' lwd = c(rep(1, 20), 2))
+#'
+#' # illustrating use of antithetics
 #' model <- SSModel(matrix(NA, 100, 1) ~ SSMtrend(1, 1, P1inf = 0), H = 1)
 #'
 #' set.seed(123)
@@ -110,9 +132,9 @@ simulateSSM <- function(object,
   if (!conditional || all(is.na(object$y))) {
     out <- .Fortran(fsimgaussianuncond, NAOK = TRUE, tv,
       object$Z, object$H, object$T, object$R, object$Q, object$a1, object$P1,
-      object$P1inf, simtmp$nNonzeroP1, as.integer(nsim), simtmp$epsplus,
+      simtmp$nNonzeroP1, as.integer(nsim), simtmp$epsplus,
       simtmp$etaplus, simtmp$aplus1, p, n, m, k, info = as.integer(0),
-      simtmp$nNonzeroP1inf, object$tol, simtmp$zeroP1inf, length(simtmp$zeroP1inf),
+      object$tol,
       sim = array({
         if (sim.what == 6) t(object$y) else 0
       }, c(simdim, n, 3 * nsim * antithetics + nsim)), simtmp$c2, sim.what,
@@ -123,7 +145,7 @@ simulateSSM <- function(object,
         object$Z, object$H, object$T, object$R, object$Q, object$a1, object$P1,
         object$P1inf, simtmp$nNonzeroP1, as.integer(nsim), simtmp$epsplus,
         simtmp$etaplus, simtmp$aplus1, p, n, m, k, info = as.integer(0),
-        simtmp$nNonzeroP1inf, object$tol, simtmp$zeroP1inf, length(simtmp$zeroP1inf),
+        simtmp$nNonzeroP1inf, object$tol,
         sim = array({
           if (sim.what == 6) t(object$y) else 0
         }, c(simdim, n, 3 * nsim * antithetics + nsim)), simtmp$c2, sim.what,
@@ -135,7 +157,7 @@ simulateSSM <- function(object,
         object$Z, object$H, object$T, object$R, object$Q, object$a1, object$P1,
         object$P1inf, simtmp$nNonzeroP1, as.integer(nsim), simtmp$epsplus,
         simtmp$etaplus, simtmp$aplus1, p, n, m, k, info = as.integer(0),
-        simtmp$nNonzeroP1inf, object$tol, simtmp$zeroP1inf, length(simtmp$zeroP1inf),
+        simtmp$nNonzeroP1inf, object$tol,
         sim = array(0, c(simdim, n, 3 * nsim * antithetics + nsim)),
         simtmp$c2, sim.what, simdim, as.integer(antithetics))
     }

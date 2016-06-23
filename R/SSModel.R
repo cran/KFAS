@@ -50,11 +50,12 @@
 #' @param a1 Optional \eqn{m \times 1}{m x 1} matrix giving the expected value
 #'   of the initial state vector \eqn{\alpha_1}{\alpha[1]}.
 #' @param P1 Optional \eqn{m \times m}{m x m} matrix giving the covariance
-#'   matrix of \eqn{\alpha_1}{\alpha[1]}.  In the diffuse case the non-diffuse
+#'   matrix of \eqn{\alpha_1}{\alpha[1]}. In the diffuse case the non-diffuse
 #'   part of \eqn{P_1}{P[1]}.
 #' @param P1inf Optional \eqn{m \times m}{m x m} matrix giving the diffuse part
 #'   of \eqn{P_1}{P[1]}. Diagonal matrix with ones on diagonal elements which
-#'   correspond to the unknown initial states.
+#'   correspond to the diffuse initial states. If \code{P1inf[i,i]>0}, corresponding
+#'   row and column of \code{P1} should be zero.
 #' @param R For a custom and regression components, optional \eqn{m \times k}
 #'   system matrix or array of transition equation.
 #' @param ar For arima component, a numeric vector containing the autoregressive
@@ -83,7 +84,7 @@
 #'   terms in the model.
 #' @param n Length of the series, only used internally for dimensionality check.
 #' @param ynames names of the times series, used internally.
-#'
+#' @param state_names A character vector giving the state names.
 #' @return Object of class \code{SSModel}, which is a list with the following
 #'   components:
 #'   \item{y}{A n x p matrix containing the observations. }
@@ -104,7 +105,7 @@
 #'   containing the covariance matrix of the nondiffuse part of the initial
 #'   state vector. }
 #'   \item{P1inf}{A m x m matrix containing the covariance
-#'   matrix of the diffuse part of the initial state vector. 
+#'   matrix of the diffuse part of the initial state vector.
 #'   If \code{P1[i,i]} is non-zero then \code{P1inf[i,i]} is automatically set to zero. }
 #'   \item{u}{A n x p
 #'   matrix of an additional parameters in case of non-Gaussian model.}

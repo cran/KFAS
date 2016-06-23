@@ -3,18 +3,18 @@
 #' Function \code{logLik.SSmodel} computes the log-likelihood value of a state
 #' space model.
 #'
-#' As KFAS is based on diffuse initialization, the likelihood is also diffuse,
-#' which coincides with restricted likelihood (REML) in appropriate (mixed)
+#' As KFAS is based on diffuse initialization, the log-likelihood is also diffuse,
+#' which coincides with restricted likelihood (REML) in an appropriate (mixed)
 #' models. However, in typical REML estimation constant term \eqn{log|X'X|} is
 #' omitted from the log-likelihood formula. Similar term is also missing in
-#' diffuse likelihood formulations, but unlike in simpler linear models this
-#' term is not necessarily constant. Therefore omitting this term can lead to
-#' suboptimal results in model estimation if there is unknown parameters in
-#' diffuse parts of Zt or Tt (Francke et al. 2010). See also Gurka (2006) for
-#' model comparison in mixed model settings with and without the additional
-#' (constant) term (for BIC it could be better to use marginal likelihood instead
-#' of diffuse likelihood and vice versa for AIC) and Casals et al. (2014).
-#' The marginal likelihood can be computed by setting \code{marginal = TRUE}.
+#' diffuse log-likelihood formulations of state space models, but unlike in simpler
+#' linear models this term is not necessarily constant. Therefore omitting this
+#' term can lead to suboptimal results in model estimation if there is unknown
+#' parameters in diffuse parts of Zt or Tt (Francke et al. 2011). Therefore
+#' so called marginal log-likelihood (diffuse likelihood + extra term) is
+#' recommended. See also Gurka (2006) for model comparison in mixed model
+#' settings using REML with and without the additional (constant) term.
+#' The marginal log-likelihood can be computed by setting \code{marginal = TRUE}.
 #'
 #' Note that for non-Gaussian models with importance sampling derivative-free
 #' optimization methods such as Nelder-Mead might be more reliable than methods
@@ -142,7 +142,7 @@ logLik.SSModel <- function(object, marginal=FALSE, nsim = 0,
       simtmp$nNonzeroP1, as.integer(nsim), simtmp$epsplus, simtmp$etaplus,
       simtmp$aplus1, simtmp$c2, object$tol,
       info = integer(1), as.integer(antithetics), as.integer(sim), nsim2,
-      simtmp$zeroP1inf, length(simtmp$zeroP1inf), diff = double(1),
+      diff = double(1),
       marginal = as.integer(marginal))
 
     if(out$info!=0){
