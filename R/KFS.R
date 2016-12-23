@@ -14,13 +14,13 @@
 #' obtained from the output of \code{KFS} using the function
 #' \code{\link{mvInnovations}}.
 #'
-#' In rare cases of a diffuse initialization phase with highly correlated
-#' states, cumulative rounding errors in computing \code{Finf} and \code{Pinf}
-#' can sometimes cause the diffuse phase end too early,
-#' or the backward smoothing gives negative variances. Changing the tolerance
+#' In rare cases (typically with regression components with high multicollinearity or 
+#' long seasonal patterns), the cumulative rounding errors in Kalman filtering and 
+#' smoothing can cause the diffuse phase end too early,
+#' or the backward smoothing gives negative variances. In these cases, redefining the 
+#' prior state variances more informative is often helpful. Changing the tolerance
 #' parameter \code{tol} of the model (see \code{\link{SSModel}}) to smaller (or
-#' larger) can sometimes help. Another option is to redefine the prior state
-#' variances more informative.
+#' larger) can sometimes help as well.
 #'
 #' Fon non-Gaussian models the components corresponding to diffuse filtering
 #' (\code{Finf}, \code{Pinf}, \code{d}, \code{Kinf}) are not returned even
@@ -133,7 +133,8 @@
 #'   y_n)}{E(\eta[t] | y[1], \ldots, y[n])}. Only for Gaussian models. }
 #'
 #'   \item{V_eta}{Error covariances \eqn{Var(\eta_t | y_1, \ldots, y_n)}{Var(\eta[t]
-#'   | y[1], \ldots, y[n])}. }
+#'   | y[1], \ldots, y[n])}. Note that for computing auxiliary residuals you shoud use method
+#'   \code{\link{rstandard.KFS}}.}
 #'
 #'   \item{epshat}{Smoothed disturbance terms \eqn{E(\epsilon_{t,i} | y_1,
 #'   \ldots, y_n)}{E(\epsilon[t,i] | y[1], \ldots, y[n])}. Note that due to
@@ -143,7 +144,8 @@
 #'   \item{V_eps}{Diagonal elements of \eqn{Var(\epsilon_{t} | y_1, \ldots,
 #'   y_n)}{Var(\epsilon[t] | y[1], \ldots, y[n])}. Note that due to the
 #'   diagonalization the off-diagonal elements are zero.
-#'   Only for Gaussian models.  }
+#'   Only for Gaussian models. Note that for computing auxiliary residuals you shoud use method
+#'   \code{\link{rstandard.KFS}}.}
 #'
 #'   \item{iterations}{The number of iterations used in linearization of
 #'   non-Gaussian model. }
