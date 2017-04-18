@@ -42,13 +42,7 @@
 #'   matrix. For Gaussian models, these coincide with the standardized smoothed
 #'   \eqn{\epsilon} disturbance residuals, and for generalized linear models
 #'   these coincide with the standardized Pearson residuals (hence the name).
-#'
-#'
-#' \item 'deviance': Deviance residuals. Deprecated. This option was meant to be
-#' used only for the GLM comparisons, as their generalization to other models is
-#' lacking, but these will be completely removed in future in order to avoid
-#' misleading results in non-GLM settings. }
-#'
+#'  }
 #' @param model KFS object
 #' @param type Type of residuals. See details.
 #' @param standardization_type Type of standardization. Either \code{"marginal"}
@@ -73,13 +67,11 @@ rstandard.KFS <- function(model,
   type <- match.arg(type)
   stype <- match.arg(standardization_type)
 
-  if (type == "deviance")
-    .Deprecated(msg="Argument type=\"deviance\" is deprecated.")
-
   if (type == "state" && any(model$model$distribution != "gaussian"))
     stop("State residuals are only supported for fully gaussian models.")
 
+  res_names <- if (type == "state") rownames(model$model$a1) else colnames(model$model$y)
   x <- do.call(paste0(type,"_standardized"), list(model,stype))
   return(ts(drop(x), start = start(model$model$y), frequency = frequency(model$model$y),
-    names = colnames(model$model$y)))
+    names = res_names))
 }
