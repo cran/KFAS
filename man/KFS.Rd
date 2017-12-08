@@ -71,6 +71,13 @@ What \code{KFS} returns depends on the arguments \code{filtering},
   \item{Pinf}{Diffuse part of the error covariance matrix of predicted states.
   Only returned for Gaussian models. }
 
+  \item{att}{Filtered estimates of states, \eqn{a_tt = E(\alpha_t | y_{t},
+  \ldots, y_{1})}{a[t] = E(\alpha[t] | y[t], \ldots, y[1])}. }
+
+  \item{Ptt}{Non-diffuse parts of the error covariance matrix of filtered states,
+  \eqn{P_tt = Var(\alpha_t | y_{t}, \ldots, y_{1})
+  }{P[t] = Var(\alpha[t] | y[t], \ldots, y[1])}. }
+  
   \item{t}{One-step-ahead predictions of signals, \eqn{E(Z_t\alpha_t | y_{t-1},
   \ldots, y_{1})}{E(Z[t]\alpha[t] | y[t-1], \ldots, y[1])}. }
 
@@ -208,6 +215,15 @@ relate to the conditional mode of \eqn{p(\alpha|y)}. When using importance
 sampling (\code{nsim>0}), results correspond to the conditional mean of
  \eqn{p(\alpha|y)}.
 }
+\examples{
+set.seed(1)
+x <- cumsum(rnorm(100, 0, 0.1))
+y <- rnorm(100, x, 0.1)
+model <- SSModel(y ~ SSMtrend(1, Q = 0.01), H = 0.01)
+out <- KFS(model)
+ts.plot(ts(x), out$a, out$att, out$alpha, col = 1:4)
+
+}
 \references{
 Koopman, S.J. and Durbin J. (2000).  Fast filtering and
 smoothing for non-stationary time series models, Journal of American
@@ -219,4 +235,7 @@ Methods. Oxford: Oxford University Press.  \cr
 Koopman, S.J. and Durbin J. (2003).  Filtering and smoothing of state vector
 for diffuse state space models, Journal of Time Series Analysis, Vol. 24,
 No. 1.  \cr
+}
+\seealso{
+\code{\link{KFAS}} for examples
 }
