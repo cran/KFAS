@@ -1,5 +1,5 @@
-8a223e45b48496fda958b2024c270af2 *ChangeLog
-d825cbf4b9dfbb13b0468c47d361763b *DESCRIPTION
+a91eb4d67fcd69a5081e9024eb2c3576 *ChangeLog
+c28fa4eff0028175fa13cb37493caad0 *DESCRIPTION
 ea34baa7dd06a3acce51a6c7de3303aa *NAMESPACE
 09426e529d712c5b623ee03bd87358d3 *R/KFAS-defunct.R
 9925b2cf6d7af04b92a16986dbb17f1a *R/KFAS-package.R
@@ -36,7 +36,7 @@ e70302491f087a3b13aeebf1a9d2b98e *R/rename_states.R
 be407ab5b52baa17570645c0a9913ef2 *R/simHelper.R
 cde4406863ac0bf98b2b76083775118c *R/simulateSSM.R
 461964059f856b8af504b26f4e08ae53 *R/transformSSM.R
-c779e0d8495d331da72d9a0ff0da5dd1 *build/vignette.rds
+ca7cc12c34417c9ec139433654ab0eca *build/vignette.rds
 85993fe9d3165948f23ee4d023dd8e78 *data/GlobalTemp.rda
 9da2de338f151877efb979f8bd5a64fb *data/alcohol.rda
 30f3f80fe83502869ff93a6662c56c5e *data/boat.rda
@@ -44,7 +44,7 @@ cae765cd5662c7c2ed49ce79fc54114c *data/sexratio.rda
 353dc238f6ea0063789e6dc385bc77df *inst/CITATION
 9ed5488c1a17db6e1a570481b54b1c84 *inst/doc/KFAS.R
 b6fed46074d43c46670fcda7a900266c *inst/doc/KFAS.Rnw
-46c4ac510e039cd5cb8a873590c5a154 *inst/doc/KFAS.pdf
+ad8b914fdb4b65e777b427a240cffbb1 *inst/doc/KFAS.pdf
 e601601795387b640a68f74b746c2524 *man/Extract.SSModel.Rd
 036f2fd760850577b5b711399e3b951a *man/GlobalTemp.Rd
 c2733693ac716613f01ba82ad4d40f0d *man/KFAS-defunct.Rd
@@ -83,7 +83,7 @@ d8ac4ed9303df1f1bf3ace30485946b2 *src/artransform.f95
 737f69e64c8fcd153f12abb79d1f35cc *src/cdistwrap.c
 3b244c5dafb64beb750e783100d1f269 *src/covmeanw.f95
 b67a9ae79735c0d1a272ee21de548877 *src/declarations.h
-9fb1e59e73d21962f9b31986ab1b7bac *src/filter1step.f95
+5316ba967bbf54bd65019a1a13bde353 *src/filter1step.f95
 af5f461bc3f8fd7463342abb8ea6795d *src/filter1stepnovar.f95
 fde33db5f08aacb2543f6c119d26de69 *src/filtersimfast.f95
 3f4552a6469cfb30bbf2bce59b9dc492 *src/gloglik.f95
