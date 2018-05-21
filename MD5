@@ -1,5 +1,5 @@
-a91eb4d67fcd69a5081e9024eb2c3576 *ChangeLog
-c28fa4eff0028175fa13cb37493caad0 *DESCRIPTION
+a633fa63e650a5119d6a7b902e192c38 *ChangeLog
+f05519376bc36d3893777ba8e7f188e8 *DESCRIPTION
 ea34baa7dd06a3acce51a6c7de3303aa *NAMESPACE
 09426e529d712c5b623ee03bd87358d3 *R/KFAS-defunct.R
 9925b2cf6d7af04b92a16986dbb17f1a *R/KFAS-package.R
@@ -9,7 +9,7 @@ cc95ddeac90d4ccefaf04de8c32f4e9e *R/SSMcustom.R
 17329c0223b861c5b454c024543c624c *R/SSMcycle.R
 d750a9bec845cbe0b80c741d38b566cc *R/SSModel.R
 219c0321227c3f048adf09f4d1cfacf1 *R/SSMregression.R
-436f00bb699fe8b6579dd5f200781229 *R/SSMseasonal.R
+d58e31105607c0ceb50b2908c7a42e79 *R/SSMseasonal.R
 daef5abd8f32cb8fd09f54979fb9bc35 *R/SSMtrend.R
 f3b8cb12400ce01511cf2fc96d4918b9 *R/approxSSM.R
 b3085c090d76ab78340ec0244f9993ed *R/artransform.R
@@ -21,7 +21,7 @@ f3bb1045fd8a087b81b01ac079513da1 *R/extract.SSModel.R
 9bea816b2faa870e6316660874f31cad *R/hatvalues.KFS.R
 0d8dfcab8f7dcc963f5679a6f7b7073d *R/importanceSSM.R
 6cb9976299ff2b631796a8e085686b4f *R/initTheta.R
-1eb7680aadd65fb9c8054dcbf5fb5036 *R/internalResids.R
+5ec3383e70ada904f73c6b0e3074571c *R/internalResids.R
 3affb79101d0108299e8f1a595398b4d *R/interval.R
 bd008624d1968b324b3e59307e3d644f *R/ldl.R
 be632ba066f634ea07a712a8c49bc10b *R/logLik.SSModel.R
@@ -36,15 +36,15 @@ e70302491f087a3b13aeebf1a9d2b98e *R/rename_states.R
 be407ab5b52baa17570645c0a9913ef2 *R/simHelper.R
 cde4406863ac0bf98b2b76083775118c *R/simulateSSM.R
 461964059f856b8af504b26f4e08ae53 *R/transformSSM.R
-ca7cc12c34417c9ec139433654ab0eca *build/vignette.rds
+26c0c1d11fc6333d62c89bd394c31fcc *build/vignette.rds
 85993fe9d3165948f23ee4d023dd8e78 *data/GlobalTemp.rda
 9da2de338f151877efb979f8bd5a64fb *data/alcohol.rda
 30f3f80fe83502869ff93a6662c56c5e *data/boat.rda
 cae765cd5662c7c2ed49ce79fc54114c *data/sexratio.rda
 353dc238f6ea0063789e6dc385bc77df *inst/CITATION
-9ed5488c1a17db6e1a570481b54b1c84 *inst/doc/KFAS.R
+22a5a0e55ffd8ec96a4ce507893cb2bb *inst/doc/KFAS.R
 b6fed46074d43c46670fcda7a900266c *inst/doc/KFAS.Rnw
-ad8b914fdb4b65e777b427a240cffbb1 *inst/doc/KFAS.pdf
+b50c2ec60d3980ed9afc2f14c36f7c9a *inst/doc/KFAS.pdf
 e601601795387b640a68f74b746c2524 *man/Extract.SSModel.Rd
 036f2fd760850577b5b711399e3b951a *man/GlobalTemp.Rd
 c2733693ac716613f01ba82ad4d40f0d *man/KFAS-defunct.Rd
@@ -122,4 +122,4 @@ a4a3ee37c873835a38a4855619066572 *tests/testthat/testMisc.R
 ee0f352ebffd49e95de9a968cb4d1885 *tests/testthat/testSimulateSSM.R
 adb5728ce46a72957393cae40008eba0 *tests/testthat/testStruct.R
 b6fed46074d43c46670fcda7a900266c *vignettes/KFAS.Rnw
-7e800feec724b84331c9a7c696cd1747 *vignettes/KFAS.bib
+72cc8fe90886c97dfefa4782f2ddf91d *vignettes/KFAS.bib
