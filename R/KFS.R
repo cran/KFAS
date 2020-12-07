@@ -15,12 +15,16 @@
 #' \code{\link{mvInnovations}}.
 #'
 #' In rare cases (typically with regression components with high multicollinearity or 
-#' long seasonal patterns), the cumulative rounding errors in Kalman filtering and 
+#' long cyclic patterns), the cumulative rounding errors in Kalman filtering and 
 #' smoothing can cause the diffuse phase end too early,
-#' or the backward smoothing gives negative variances. In these cases, redefining the 
-#' prior state variances more informative is often helpful. Changing the tolerance
-#' parameter \code{tol} of the model (see \code{\link{SSModel}}) to smaller (or
-#' larger) can sometimes help as well.
+#' or the backward smoothing gives negative variances (in diffuse and nondiffuse cases). 
+#' Since version 1.4.0, filtering and smoothing algorithms truncate these values to zero during the 
+#' recursions, but this can still leads some numerical problems.
+#' In these cases, redefining the  prior state variances more informative is often helpful. 
+#' Changing the tolerance parameter \code{tol} of the model (see \code{\link{SSModel}}) to smaller 
+#' (or larger), or scaling the model input can sometimes help as well. These numerical issues 
+#' are well known in Kalman filtering/smoothing in general 
+#' (there are other numerically more stable versions available, but these are in general slower).
 #'
 #' Fon non-Gaussian models the components corresponding to diffuse filtering
 #' (\code{Finf}, \code{Pinf}, \code{d}, \code{Kinf}) are not returned even
@@ -78,6 +82,12 @@
 #' returned as part of the output. Defaults to TRUE, but for large models can be set 
 #' to FALSE in order to save memory. However, many of the methods operating on the 
 #' output of \code{KFS} use this model so this will not work if \code{return_model=FALSE}.
+#' @param expected Logical value defining the approximation of H_t in case of Gamma 
+#' and negative binomial distribution. Default is \code{FALSE} which matches the 
+#' algorithm of Durbin & Koopman (1997), whereas \code{TRUE} uses the expected value
+#' of observations in the equations, leading to results which match with \code{glm} (where applicable).
+#' The latter case was the default behaviour of KFAS before version 1.3.8.
+#' Essentially this is the difference between observed and expected information in GLM context.
 #' @return What \code{KFS} returns depends on the arguments \code{filtering},
 #'   \code{smoothing} and \code{simplify}, and whether the model is Gaussian or
 #'   not:
@@ -223,7 +233,7 @@
 #'
 KFS <-  function(model, filtering, smoothing, simplify = TRUE,
   transform = c("ldl", "augment"), nsim = 0, theta, maxiter = 50,
-  convtol = 1e-08, return_model = TRUE) {
+  convtol = 1e-08, return_model = TRUE, expected = FALSE) {
 
   # Check that the model object is of proper form
   is.SSModel(model, na.check = TRUE, return.logical = FALSE)
@@ -256,6 +266,9 @@ KFS <-  function(model, filtering, smoothing, simplify = TRUE,
       smoothing <- smoothing[smoothing != "disturbance"]
     }
   }
+  if (!is.logical(expected))
+    stop("Argument expected should be logical. ")
+  expected <- as.integer(expected)
   p <- attr(model, "p")
   m <- attr(model, "m")
   k <- attr(model, "k")
@@ -306,7 +319,7 @@ KFS <-  function(model, filtering, smoothing, simplify = TRUE,
           mu = array(0, ("mean" %in% filtering) * c(p - 1, n - 1) + 1),
           P_mu = array(0, ("mean" %in% filtering) * c(p - 1, p - 1, n - 1) + 1),
           as.integer("state" %in%  filtering), as.integer("signal" %in% filtering),
-          as.integer("mean" %in%  filtering))
+          as.integer("mean" %in%  filtering), expected)
         if(filterout$info!=0){
           switch(as.character(filterout$info),
             "-3" = stop("Couldn't compute LDL decomposition of P1."),
@@ -354,7 +367,7 @@ KFS <-  function(model, filtering, smoothing, simplify = TRUE,
             muhat = array(0, ("mean" %in% smoothing) * c(p - 1, n - 1) + 1),
             V_mu = array(0, ("mean" %in% smoothing) * c(p - 1, p - 1, n - 1) + 1),
             as.integer("state" %in%  smoothing), as.integer("signal" %in% smoothing),
-            as.integer("mean" %in% smoothing))
+            as.integer("mean" %in% smoothing), expected)
         if (smoothout$info != 0) {
           switch(as.character(smoothout$info),
             "-3" = stop("Couldn't compute LDL decomposition of P1."),
@@ -397,7 +410,7 @@ KFS <-  function(model, filtering, smoothing, simplify = TRUE,
           table = c("gaussian", "poisson", "binomial", "gamma", "negative binomial"),
           duplicates.ok = TRUE),
         maxiter = as.integer(maxiter), model$tol, as.integer(sum(model$P1inf)),
-        convtol, diff = double(1),lik=double(1), info=integer(1))
+        convtol, diff = double(1),lik=double(1), info=integer(1), expected)
 
       if(app$info!=0){
         switch(as.character(app$info),
@@ -458,14 +471,16 @@ KFS <-  function(model, filtering, smoothing, simplify = TRUE,
     stop("Non-finite values on covariance matrix P. ")
   }
   filterout$Pinf <- filterout$Pinf[1:m, 1:m, 1:filterout$d, drop = FALSE]
-  if (filterout$d > 0 & m > 1 & min(apply(filterout$Pinf, 3, diag)) < -.Machine$double.eps^0.5)
-    warning(paste0("Possible error in diffuse filtering: Negative variances in Pinf, ",
-      "check the model or try changing the tolerance parameter tol or P1/P1inf of the model."))
+  # this is not possible anymore due to intermediate rounding from 1.4-> onwards
+  #if (filterout$d > 0 & m > 1 & min(apply(filterout$Pinf, 3, diag)) < 0)
+  #  warning(paste0("Possible error in diffuse filtering: Negative variances in Pinf, ",
+  #    "check the model or try changing the tolerance parameter tol or P1/P1inf of the model."))
+  
   if (sum(filterout$Finf > 0) != sum(diag(model$P1inf)))
     warning(paste0("Possible error in diffuse filtering: Number of nonzero elements in ",
       "Finf is not equal to the number of diffuse states. \n",
       "Either model is degenerate or numerical errors occured. ",
-      "Check the model or try changing the tolerance parameter tol or P1/P1inf of the model."))
+      "Check the model or try changing the tolerance parameter 'tol' or P1/P1inf of the model."))
 
   if (filterout$d > 0) {
     filterout$Finf <- filterout$Finf[, 1:filterout$d, drop = FALSE]
@@ -561,9 +576,10 @@ KFS <-  function(model, filtering, smoothing, simplify = TRUE,
       as.integer("state" %in% smoothing), as.integer("disturbance" %in% smoothing),
       as.integer(("signal" %in% smoothing || "mean" %in% smoothing)))
 
-    if (m > 1 & min(apply(smoothout$V, 3, diag)) < -.Machine$double.eps^0.5)
-      warning(paste0("Possible error in smoothing: Negative variances in V, ",
-        "check the model or try changing the tolerance parameter tol or P1/P1inf of the model."))
+    # This is not possible anymore due to the intermediate rounding since 1.4.0
+    #if (m > 1 & min(apply(smoothout$V, 3, diag)) < 0)
+    #  warning(paste0("Possible error in smoothing: Negative variances in V, ",
+    #    "check the model or try changing the tolerance parameter tol or P1/P1inf of the model."))
     if ("state" %in% smoothing) {
       out$alphahat <- ts(t(smoothout$alphahat), start = start(model$y), frequency = frequency(model$y))
       colnames(out$alphahat) <- rownames(model$a1)

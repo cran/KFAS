@@ -5,10 +5,22 @@
 \alias{predict}
 \title{State Space Model Predictions}
 \usage{
-\method{predict}{SSModel}(object, newdata, n.ahead, interval = c("none",
-  "confidence", "prediction"), level = 0.95, type = c("response",
-  "link"), states = NULL, se.fit = FALSE, nsim = 0, prob = TRUE,
-  maxiter = 50, filtered = FALSE, ...)
+\method{predict}{SSModel}(
+  object,
+  newdata,
+  n.ahead,
+  interval = c("none", "confidence", "prediction"),
+  level = 0.95,
+  type = c("response", "link"),
+  states = NULL,
+  se.fit = FALSE,
+  nsim = 0,
+  prob = TRUE,
+  maxiter = 50,
+  filtered = FALSE,
+  expected = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{Object of class \code{SSModel}.}
@@ -31,7 +43,7 @@ cannot contain time varying system matrices.}
 \item{states}{Which states are used in computing the predictions. Either a
 numeric vector containing the indices of the corresponding states, or a
 character vector defining the types of the corresponding states. Possible choices are
-\code{"all"},  \code{"level"}, \code{"slope"},
+\code{"all"},  \code{"level"}, \code{"slope"} (which does not make sense as the corresponding Z is zero.),
 \code{"trend"},  \code{"regression"}, \code{"arima"}, \code{"custom"},
 \code{"cycle"} or \code{"seasonal"}, where \code{"trend"} extracts all states relating to trend.
  These can be combined. Default is \code{"all"}.}
@@ -53,6 +65,13 @@ all available observations given by user. For diffuse phase,
 interval bounds and standard errors of fitted values are set to \code{-Inf}/\code{Inf}
 (If the interest is in the first time points it might be useful to use
 non-exact diffuse initialization.).}
+
+\item{expected}{Logical value defining the approximation of H_t in case of Gamma 
+and negative binomial distribution. Default is \code{FALSE} which matches the 
+algorithm of Durbin & Koopman (1997), whereas \code{TRUE} uses the expected value
+of observations in the equations, leading to results which match with \code{glm} (where applicable).
+The latter case was the default behaviour of KFAS before version 1.3.8.
+Essentially this is the difference between observed and expected information in GLM context.}
 
 \item{\dots}{Ignored.}
 }

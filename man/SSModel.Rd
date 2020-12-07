@@ -11,24 +11,78 @@
 \alias{SSMtrend}
 \title{Create a State Space Model Object of Class SSModel}
 \usage{
-SSMarima(ar = NULL, ma = NULL, d = 0, Q, stationary = TRUE, index,
-  n = 1, state_names = NULL, ynames)
+SSMarima(
+  ar = NULL,
+  ma = NULL,
+  d = 0,
+  Q,
+  stationary = TRUE,
+  index,
+  n = 1,
+  state_names = NULL,
+  ynames
+)
 
 SSMcustom(Z, T, R, Q, a1, P1, P1inf, index, n = 1, state_names = NULL)
 
-SSMcycle(period, Q, type, index, a1, P1, P1inf, n = 1,
-  state_names = NULL, ynames)
+SSMcycle(
+  period,
+  Q,
+  type,
+  index,
+  a1,
+  P1,
+  P1inf,
+  n = 1,
+  state_names = NULL,
+  ynames
+)
 
 SSModel(formula, data, H, u, distribution, tol = .Machine$double.eps^0.5)
 
-SSMregression(rformula, data, type, Q, index, R, a1, P1, P1inf, n = 1,
-  remove.intercept = TRUE, state_names = NULL, ynames)
+SSMregression(
+  rformula,
+  data,
+  type,
+  Q,
+  index,
+  R,
+  a1,
+  P1,
+  P1inf,
+  n = 1,
+  remove.intercept = TRUE,
+  state_names = NULL,
+  ynames
+)
 
-SSMseasonal(period, Q, sea.type = c("dummy", "trigonometric"), type,
-  index, a1, P1, P1inf, n = 1, state_names = NULL, ynames, harmonics)
+SSMseasonal(
+  period,
+  Q,
+  sea.type = c("dummy", "trigonometric"),
+  type,
+  index,
+  a1,
+  P1,
+  P1inf,
+  n = 1,
+  state_names = NULL,
+  ynames,
+  harmonics
+)
 
-SSMtrend(degree = 1, Q, type, index, a1, P1, P1inf, n = 1,
-  state_names = NULL, ynames)
+SSMtrend(
+  degree = 1,
+  Q,
+  type,
+  index,
+  a1,
+  P1,
+  P1inf,
+  n = 1,
+  state_names = NULL,
+  ynames
+)
 }
 \arguments{
 \item{ar}{For arima component, a numeric vector containing the autoregressive
@@ -109,8 +163,10 @@ additional noise).}
 \code{rep("gaussian", p)}, where \code{p} is the number of series.}
 
 \item{tol}{A tolerance parameter used in checking whether \code{Finf} or \code{F} is numerically zero.
-Defaults to \code{.Machine$double.eps^0.5}. If smoothing gives negative variances for
-smoothed states, try adjusting this.}
+Defaults to \code{.Machine$double.eps^0.5}. If \code{F < tol * max(abs(Z[Z > 0]))^2},
+ then F is deemed to be zero (i.e. differences are due to numerical precision). 
+ This has mostly effect only on determining when to end exact diffuse phase. Tweaking this 
+ and/or scaling model parameters/observations can sometimes help with numerical issues.}
 
 \item{rformula}{For regression component, right hand side formula or list of
 of such formulas defining the custom regression part.}
@@ -159,7 +215,7 @@ Object of class \code{SSModel}, which is a list with the following
   matrix of an additional parameters in case of non-Gaussian model.}
   \item{distribution}{A vector of length p giving the distributions of the
   observations. }
-  \item{tol}{A tolerance parameter for the diffuse phase. }
+  \item{tol}{A tolerance parameter for Kalman filtering. }
   \item{call}{Original call to the function. } In addition, object of class
   \code{SSModel} contains following attributes:
   \item{names}{Names of the
@@ -219,8 +275,23 @@ out <- KFS(model)
 
 ts.plot(out$alphahat[,-1], b1, b2, col = 1:4)
 
+# SSMregression with multivariate observations
 
-# example of using data argument
+x <- matrix(rnorm(30), 10, 3) # one variable per each series
+y <- x + rnorm(30)
+model <- SSModel(y ~ SSMregression(list(~ X1, ~ X2, ~ X3), data = data.frame(x)))
+# more generally SSMregression(sapply(1:3, function(i) formula(paste0("~ X",i))), ...)
+
+# three covariates per series, with same coefficients:
+y <- x[,1] + x[,2] + x[,3] + matrix(rnorm(30), 10, 3)
+model <- SSModel(y ~ -1 + SSMregression(~ X1 + X2 + X3, remove.intercept = FALSE, 
+  type = "common", data = data.frame(x)))
+
+# the above cases can be combined in various ways, you can call SSMregression multiple times:
+model <- SSModel(y ~  SSMregression(~ X1 + X2, type = "common") + 
+  SSMregression(~ X2), data = data.frame(x))
+
+# examples of using data argument
 y <- x <- rep(1, 3)
 data1 <- data.frame(x = rep(2, 3))
 data2 <- data.frame(x = rep(3, 3))
@@ -252,8 +323,6 @@ try(c(SSModel(y ~ -1 + SSMregression(f), data = data1)$Z))
 }
 \seealso{
 \code{artransform}
-
-\code{\link{KFAS}} for examples.
 
 \code{\link{KFAS}} for examples.
 }

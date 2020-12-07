@@ -33,8 +33,10 @@
 #' @param distribution A vector of distributions of the observations. Default is
 #'   \code{rep("gaussian", p)}, where \code{p} is the number of series.
 #' @param tol A tolerance parameter used in checking whether \code{Finf} or \code{F} is numerically zero.
-#'   Defaults to \code{.Machine$double.eps^0.5}. If smoothing gives negative variances for
-#'   smoothed states, try adjusting this.
+#'   Defaults to \code{.Machine$double.eps^0.5}. If \code{F < tol * max(abs(Z[Z > 0]))^2},
+#'    then F is deemed to be zero (i.e. differences are due to numerical precision). 
+#'    This has mostly effect only on determining when to end exact diffuse phase. Tweaking this 
+#'    and/or scaling model parameters/observations can sometimes help with numerical issues.
 #' @param index A vector indicating for which series the corresponding
 #'   components are constructed.
 #' @param type For cycle, seasonal, trend and regression components, character
@@ -115,7 +117,7 @@
 #'   matrix of an additional parameters in case of non-Gaussian model.}
 #'   \item{distribution}{A vector of length p giving the distributions of the
 #'   observations. }
-#'   \item{tol}{A tolerance parameter for the diffuse phase. }
+#'   \item{tol}{A tolerance parameter for Kalman filtering. }
 #'   \item{call}{Original call to the function. } In addition, object of class
 #'   \code{SSModel} contains following attributes:
 #'   \item{names}{Names of the
@@ -129,7 +131,6 @@
 #'   \item{tv}{Integer vector stating whether \code{Z},\code{H},\code{T},\code{R} or \code{Q} is
 #'    time-varying (indicated by 1 in \code{tv} and 0 otherwise).
 #'    If you manually change the dimensions of the matrices you must change this attribute also.}
-#' @seealso \code{\link{KFAS}} for examples.
 #' @examples
 #' 
 #' # dynamic regression model
@@ -152,8 +153,23 @@
 #'
 #' ts.plot(out$alphahat[,-1], b1, b2, col = 1:4)
 #' 
+#' # SSMregression with multivariate observations
 #' 
-#' # example of using data argument
+#' x <- matrix(rnorm(30), 10, 3) # one variable per each series
+#' y <- x + rnorm(30)
+#' model <- SSModel(y ~ SSMregression(list(~ X1, ~ X2, ~ X3), data = data.frame(x)))
+#' # more generally SSMregression(sapply(1:3, function(i) formula(paste0("~ X",i))), ...)
+#' 
+#' # three covariates per series, with same coefficients:
+#' y <- x[,1] + x[,2] + x[,3] + matrix(rnorm(30), 10, 3)
+#' model <- SSModel(y ~ -1 + SSMregression(~ X1 + X2 + X3, remove.intercept = FALSE, 
+#'   type = "common", data = data.frame(x)))
+#' 
+#' # the above cases can be combined in various ways, you can call SSMregression multiple times:
+#' model <- SSModel(y ~  SSMregression(~ X1 + X2, type = "common") + 
+#'   SSMregression(~ X2), data = data.frame(x))
+#' 
+#' # examples of using data argument
 #' y <- x <- rep(1, 3)
 #' data1 <- data.frame(x = rep(2, 3))
 #' data2 <- data.frame(x = rep(3, 3))
