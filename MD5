@@ -1,5 +1,5 @@
-ad0dbc6d679b53ad8ead14edbc339b5c *ChangeLog
-40f7ebd0d409e9c43a83f7659e432a41 *DESCRIPTION
+c10c993a63afc76eb8f1bf28abcc7f24 *ChangeLog
+e50871762526b44d37aafa1e40c0c017 *DESCRIPTION
 3156eb6f8dca5b6b09334cc4f5e855cd *NAMESPACE
 5497aedfca8271e86f67cc41d96881c7 *R/KFAS-defunct.R
 56d7a4a18bdb867560f82400360e13fe *R/KFAS-package.R
@@ -44,7 +44,7 @@ cae765cd5662c7c2ed49ce79fc54114c *data/sexratio.rda
 7b68c4e6c6af22017c0a5526dcbda741 *inst/CITATION
 414961eeb60743b6194f5c748cf6cff3 *inst/doc/KFAS.R
 dd74d2f8ab5016fd0aae167022751236 *inst/doc/KFAS.Rnw
-5330655221200f45264a45ee06dd9385 *inst/doc/KFAS.pdf
+407737106bc299e8afb3ca8c44847d64 *inst/doc/KFAS.pdf
 0e94a71393fc8f1414c0d17ffa190c3a *man/Extract.SSModel.Rd
 995aa3604758de7b0a0a8e7acad04c5e *man/GlobalTemp.Rd
 6f4c0a26293c68e2dc2b6a07c8a84414 *man/KFAS-defunct.Rd
@@ -82,7 +82,7 @@ a7643cd3ec31672c4fab14ea4b579fc1 *src/approx.f95
 d8ac4ed9303df1f1bf3ace30485946b2 *src/artransform.f95
 737f69e64c8fcd153f12abb79d1f35cc *src/cdistwrap.c
 3b244c5dafb64beb750e783100d1f269 *src/covmeanw.f95
-6f4a249446d6f95fd00dc5995b791446 *src/declarations.h
+a7b4bb5dca70a9ff152d977953ee8e46 *src/declarations.h
 6144e274358ba521ae2ddffd398fdaea *src/filter1step.f95
 c4fce250ca08dfbc488bed4b958366a4 *src/filter1stepnovar.f95
 fde33db5f08aacb2543f6c119d26de69 *src/filtersimfast.f95
