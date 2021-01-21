@@ -1,9 +1,9 @@
-772fd4a11287860e944e43006e98cd6f *ChangeLog
-18a3bfe4f33a297fb89d582d92594177 *DESCRIPTION
+06a58438b84a0d695703ebf88c92e487 *ChangeLog
+215dda1fe88c9f96fbcdb9afc15f6b94 *DESCRIPTION
 ea34baa7dd06a3acce51a6c7de3303aa *NAMESPACE
 5497aedfca8271e86f67cc41d96881c7 *R/KFAS-defunct.R
 908e8611f8f2f524bfc318b2d2172e4c *R/KFAS-package.R
-2a1174febdbcbd117c7e8d532ad0e0b6 *R/KFS.R
+dee90030e13ad58b08b3efe5e96af6c0 *R/KFS.R
 6932dc6785d0b9b0291e2048457adf08 *R/SSMarima.R
 a35f3d8639f11e2b2d084912b76c4fe9 *R/SSMcustom.R
 33af73318b8e9ac2d5e3f336c41a2da3 *R/SSMcycle.R
@@ -23,8 +23,8 @@ b436a3a3c60edd5a935afd9ac9f76962 *R/hatvalues.KFS.R
 77e1b36dc38fc1405fd1812537f82ea9 *R/initTheta.R
 c858f5c87d9a044de3372df795b74d2e *R/internalResids.R
 f0d28b828f20f41a54bbc630e7ea74eb *R/interval.R
-cfae6cb60bf19903be9b0dd277a2c705 *R/ldl.R
-957d348ebaf8911c6f4670aa081a320e *R/logLik.SSModel.R
+69245019016f7c4a1a27bd745887d0d4 *R/ldl.R
+c3473f9fc456b3e84325e0e1854a8304 *R/logLik.SSModel.R
 c84146395e4d24639ed2e26186d46da8 *R/mvInnovations.R
 472781853ab234ac9f2739408d9b7685 *R/plot.SSModel.R
 bfb41c8721e45ffce67ed937a8222a32 *R/predict.SSModel.R
@@ -35,7 +35,7 @@ e0b12ed4b9ab2dca642a643e61f5f2c4 *R/rename_states.R
 0a61ebbb2e43342406b73b9471cc3305 *R/signals.R
 40e1fdb9a124e4393a63bd1184cc6909 *R/simHelper.R
 b0bccb3bf758209c0a168414d703410a *R/simulateSSM.R
-6742960d8aa0be982126924b432901e3 *R/transformSSM.R
+2ff29bb5c48c65fcd94486d165a194cc *R/transformSSM.R
 efb892056caf95604ffda95104723070 *build/vignette.rds
 85993fe9d3165948f23ee4d023dd8e78 *data/GlobalTemp.rda
 9da2de338f151877efb979f8bd5a64fb *data/alcohol.rda
@@ -44,12 +44,12 @@ cae765cd5662c7c2ed49ce79fc54114c *data/sexratio.rda
 7b68c4e6c6af22017c0a5526dcbda741 *inst/CITATION
 414961eeb60743b6194f5c748cf6cff3 *inst/doc/KFAS.R
 dd74d2f8ab5016fd0aae167022751236 *inst/doc/KFAS.Rnw
-fe1a4257c0737d42daf4f90d44ae0d83 *inst/doc/KFAS.pdf
+8a5422ed5520d207490aeb224810bddf *inst/doc/KFAS.pdf
 0e94a71393fc8f1414c0d17ffa190c3a *man/Extract.SSModel.Rd
 a7ad6fd3953b4ba9fc24b60fd8f9732f *man/GlobalTemp.Rd
 6f4c0a26293c68e2dc2b6a07c8a84414 *man/KFAS-defunct.Rd
 685ab4802bbc0f9be511135ebeca1034 *man/KFAS.Rd
-b17a0388d1fcbff2cc42dc57a8f8ffd6 *man/KFS.Rd
+db85d62f9029123b65ce7f3c5620dbe6 *man/KFS.Rd
 b98f3c0535ff0fbaf88654c1ec104c17 *man/SSModel.Rd
 b3cc53ee718a9611bb70992d4f26a88f *man/alcohol.Rd
 0e8ff030594133347b6751793d9a2815 *man/approxSSM.Rd
@@ -61,8 +61,8 @@ d257b64e1b822580df133760f21c83b6 *man/fitSSM.Rd
 4e8bd908b18d8cef5042ade4286a92cb *man/fitted.SSModel.Rd
 7a2dfbd50751f9694226fc3355e40d26 *man/hatvalues.KFS.Rd
 2fa13feeae66f520345c899a10267c86 *man/importanceSSM.Rd
-5dc8e2e1063cbb33120b132511371af0 *man/ldl.Rd
-2be28d0b1c8fdd07d09202cedf835728 *man/logLik.SSModel.Rd
+63be35065bd1cc6c748faf74c665d786 *man/ldl.Rd
+73fee3852a51a0528996a96a3c2b99a3 *man/logLik.SSModel.Rd
 7b6bb82bfa0655638c50bf82fa7c08bd *man/mvInnovations.Rd
 0456fa6821d011f3370a1ac1f3bf83ff *man/plot.SSModel.Rd
 3ab040dd1230b4bd14bcd7208bbf893f *man/predict.SSModel.Rd
@@ -74,7 +74,7 @@ bee0ab0e21ddcd81a2fd9cb36cb2565c *man/rstandard.KFS.Rd
 8a0ba57034cda3a9f846b9e7248b131a *man/sexratio.Rd
 4fc451c5fe9f872841a477fae03ded54 *man/signal.Rd
 d7e825a2984108137957364109140f5f *man/simulateSSM.Rd
-412ae2e3b0cd24ed383fdf442e747cb2 *man/transformSSM.Rd
+20e0c190765a2d27987ebbf0682a00c2 *man/transformSSM.Rd
 2a6f9e9e044a78154d3cfda5936d6f48 *src/Makevars
 2a6f9e9e044a78154d3cfda5936d6f48 *src/Makevars.win
 197c96aa32594f04f7a3ac0cdabf3c73 *src/approx.f95
@@ -82,7 +82,7 @@ d7e825a2984108137957364109140f5f *man/simulateSSM.Rd
 d8ac4ed9303df1f1bf3ace30485946b2 *src/artransform.f95
 737f69e64c8fcd153f12abb79d1f35cc *src/cdistwrap.c
 3b244c5dafb64beb750e783100d1f269 *src/covmeanw.f95
-a7b4bb5dca70a9ff152d977953ee8e46 *src/declarations.h
+0a47355539b9c28c946495550e74a1e7 *src/declarations.h
 6144e274358ba521ae2ddffd398fdaea *src/filter1step.f95
 c4fce250ca08dfbc488bed4b958366a4 *src/filter1stepnovar.f95
 fde33db5f08aacb2543f6c119d26de69 *src/filtersimfast.f95
@@ -99,7 +99,7 @@ c32eb265ab13678b285218d04abed660 *src/ldlssm.f95
 2cab1040803f919e7958727db4d02981 *src/marginalxx.f95
 6614f07eed6ae79b87394ff89d5fdcce *src/mvfilter.f95
 9c50a162a16a7f29ee69fd445e4c2de4 *src/ngfilter.f95
-d34423783cb866374b9ec4cba0548392 *src/ngloglik.f95
+696ad8a1e84cc34e1e817e4a9cad0e9d *src/ngloglik.f95
 2be68d7e0910eae3469d7afc591a5510 *src/ngsmooth.f95
 4a67cec35c99d4fac26cdee34003f876 *src/predict.f95
 ace02c76426552c4176483e43353ca95 *src/ptheta.f95
@@ -116,7 +116,7 @@ cfa0086dd519fd2054a93f7259fe4885 *tests/test-all.R
 280df3b2ac632201b3bd81aa089d27dd *tests/testthat/testGLM.R
 5da1eec825750047fb84c154143a197d *tests/testthat/testImportanceSSM.R
 25093ddcf703afd804f59483332f324e *tests/testthat/testLMM.R
-fde3526e406601abc0b78662c2c40505 *tests/testthat/testMisc.R
+fc38da018916305e92cfa6d042299834 *tests/testthat/testMisc.R
 008f6ecfcbb9c020c07e31df70ac47c0 *tests/testthat/testNumerical.R
 0725c090152f51610bb98a754a1ecd91 *tests/testthat/testPredict.R
 5455f1e028bb3fde8f4a0bbba590c3ed *tests/testthat/testSimulateSSM.R

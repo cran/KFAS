@@ -1,8 +1,8 @@
 ! Non-Gaussian log-likelihood computation
-subroutine ngloglik(yt, ymiss, timevar, zt, tt, rtv, qt, a1, p1,p1inf, p,m,&
-r, n, lik, theta, u, dist,maxiter,rankp,convtol, &
-nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,diff,marginal&
-, expected, htol)
+subroutine ngloglik(yt, ymiss, timevar, zt, tt, rtv, qt, a1, p1,p1inf, p,m, &
+  r, n, lik, theta, u, dist,maxiter,rankp,convtol, &
+  nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,diff,marginal, &
+  expected, htol)
 
     implicit none
 
@@ -38,6 +38,7 @@ nnd,nsim,epsplus,etaplus,aplus1,c,tol,info,antit,sim,nsim2,diff,marginal&
     double precision, external :: ddot
 
     external approx, marginalxx, dpoisf, dnormf, dbinomf, dgammaf, dnbinomf, simgaussian
+    ht = 0.0d0
     !approximate
     call approx(yt, ymiss, timevar, zt, tt, rtv, ht, qt, a1, p1,p1inf, p, n, m, r,&
     theta, u, ytilde, dist,maxiter,tol,rankp,convtol,diff,lik, info, expected, htol)
