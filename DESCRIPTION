@@ -1,6 +1,6 @@
 Package: KFAS
-Version: 1.4.4
-Date: 2021-01-18
+Version: 1.4.5
+Date: 2021-05-10
 Title: Kalman Filter and Smoother for Exponential Family State Space
         Models
 Authors@R: 
@@ -26,8 +26,8 @@ Encoding: UTF-8
 ByteCompile: true
 URL: https://github.com/helske/KFAS
 NeedsCompilation: yes
-Packaged: 2021-01-18 17:29:53 UTC; jovetale
+Packaged: 2021-05-10 08:48:37 UTC; jhelske
 Author: Jouni Helske [aut, cre] (<https://orcid.org/0000-0001-7130-793X>)
 Maintainer: Jouni Helske <jouni.helske@iki.fi>
 Repository: CRAN
-Date/Publication: 2021-01-21 17:40:03 UTC
+Date/Publication: 2021-05-10 09:42:11 UTC
