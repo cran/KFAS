@@ -1,8 +1,8 @@
-ff6605b508b5d54db81551550cc151e4 *ChangeLog
-2d6894e24ef80487969b2f540e0dbff8 *DESCRIPTION
+f5e49fd3fa51465b36be9cf053591206 *ChangeLog
+9c46e1c850ade0331b4adb2afee8885a *DESCRIPTION
 2c8f113a6fb3a37f9c01b8dc3ac74087 *NAMESPACE
 09426e529d712c5b623ee03bd87358d3 *R/KFAS-defunct.R
-0a3063c9f6b69c287c661a2bfece43ae *R/KFAS-package.R
+587f61dbfde20f11e73e5f2df7ecae8c *R/KFAS-package.R
 57ea3865fb4022a757b296d6895f9ce7 *R/KFS.R
 72fbd4fb0b68a189b64fe6b2fe8206c9 *R/SSMarima.R
 cc95ddeac90d4ccefaf04de8c32f4e9e *R/SSMcustom.R
@@ -38,7 +38,7 @@ be407ab5b52baa17570645c0a9913ef2 *R/simHelper.R
 cde4406863ac0bf98b2b76083775118c *R/simulateSSM.R
 2b8d3c95ce3ed64d98c20de35357256d *R/transformSSM.R
 d12b08c5d982ab1e7b1650d5045cc41d *R/zzz.R
-07097552803a3232785162070aa0ef39 *build/vignette.rds
+a0a619da0c0aff9d291e1908c6d32f52 *build/vignette.rds
 85993fe9d3165948f23ee4d023dd8e78 *data/GlobalTemp.rda
 9da2de338f151877efb979f8bd5a64fb *data/alcohol.rda
 30f3f80fe83502869ff93a6662c56c5e *data/boat.rda
@@ -46,11 +46,11 @@ cae765cd5662c7c2ed49ce79fc54114c *data/sexratio.rda
 353dc238f6ea0063789e6dc385bc77df *inst/CITATION
 414961eeb60743b6194f5c748cf6cff3 *inst/doc/KFAS.R
 95bd7b0b49c5b9fedc016dbcfe3fdf76 *inst/doc/KFAS.Rnw
-03ac50ac057238b1fc6c4e90a1ebcbf7 *inst/doc/KFAS.pdf
+b8c9a9e08c0c7b9399c8d76722d1dd74 *inst/doc/KFAS.pdf
 6ca1c96aa3e291984a8126bd37a13125 *man/Extract.SSModel.Rd
 16f703c6d7875e33e4945ec14fdbe0ce *man/GlobalTemp.Rd
 e91cc0e5c79e31ab4b8c4b66e95333f6 *man/KFAS-defunct.Rd
-9c9d33216d4d4c12aceff612bec82278 *man/KFAS.Rd
+02e4e25c75eafe92628252ae748b339b *man/KFAS.Rd
 bb896f869cdad8a0b389ee6acc5418f7 *man/KFS.Rd
 f8bfc7f85420368c51371b7ebe15e685 *man/SSModel.Rd
 b79747527e26942fbc36aa66d5ac5df4 *man/alcohol.Rd
